@@ -78,3 +78,24 @@ export async function deleteExpense(expenseId: number): Promise<{ success: boole
     return { success: false, error: 'An unexpected error occurred' };
   }
 }
+
+export async function settleMonthlyBalance(year: number, month: number): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/settle/${year}/${month}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      return { success: false, error: result.detail || 'Failed to settle balance' };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error settling balance:', error);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
+}
