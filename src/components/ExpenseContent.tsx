@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BalanceSummary } from './BalanceSummary';
 import { ExpenseList } from './ExpenseList';
 import { LoadingState } from './LoadingState';
+import { ConfirmationModal } from './ConfirmationModal';
 import { settleMonthlyBalance } from '../api/expenses';
 import type { MonthlyBalanceResponse, Member } from '../types/expense';
 
@@ -15,6 +16,7 @@ interface ExpenseContentProps {
 export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdated }: ExpenseContentProps) {
   const [isSettling, setIsSettling] = useState(false);
   const [settleError, setSettleError] = useState<string | null>(null);
+  const [showSettleConfirmation, setShowSettleConfirmation] = useState(false);
 
   const handleSettle = async () => {
     if (!monthlyData || isSettling) return;
@@ -26,6 +28,7 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
       
       if (result.success) {
         onExpenseUpdated();
+        setShowSettleConfirmation(false);
       } else {
         throw new Error(result.error || 'Failed to settle balance');
       }
@@ -51,6 +54,16 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
 
   return (
     <>
+      <ConfirmationModal
+        isOpen={showSettleConfirmation}
+        onConfirm={handleSettle}
+        onCancel={() => setShowSettleConfirmation(false)}
+        title="Settle Monthly Balance"
+        message="Are you sure you want to settle this month's balance? This action cannot be undone."
+        confirmText={isSettling ? "Settling..." : "Settle Balance"}
+        cancelText="Cancel"
+      />
+      
       {settleError && (
         <div className="mb-4 bg-red-50 text-red-800 p-4 rounded-lg shadow">
           <p>{settleError}</p>
@@ -60,7 +73,7 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
         balances={monthlyData.balances}
         members={members}
         isSettled={monthlyData.isSettled}
-        onSettle={handleSettle}
+        onSettle={() => setShowSettleConfirmation(true)}
         isSettling={isSettling}
       />
       <ExpenseList
