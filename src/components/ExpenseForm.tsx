@@ -193,7 +193,12 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
               value={expense.splitStrategy.type}
               onChange={(e) => setExpense({
                 ...expense,
-                splitStrategy: { type: e.target.value as 'equal' | 'percentage', percentages: null }
+                splitStrategy: { 
+                  type: e.target.value as 'equal' | 'percentage',
+                  percentages: e.target.value === 'percentage' 
+                    ? Object.fromEntries(members.map(m => [m.id.toString(), 0]))
+                    : null 
+                }
               })}
             >
               <option value="equal">Equal</option>
@@ -201,6 +206,44 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
             </select>
           </div>
         </div>
+
+        {expense.splitStrategy.type === 'percentage' && (
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700">
+              Member Percentages
+            </label>
+            <div className="space-y-2">
+              {members.map((member) => (
+                <div key={member.id} className="flex items-center space-x-2">
+                  <span className="w-32">{member.name}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    required
+                    className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    value={expense.splitStrategy.percentages?.[member.id] || 0}
+                    onChange={(e) => {
+                      const newPercentages = {
+                        ...expense.splitStrategy.percentages,
+                        [member.id]: parseFloat(e.target.value)
+                      };
+                      setExpense({
+                        ...expense,
+                        splitStrategy: {
+                          ...expense.splitStrategy,
+                          percentages: newPercentages
+                        }
+                      });
+                    }}
+                  />
+                  <span>%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {expense.paymentType === 'credit' && (
           <div className="flex items-center space-x-4">

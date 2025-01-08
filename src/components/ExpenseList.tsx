@@ -90,6 +90,7 @@ export function ExpenseList({ expenses, members, onExpenseUpdated }: ExpenseList
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payer</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Split</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -119,6 +120,22 @@ export function ExpenseList({ expenses, members, onExpenseUpdated }: ExpenseList
                       {expense.paymentType === 'credit' && expense.installments > 1 && 
                         ` (${expense.installmentNo}/${expense.installments})`}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {expense.splitStrategy.type === 'equal' ? (
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+                        Equal
+                      </span>
+                    ) : (
+                      <div className="text-xs space-y-1">
+                        {members.map(member => (
+                          <div key={member.id} className="flex items-center space-x-1">
+                            <span className="font-medium">{member.name}:</span>
+                            <span>{expense.splitStrategy.percentages?.[member.id]}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button
