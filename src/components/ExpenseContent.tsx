@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { BalanceSummary } from './BalanceSummary';
 import { ExpenseList } from './ExpenseList';
+import { BalanceSummary } from './BalanceSummary';
 import { LoadingState } from './LoadingState';
 import { ConfirmationModal } from './ConfirmationModal';
 import { settleMonthlyBalance } from '../api/expenses';
+import { recalculateMonthlyShare } from '../api/shares';
 import type { MonthlyBalanceResponse, Member } from '../types/expense';
 
 interface ExpenseContentProps {
@@ -53,7 +54,27 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
   }
 
   return (
-    <>
+    <div className="space-y-8">
+      {monthlyData && (
+        <>
+          <BalanceSummary
+            balances={monthlyData.balances}
+            members={members}
+            isSettled={monthlyData.isSettled}
+            onSettle={() => setShowSettleConfirmation(true)}
+            isSettling={isSettling}
+            expenses={monthlyData.expenses}
+          />
+
+          <ExpenseList
+            expenses={monthlyData.expenses}
+            members={members}
+            onExpenseUpdated={onExpenseUpdated}
+            isSettled={monthlyData.isSettled}
+          />
+        </>
+      )}
+
       <ConfirmationModal
         isOpen={showSettleConfirmation}
         onConfirm={handleSettle}
@@ -63,24 +84,6 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
         confirmText={isSettling ? "Settling..." : "Settle Balance"}
         cancelText="Cancel"
       />
-      
-      {settleError && (
-        <div className="mb-4 bg-red-50 text-red-800 p-4 rounded-lg shadow">
-          <p>{settleError}</p>
-        </div>
-      )}
-      <BalanceSummary
-        balances={monthlyData.balances}
-        members={members}
-        isSettled={monthlyData.isSettled}
-        onSettle={() => setShowSettleConfirmation(true)}
-        isSettling={isSettling}
-      />
-      <ExpenseList
-        expenses={monthlyData.expenses}
-        members={members}
-        onExpenseUpdated={onExpenseUpdated}
-      />
-    </>
+    </div>
   );
 }

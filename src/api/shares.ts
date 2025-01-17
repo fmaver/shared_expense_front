@@ -33,19 +33,39 @@ export async function settleMonthlyShare(year: number, month: number): Promise<M
   }
 }
 
-export async function recalculateMonthlyShare(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
+export async function recalculateMonthlyShare(year: number, month: number): Promise<{ success: boolean; error: string | null }> {
   try {
-    const paddedMonth = month.toString().padStart(2, '0');
-    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${paddedMonth}`, {
+    console.log(`Recalculating monthly share for ${year}/${month}`);
+    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${month}`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+    
+    console.log('Response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error('Failed to recalculate monthly share');
+      const text = await response.text();
+      console.log('Error response text:', text);
+      let errorMessage = 'Failed to recalculate monthly share';
+      try {
+        const error = JSON.parse(text);
+        errorMessage = error.detail || errorMessage;
+      } catch {
+        // If JSON parsing fails, use the raw text if available
+        if (text) errorMessage = text;
+      }
+      throw new Error(errorMessage);
     }
-    const result = await response.json();
-    return result.data;
+    
+    console.log('Recalculation successful');
+    return { success: true, error: null };
   } catch (error) {
     console.error('Error recalculating monthly share:', error);
-    return null;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to recalculate monthly share'
+    };
   }
 }

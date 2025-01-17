@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, DollarSign, Users, Tag, CreditCard } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse, Member } from '../types/expense';
 import { useCategories } from '../hooks/useCategories';
+import { formatDate } from '../utils/format';
 
 interface ExpenseFormProps {
   onSubmit: (expense: ExpenseCreate) => void;
@@ -9,9 +10,10 @@ interface ExpenseFormProps {
   initialExpense?: ExpenseResponse;
   mode?: 'create' | 'edit';
   onCancel?: () => void;
+  isSettled?: boolean;
 }
 
-export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create', onCancel }: ExpenseFormProps) {
+export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create', onCancel, isSettled = false }: ExpenseFormProps) {
   const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
   const [expense, setExpense] = useState<ExpenseCreate>(() => {
     if (initialExpense) {
@@ -33,13 +35,16 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
     }
     return {
       description: '',
-      amount: 0,
-      date: new Date().toISOString().split('T')[0],
+      amount: '',
+      date: formatDate(new Date()),
       category: { name: categories?.[0]?.name || '' },
       payerId: members[0]?.id || 0,
       paymentType: 'debit',
       installments: 1,
-      splitStrategy: { type: 'equal' }
+      splitStrategy: { 
+        type: 'equal',
+        percentages: {}
+      }
     };
   });
 
@@ -50,7 +55,14 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
       splitStrategy: {
         type: expense.splitStrategy.type,
         ...(expense.splitStrategy.type === 'percentage' 
-          ? { percentages: expense.splitStrategy.percentages }
+          ? { 
+              percentages: Object.fromEntries(
+                Object.entries(expense.splitStrategy.percentages || {}).map(([key, value]) => [
+                  key, 
+                  value === null ? 0 : value
+                ])
+              )
+            }
           : {})
       }
     };
@@ -58,7 +70,7 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">{mode === 'create' ? 'New Expense' : 'Edit Expense'}</h2>
       
       <div className="space-y-4">
@@ -74,9 +86,11 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
               step="0.01"
               min="0"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.amount}
-              onChange={(e) => setExpense({ ...expense, amount: parseFloat(e.target.value) })}
+              onChange={(e) => setExpense({ ...expense, amount: e.target.value ? parseFloat(e.target.value) : '' })}
+              disabled={isSettled}
+              placeholder="e.g., 42.50"
             />
           </div>
         </div>
@@ -92,9 +106,10 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
               id="description"
               required
               maxLength={255}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.description}
               onChange={(e) => setExpense({ ...expense, description: e.target.value })}
+              disabled={isSettled}
             />
           </div>
         </div>
@@ -109,9 +124,10 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
               type="date"
               id="date"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.date}
               onChange={(e) => setExpense({ ...expense, date: e.target.value })}
+              disabled={isSettled}
             />
           </div>
         </div>
@@ -125,10 +141,10 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
             <select
               id="category"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.category.name}
               onChange={(e) => setExpense({ ...expense, category: { name: e.target.value } })}
-              disabled={isLoadingCategories}
+              disabled={isLoadingCategories || isSettled}
             >
               <option value="">Select a category</option>
               {categories && categories.length > 0 && categories.map((category) => (
@@ -149,9 +165,10 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
             <select
               id="payer"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.payerId}
               onChange={(e) => setExpense({ ...expense, payerId: parseInt(e.target.value) })}
+              disabled={isSettled}
             >
               {members.map((member) => (
                 <option key={member.id} value={member.id}>
@@ -171,9 +188,10 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
             <select
               id="paymentType"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.paymentType}
               onChange={(e) => setExpense({ ...expense, paymentType: e.target.value as 'debit' | 'credit' })}
+              disabled={isSettled}
             >
               <option value="debit">Debit</option>
               <option value="credit">Credit</option>
@@ -189,17 +207,18 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
             <select
               id="splitType"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.splitStrategy.type}
               onChange={(e) => setExpense({
                 ...expense,
                 splitStrategy: { 
                   type: e.target.value as 'equal' | 'percentage',
                   percentages: e.target.value === 'percentage' 
-                    ? Object.fromEntries(members.map(m => [m.id.toString(), 0]))
+                    ? Object.fromEntries(members.map(m => [m.id.toString(), null]))
                     : null 
                 }
               })}
+              disabled={isSettled}
             >
               <option value="equal">Equal</option>
               <option value="percentage">Percentage</option>
@@ -222,12 +241,14 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
                     max="100"
                     step="0.01"
                     required
-                    className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={expense.splitStrategy.percentages?.[member.id] || 0}
+                    placeholder="e.g., 50.00"
+                    className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none caret-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    value={expense.splitStrategy.percentages?.[member.id] === null ? '' : expense.splitStrategy.percentages?.[member.id]}
                     onChange={(e) => {
+                      const value = e.target.value === '' ? null : parseFloat(e.target.value);
                       const newPercentages = {
                         ...expense.splitStrategy.percentages,
-                        [member.id]: parseFloat(e.target.value)
+                        [member.id]: value
                       };
                       setExpense({
                         ...expense,
@@ -237,6 +258,7 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
                         }
                       });
                     }}
+                    disabled={isSettled}
                   />
                   <span>%</span>
                 </div>
@@ -256,16 +278,17 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
                 id="installments"
                 min="1"
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none caret-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 value={expense.installments}
                 onChange={(e) => setExpense({ ...expense, installments: parseInt(e.target.value) })}
+                disabled={isSettled}
               />
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex justify-end space-x-4">
+      <div className="flex justify-end space-x-3 mt-6">
         {onCancel && (
           <button
             type="button"
@@ -277,9 +300,14 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
         )}
         <button
           type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          disabled={isSettled}
+          className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            isSettled 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
         >
-          {mode === 'create' ? 'Create Expense' : 'Save Changes'}
+          {mode === 'create' ? 'Create Expense' : 'Update Expense'}
         </button>
       </div>
     </form>
