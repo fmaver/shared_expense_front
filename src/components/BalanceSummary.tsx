@@ -28,7 +28,12 @@ export function BalanceSummary({
     return members.find(m => m.id === parseInt(id))?.name || 'Unknown';
   };
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = expenses.reduce((sum, expense) => {
+    if (expense.category === 'prestamo' || expense.category === 'balance') {
+      return sum;
+    }
+    return sum + expense.amount;
+  }, 0);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">

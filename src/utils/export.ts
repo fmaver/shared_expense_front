@@ -64,7 +64,12 @@ export function exportMonthlyData(data: MonthlyData, members: Member[]) {
   pdf.setFontSize(16);
   pdf.text('Expenses', 14, pdf.lastAutoTable.finalY + 20);
 
-  const expenseRows = data.expenses.map(expense => [
+  // Sort expenses by date
+  const sortedExpenses = [...data.expenses].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  const expenseRows = sortedExpenses.map(expense => [
     new Date(expense.date).toLocaleDateString(),
     capitalize(expense.description),
     `$${expense.amount.toFixed(2)}`,
