@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { formatCurrency, capitalize, formatDate } from '../utils/format';
 import type { ExpenseResponse, Member, ExpenseCreate } from '../types/expense';
-import { updateExpense, deleteExpense } from '../api/expenses';
+import { updateExpense, deleteExpense, recalculateMonthlyBalance } from '../api/expenses';
 import { ExpenseForm } from './ExpenseForm';
 import { Pen, Trash2, ArrowUpDown } from 'lucide-react';
+import { Toast } from './Toast';
 
 type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'paymentType' | 'splitStrategy';
 type SortOrder = 'asc' | 'desc';
@@ -20,12 +21,18 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
   const [isUpdating, setIsUpdating] = useState(false);
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const getMemberName = (id: number) => {
     return members.find(m => m.id === id)?.name || 'Unknown';
   };
 
   const handleEdit = (expense: ExpenseResponse) => {
+    // Don't allow editing of non-first installments for credit expenses
+    if (expense.installmentNo > 1) {
+      alert('You can only edit the first installment of a credit expense. This will update all related installments.');
+      return;
+    }
     setEditingExpense(expense);
   };
 
@@ -71,18 +78,29 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
   const handleUpdate = async (updatedExpense: ExpenseCreate) => {
     if (!editingExpense || isUpdating) return;
     
+    // If it's a credit expense with multiple installments, show a confirmation
+    if (editingExpense.paymentType === 'credit' && editingExpense.installments > 1) {
+      if (!window.confirm('This is a credit expense with multiple installments. Updating this will modify all related installments. Are you sure?')) {
+        return;
+      }
+    }
+    
     try {
       setIsUpdating(true);
       const result = await updateExpense(editingExpense.id, updatedExpense);
       if (!result.error && result.data) {
         onExpenseUpdated();
         setEditingExpense(null);
+        setToast({ message: 'Expense updated successfully!', type: 'success' });
       } else {
         throw new Error(result.error || 'Failed to update expense');
       }
     } catch (error) {
       console.error('Error updating expense:', error);
-      alert(error instanceof Error ? error.message : 'Failed to update expense');
+      setToast({ 
+        message: error instanceof Error ? error.message : 'Failed to update expense',
+        type: 'error'
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -92,10 +110,23 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
     setEditingExpense(null);
   };
 
-  const handleDelete = async (expenseId: number) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
+  const handleDelete = async (expense: ExpenseResponse) => {
+    // Don't allow deletion of non-first installments for credit expenses
+    if (expense.installmentNo > 1) {
+      alert('You can only delete the first installment of a credit expense. This will delete all related installments.');
+      return;
+    }
+
+    // If it's a credit expense with multiple installments, we need to find the parent expense
+    const expenseToDelete = expense.parentExpenseId || expense.id;
+    
+    const message = expense.installments > 1 
+      ? 'This is a credit expense with multiple installments. Deleting this will remove all related installments. Are you sure?'
+      : 'Are you sure you want to delete this expense?';
+
+    if (window.confirm(message)) {
       try {
-        const result = await deleteExpense(expenseId);
+        const result = await deleteExpense(expenseToDelete);
         if (result.success) {
           onExpenseUpdated();
         } else {
@@ -108,8 +139,47 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
     }
   };
 
+  const handleRecalculate = async () => {
+    console.log('Recalculate button clicked');
+    // Extract year and month from the first expense
+    if (expenses.length === 0) {
+      console.log('No expenses found');
+      return;
+    }
+    
+    const date = new Date(expenses[0].date);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    console.log('Recalculating for:', { year, month, date: expenses[0].date });
+
+    try {
+      console.log('Calling recalculateMonthlyBalance...');
+      const result = await recalculateMonthlyBalance(year, month);
+      console.log('Recalculate result:', result);
+      if (result.success) {
+        onExpenseUpdated();
+        setToast({ message: 'Balances recalculated successfully!', type: 'success' });
+      } else {
+        throw new Error(result.error || 'Failed to recalculate balance');
+      }
+    } catch (error) {
+      console.error('Error recalculating balance:', error);
+      setToast({ 
+        message: error instanceof Error ? error.message : 'Failed to recalculate balance',
+        type: 'error'
+      });
+    }
+  };
+
   return (
     <div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       {editingExpense && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -126,6 +196,9 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
       )}
       
       <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Expenses</h2>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -256,27 +329,39 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleEdit(expense)}
-                        disabled={isSettled}
-                        className={`p-1.5 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                          isSettled ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <Pen className="w-4 h-4 text-gray-500" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(expense.id)}
-                        disabled={isSettled}
-                        className={`p-1.5 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                          isSettled ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {!isSettled && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEdit(expense)}
+                          className={`text-blue-600 hover:text-blue-800 ${
+                            expense.installmentNo > 1 ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          disabled={expense.installmentNo > 1}
+                          title={
+                            expense.installmentNo > 1
+                              ? 'You can only edit the first installment of a credit expense'
+                              : 'Edit expense'
+                          }
+                        >
+                          <Pen className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(expense)}
+                          className={`text-red-600 hover:text-red-800 ${
+                            expense.installmentNo > 1 ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          disabled={expense.installmentNo > 1}
+                          title={
+                            expense.installmentNo > 1
+                              ? 'You can only delete the first installment of a credit expense'
+                              : 'Delete expense'
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

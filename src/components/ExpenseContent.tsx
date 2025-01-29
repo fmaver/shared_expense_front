@@ -16,6 +16,7 @@ interface ExpenseContentProps {
 
 export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdated }: ExpenseContentProps) {
   const [isSettling, setIsSettling] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const [settleError, setSettleError] = useState<string | null>(null);
   const [showSettleConfirmation, setShowSettleConfirmation] = useState(false);
 
@@ -41,6 +42,25 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
     }
   };
 
+  const handleRecalculate = async () => {
+    if (!monthlyData || isRecalculating) return;
+
+    try {
+      setIsRecalculating(true);
+      const result = await recalculateMonthlyShare(monthlyData.year, monthlyData.month);
+      
+      if (result.success) {
+        onExpenseUpdated();
+      } else {
+        throw new Error(result.error || 'Failed to recalculate balance');
+      }
+    } catch (error) {
+      console.error('Error recalculating balance:', error);
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   if (isLoading) {
     return <LoadingState message="Loading expenses..." />;
   }
@@ -63,6 +83,8 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
             isSettled={monthlyData.isSettled}
             onSettle={() => setShowSettleConfirmation(true)}
             isSettling={isSettling}
+            onRecalculate={handleRecalculate}
+            isRecalculating={isRecalculating}
             expenses={monthlyData.expenses}
           />
 

@@ -65,6 +65,11 @@ export async function deleteExpense(expenseId: number): Promise<{ success: boole
   try {
     const response = await fetch(`${config.apiBaseUrl}/api/v1/expenses/${expenseId}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Add query parameter to indicate we want to delete all installments
+      // The backend should handle this parameter
     });
 
     if (!response.ok) {
@@ -96,6 +101,42 @@ export async function settleMonthlyBalance(year: number, month: number): Promise
     return { success: true, error: null };
   } catch (error) {
     console.error('Error settling balance:', error);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
+}
+
+export async function recalculateMonthlyBalance(year: number, month: number): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const token = localStorage.getItem('token');
+    console.log('Recalculating with token:', token?.substring(0, 10) + '...');
+    console.log(`Calling API: ${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${month}`);
+
+    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${month}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    console.log('API Response:', response.status, response.statusText);
+    const responseText = await response.text();
+    console.log('Response text:', responseText);
+
+    if (!response.ok) {
+      let errorDetail;
+      try {
+        const errorJson = JSON.parse(responseText);
+        errorDetail = errorJson.detail || 'Failed to recalculate balance';
+      } catch {
+        errorDetail = responseText || 'Failed to recalculate balance';
+      }
+      return { success: false, error: errorDetail };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error recalculating balance:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
 }

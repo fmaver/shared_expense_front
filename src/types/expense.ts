@@ -24,6 +24,11 @@ export interface ExpenseResponse extends Omit<ExpenseCreate, 'category'> {
   id: number;
   category: string;
   installmentNo: number;
+  parentExpenseId?: number | null;
+}
+
+export interface CategoryWithEmoji extends Category {
+  emoji: string;
 }
 
 export interface Member {

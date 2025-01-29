@@ -17,8 +17,11 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
   const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
   const [expense, setExpense] = useState<ExpenseCreate>(() => {
     if (initialExpense) {
+      // Remove the installment suffix from the description if it exists
+      const description = initialExpense.description.replace(/\s*\(\d+\/\d+\)\s*$/, '');
+      
       return {
-        description: initialExpense.description,
+        description,
         amount: initialExpense.amount,
         date: initialExpense.date,
         category: { name: initialExpense.category },
@@ -147,12 +150,15 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
               disabled={isLoadingCategories || isSettled}
             >
               <option value="">Select a category</option>
-              {categories && categories.length > 0 && categories.map((category) => (
+              {!isLoadingCategories && categories && categories.map((category) => (
                 <option key={category.name} value={category.name}>
-                  {category.name}
+                  {category.emoji} {category.name}
                 </option>
               ))}
             </select>
+            {isLoadingCategories && (
+              <p className="mt-1 text-sm text-gray-500">Loading categories...</p>
+            )}
           </div>
         </div>
 
