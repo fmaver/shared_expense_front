@@ -195,12 +195,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 color: 'white',
                 '&:hover': {
                   background: 'linear-gradient(45deg, #1976D2 30%, #1CB5E0 90%)',
+                  transform: 'scale(1.02)',
                 },
                 transition: 'all 0.3s ease-in-out',
                 transform: 'scale(1)',
-                '&:hover': {
-                  transform: 'scale(1.02)',
-                },
               }}
             >
               {isLoading ? (
