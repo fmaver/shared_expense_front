@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser, updateProfile, updatePassword, MemberResponse } from '../api/auth';
+import { getCurrentUser, updateProfile, updatePassword, MemberResponse, NotificationType } from '../api/auth';
 import {
   Box,
   Button,
@@ -11,6 +11,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
 } from '@mui/material';
 
 export const Profile: React.FC = () => {
@@ -18,6 +23,7 @@ export const Profile: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [telephone, setTelephone] = useState('');
+  const [notificationPreference, setNotificationPreference] = useState<NotificationType>('NONE');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
@@ -35,6 +41,7 @@ export const Profile: React.FC = () => {
       setName(userData.name);
       setEmail(userData.email);
       setTelephone(userData.telephone);
+      setNotificationPreference(userData.notificationPreference);
     } catch (err) {
       setError('Failed to load user data');
     }
@@ -43,7 +50,18 @@ export const Profile: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateProfile({ name, email, telephone });
+      // Validate WhatsApp notification preference
+      if (notificationPreference === 'WHATSAPP' && !telephone) {
+        setError('Phone number is required for WhatsApp notifications');
+        return;
+      }
+
+      await updateProfile({ 
+        name, 
+        email, 
+        telephone, 
+        notification_preference: notificationPreference 
+      });
       setSuccess('Profile updated successfully');
       setError('');
     } catch (err) {
@@ -111,14 +129,33 @@ export const Profile: React.FC = () => {
           />
           <TextField
             margin="normal"
-            required
+            required={notificationPreference === 'WHATSAPP'}
             fullWidth
             id="telephone"
             label="Telephone"
             name="telephone"
             value={telephone}
             onChange={(e) => setTelephone(e.target.value)}
+            error={notificationPreference === 'WHATSAPP' && !telephone}
+            helperText={notificationPreference === 'WHATSAPP' && !telephone ? 'Phone number is required for WhatsApp notifications' : ''}
           />
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="notification-preference-label">Notification Preference</InputLabel>
+            <Select
+              labelId="notification-preference-label"
+              id="notification-preference"
+              value={notificationPreference}
+              label="Notification Preference"
+              onChange={(e) => setNotificationPreference(e.target.value as NotificationType)}
+            >
+              <MenuItem value="NONE">No Notifications</MenuItem>
+              <MenuItem value="EMAIL">Email</MenuItem>
+              <MenuItem value="WHATSAPP">WhatsApp</MenuItem>
+            </Select>
+            {notificationPreference === 'WHATSAPP' && !telephone && (
+              <FormHelperText error>Phone number is required for WhatsApp notifications</FormHelperText>
+            )}
+          </FormControl>
           <Button
             type="submit"
             fullWidth

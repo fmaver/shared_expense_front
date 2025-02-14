@@ -3,10 +3,16 @@ import type { ExpenseCreate, ExpenseResponse, MonthlyBalanceResponse } from '../
 
 export async function createExpense(expense: ExpenseCreate): Promise<{ data: ExpenseResponse | null; error: string | null }> {
   try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return { data: null, error: 'No authentication token found' };
+    }
+
     const response = await fetch(`${config.apiBaseUrl}/api/v1/expenses/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(expense),
     });
