@@ -326,7 +326,7 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
                           return (
                             <div key={memberId} className="flex items-center space-x-1 group relative">
                               <span className="font-medium">{getMemberName(parseInt(memberId))}:</span>
-                              <span className="cursor-help">{percentage}%</span>
+                              <span className="cursor-help">{parseFloat(Number(percentage).toFixed(2))}%</span>
                               <div className="invisible group-hover:visible absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-10">
                                 {formatCurrency(amount)}
                               </div>

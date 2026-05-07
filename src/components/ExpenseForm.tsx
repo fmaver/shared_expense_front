@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Calendar, DollarSign, Users, Tag, CreditCard } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '../types/expense';
 import { useCategories } from '../hooks/useCategories';
@@ -57,8 +57,21 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
     };
   });
 
+  const exactTotal = useMemo(() => {
+    if (expense.splitStrategy.type !== 'exact') return 0;
+    return Object.values(expense.splitStrategy.amounts || {}).reduce(
+      (sum, v) => sum + (v === null ? 0 : (v as number)),
+      0
+    );
+  }, [expense.splitStrategy]);
+
+  const exactRemaining = Number(expense.amount || 0) - exactTotal;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (expense.splitStrategy.type === 'exact' && Math.abs(exactRemaining) > 0.01) {
+      return;
+    }
     const { type, percentages, amounts, participantIds } = expense.splitStrategy;
     const splitStrategy: SplitStrategy = { type };
     if (type === 'percentage') {
@@ -256,7 +269,6 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
                     type="number"
                     min="0"
                     step="0.01"
-                    required
                     placeholder="e.g., 250.00"
                     className="block w-28 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none caret-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     value={expense.splitStrategy.amounts?.[member.id] === null ? '' : expense.splitStrategy.amounts?.[member.id]}
@@ -274,6 +286,13 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
                   />
                 </div>
               ))}
+            </div>
+            <div className={`text-sm font-medium ${Math.abs(exactRemaining) <= 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+              {Math.abs(exactRemaining) <= 0.01
+                ? '✓ Amounts add up correctly'
+                : exactRemaining > 0
+                  ? `$${exactRemaining.toFixed(2)} still unassigned`
+                  : `Over by $${Math.abs(exactRemaining).toFixed(2)}`}
             </div>
           </div>
         )}
@@ -332,7 +351,7 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none caret-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 value={expense.installments}
-                onChange={(e) => setExpense({ ...expense, installments: parseInt(e.target.value) })}
+                onChange={(e) => setExpense({ ...expense, installments: parseInt(e.target.value) || 1 })}
                 disabled={isSettled}
               />
             </div>
