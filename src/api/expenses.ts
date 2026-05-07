@@ -32,7 +32,10 @@ export async function createExpense(expense: ExpenseCreate): Promise<{ data: Exp
 
 export async function getMonthlyExpenses(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
-    const response = await fetch(`${config.apiBaseUrl}/api/v1/expenses/${year}/${month}`);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${config.apiBaseUrl}/api/v1/expenses/${year}/${month}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch expenses');
     }
@@ -46,10 +49,12 @@ export async function getMonthlyExpenses(year: number, month: number): Promise<M
 
 export async function updateExpense(expenseId: number, expense: ExpenseCreate): Promise<{ data: ExpenseResponse | null; error: string | null }> {
   try {
+    const token = localStorage.getItem('token');
     const response = await fetch(`${config.apiBaseUrl}/api/v1/expenses/${expenseId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(expense),
     });
@@ -69,13 +74,13 @@ export async function updateExpense(expenseId: number, expense: ExpenseCreate): 
 
 export async function deleteExpense(expenseId: number): Promise<{ success: boolean; error: string | null }> {
   try {
+    const token = localStorage.getItem('token');
     const response = await fetch(`${config.apiBaseUrl}/api/v1/expenses/${expenseId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
-      // Add query parameter to indicate we want to delete all installments
-      // The backend should handle this parameter
     });
 
     if (!response.ok) {
@@ -92,10 +97,12 @@ export async function deleteExpense(expenseId: number): Promise<{ success: boole
 
 export async function settleMonthlyBalance(year: number, month: number): Promise<{ success: boolean; error: string | null }> {
   try {
+    const token = localStorage.getItem('token');
     const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/settle/${year}/${month}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
 

@@ -3,8 +3,11 @@ import type { MonthlyBalanceResponse } from '../types/expense';
 
 export async function getMonthlyBalance(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
+    const token = localStorage.getItem('token');
     const paddedMonth = month.toString().padStart(2, '0');
-    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/${year}/${paddedMonth}`);
+    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/${year}/${paddedMonth}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch monthly balance');
     }
@@ -18,9 +21,11 @@ export async function getMonthlyBalance(year: number, month: number): Promise<Mo
 
 export async function settleMonthlyShare(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
+    const token = localStorage.getItem('token');
     const paddedMonth = month.toString().padStart(2, '0');
     const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/settle/${year}/${paddedMonth}`, {
       method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
     });
     if (!response.ok) {
       throw new Error('Failed to settle monthly share');
@@ -33,21 +38,38 @@ export async function settleMonthlyShare(year: number, month: number): Promise<M
   }
 }
 
+export async function unsettleMonthlyShare(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
+  try {
+    const token = localStorage.getItem('token');
+    const paddedMonth = month.toString().padStart(2, '0');
+    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/unsettle/${year}/${paddedMonth}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to unsettle monthly share');
+    }
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('Error unsettling monthly share:', error);
+    return null;
+  }
+}
+
 export async function recalculateMonthlyShare(year: number, month: number): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log(`Recalculating monthly share for ${year}/${month}`);
+    const token = localStorage.getItem('token');
     const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${month}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
-    
-    console.log('Response status:', response.status);
-    
+
     if (!response.ok) {
       const text = await response.text();
-      console.log('Error response text:', text);
       let errorMessage = 'Failed to recalculate monthly share';
       try {
         const error = JSON.parse(text);
@@ -58,8 +80,7 @@ export async function recalculateMonthlyShare(year: number, month: number): Prom
       }
       throw new Error(errorMessage);
     }
-    
-    console.log('Recalculation successful');
+
     return { success: true, error: null };
   } catch (error) {
     console.error('Error recalculating monthly share:', error);

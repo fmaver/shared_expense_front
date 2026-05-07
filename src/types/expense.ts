@@ -5,8 +5,10 @@ export interface Category {
 export type PaymentType = 'debit' | 'credit';
 
 export interface SplitStrategy {
-  type: 'equal' | 'percentage';
+  type: 'equal' | 'percentage' | 'exact';
   percentages?: Record<string, number> | null;
+  participantIds?: number[] | null;
+  amounts?: Record<string, number> | null;
 }
 
 export interface ExpenseCreate {

@@ -308,11 +308,18 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
                     </span>
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {expense.splitStrategy.type === 'equal' ? (
-                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
-                        {capitalize(expense.splitStrategy.type)}
-                      </span>
-                    ) : (
+                    {expense.splitStrategy.type === 'equal' && !expense.splitStrategy.participantIds && (
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Equal</span>
+                    )}
+                    {expense.splitStrategy.type === 'equal' && expense.splitStrategy.participantIds && (
+                      <div className="text-xs space-y-1">
+                        <span className="text-gray-500">Equal:</span>
+                        {expense.splitStrategy.participantIds.map((id) => (
+                          <div key={id} className="ml-1">{getMemberName(id)}</div>
+                        ))}
+                      </div>
+                    )}
+                    {expense.splitStrategy.type === 'percentage' && (
                       <div className="text-xs space-y-1">
                         {Object.entries(expense.splitStrategy.percentages || {}).map(([memberId, percentage]) => {
                           const amount = (expense.amount * (percentage || 0)) / 100;
@@ -326,6 +333,16 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+                    {expense.splitStrategy.type === 'exact' && (
+                      <div className="text-xs space-y-1">
+                        {Object.entries(expense.splitStrategy.amounts || {}).map(([memberId, amount]) => (
+                          <div key={memberId} className="flex items-center space-x-1">
+                            <span className="font-medium">{getMemberName(parseInt(memberId))}:</span>
+                            <span>{formatCurrency(amount || 0)}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </td>
