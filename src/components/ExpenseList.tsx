@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatCurrency, capitalize, formatDate } from '../utils/format';
 import type { ExpenseResponse, Member, ExpenseCreate } from '../types/expense';
-import { updateExpense, deleteExpense, recalculateMonthlyBalance } from '../api/expenses';
+import { updateExpense, deleteExpense } from '../api/expenses';
 import { ExpenseForm } from './ExpenseForm';
 import { Pen, Trash2, ArrowUpDown } from 'lucide-react';
 import { Toast } from './Toast';
@@ -136,38 +136,6 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
         console.error('Error deleting expense:', error);
         alert(error instanceof Error ? error.message : 'Failed to delete expense');
       }
-    }
-  };
-
-  const handleRecalculate = async () => {
-    console.log('Recalculate button clicked');
-    // Extract year and month from the first expense
-    if (expenses.length === 0) {
-      console.log('No expenses found');
-      return;
-    }
-    
-    const date = new Date(expenses[0].date);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    console.log('Recalculating for:', { year, month, date: expenses[0].date });
-
-    try {
-      console.log('Calling recalculateMonthlyBalance...');
-      const result = await recalculateMonthlyBalance(year, month);
-      console.log('Recalculate result:', result);
-      if (result.success) {
-        onExpenseUpdated();
-        setToast({ message: 'Balances recalculated successfully!', type: 'success' });
-      } else {
-        throw new Error(result.error || 'Failed to recalculate balance');
-      }
-    } catch (error) {
-      console.error('Error recalculating balance:', error);
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to recalculate balance',
-        type: 'error'
-      });
     }
   };
 
@@ -326,7 +294,7 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
                           return (
                             <div key={memberId} className="flex items-center space-x-1 group relative">
                               <span className="font-medium">{getMemberName(parseInt(memberId))}:</span>
-                              <span className="cursor-help">{percentage}%</span>
+                              <span className="cursor-help">{parseFloat(Number(percentage).toFixed(2))}%</span>
                               <div className="invisible group-hover:visible absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-10">
                                 {formatCurrency(amount)}
                               </div>

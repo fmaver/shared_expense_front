@@ -20,7 +20,9 @@ export async function createExpense(expense: ExpenseCreate): Promise<{ data: Exp
     const result = await response.json();
 
     if (!response.ok) {
-      return { data: null, error: result.detail || 'Failed to create expense' };
+      const detail = result.detail;
+      const msg = typeof detail === 'string' ? detail : JSON.stringify(detail);
+      return { data: null, error: msg || 'Failed to create expense' };
     }
 
     return { data: result.data, error: null };
@@ -62,7 +64,9 @@ export async function updateExpense(expenseId: number, expense: ExpenseCreate): 
     const result = await response.json();
 
     if (!response.ok) {
-      return { data: null, error: result.detail || 'Failed to update expense' };
+      const detail = result.detail;
+      const msg = typeof detail === 'string' ? detail : JSON.stringify(detail);
+      return { data: null, error: msg || 'Failed to update expense' };
     }
 
     return { data: result.data, error: null };

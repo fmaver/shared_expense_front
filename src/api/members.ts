@@ -27,7 +27,7 @@ export async function getMembers(): Promise<Member[]> {
       try {
         const errorBody = await response.text();
         console.error('Error response body:', errorBody);
-      } catch (e) {
+      } catch {
         console.error('Could not read error response body');
       }
       

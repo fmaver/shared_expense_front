@@ -98,7 +98,7 @@ function App() {
     handleClose();
   };
 
-  const handleCreateExpense = async (expenseData: any) => {
+  const handleCreateExpense = async (expenseData: ExpenseCreate) => {
     try {
       setCreateExpenseError(null);
       const { data: result, error } = await createExpense(expenseData);

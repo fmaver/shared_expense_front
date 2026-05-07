@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getMonthlyBalance } from '../api/shares';
 import type { MonthlyBalanceResponse } from '../types/expense';
 
@@ -7,7 +7,7 @@ export function useMonthlyBalance(year: number, month: number) {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MonthlyBalanceResponse | null>(null);
 
-  const fetchMonthlyBalance = async () => {
+  const fetchMonthlyBalance = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -18,11 +18,11 @@ export function useMonthlyBalance(year: number, month: number) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [year, month]);
 
   useEffect(() => {
     fetchMonthlyBalance();
-  }, [year, month]);
+  }, [fetchMonthlyBalance]);
 
   return { data, isLoading, error, refetch: fetchMonthlyBalance };
 }

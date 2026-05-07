@@ -42,7 +42,7 @@ export const Profile: React.FC = () => {
       setEmail(userData.email);
       setTelephone(userData.telephone);
       setNotificationPreference(userData.notificationPreference);
-    } catch (err) {
+    } catch {
       setError('Failed to load user data');
     }
   };
@@ -64,7 +64,7 @@ export const Profile: React.FC = () => {
       });
       setSuccess('Profile updated successfully');
       setError('');
-    } catch (err) {
+    } catch {
       setError('Failed to update profile');
       setSuccess('');
     }
@@ -81,7 +81,7 @@ export const Profile: React.FC = () => {
       setOpenPasswordDialog(false);
       setCurrentPassword('');
       setNewPassword('');
-    } catch (err) {
+    } catch {
       setError('Failed to update password');
       setSuccess('');
     }
