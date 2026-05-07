@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatCurrency, capitalize, formatDate } from '../utils/format';
 import type { ExpenseResponse, Member, ExpenseCreate } from '../types/expense';
-import { updateExpense, deleteExpense, recalculateMonthlyBalance } from '../api/expenses';
+import { updateExpense, deleteExpense } from '../api/expenses';
 import { ExpenseForm } from './ExpenseForm';
 import { Pen, Trash2, ArrowUpDown } from 'lucide-react';
 import { Toast } from './Toast';
@@ -136,38 +136,6 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
         console.error('Error deleting expense:', error);
         alert(error instanceof Error ? error.message : 'Failed to delete expense');
       }
-    }
-  };
-
-  const handleRecalculate = async () => {
-    console.log('Recalculate button clicked');
-    // Extract year and month from the first expense
-    if (expenses.length === 0) {
-      console.log('No expenses found');
-      return;
-    }
-    
-    const date = new Date(expenses[0].date);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    console.log('Recalculating for:', { year, month, date: expenses[0].date });
-
-    try {
-      console.log('Calling recalculateMonthlyBalance...');
-      const result = await recalculateMonthlyBalance(year, month);
-      console.log('Recalculate result:', result);
-      if (result.success) {
-        onExpenseUpdated();
-        setToast({ message: 'Balances recalculated successfully!', type: 'success' });
-      } else {
-        throw new Error(result.error || 'Failed to recalculate balance');
-      }
-    } catch (error) {
-      console.error('Error recalculating balance:', error);
-      setToast({ 
-        message: error instanceof Error ? error.message : 'Failed to recalculate balance',
-        type: 'error'
-      });
     }
   };
 

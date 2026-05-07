@@ -36,7 +36,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       const response = await login({ username: email, password });
       localStorage.setItem('token', response.access_token);
       onLoginSuccess(response.access_token);
-    } catch (err) {
+    } catch {
       setError('Invalid email or password');
     } finally {
       setIsLoading(false);

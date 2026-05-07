@@ -18,7 +18,6 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
   const [isSettling, setIsSettling] = useState(false);
   const [isUnsettling, setIsUnsettling] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
-  const [settleError, setSettleError] = useState<string | null>(null);
   const [showSettleConfirmation, setShowSettleConfirmation] = useState(false);
   const [showUnsettleConfirmation, setShowUnsettleConfirmation] = useState(false);
 
@@ -27,7 +26,6 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
 
     try {
       setIsSettling(true);
-      setSettleError(null);
       const result = await settleMonthlyBalance(monthlyData.year, monthlyData.month);
       
       if (result.success) {
@@ -38,7 +36,6 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
       }
     } catch (error) {
       console.error('Error settling balance:', error);
-      setSettleError(error instanceof Error ? error.message : 'Failed to settle balance');
     } finally {
       setIsSettling(false);
     }
