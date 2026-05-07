@@ -20,9 +20,16 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
       // Remove the installment suffix from the description if it exists
       const description = initialExpense.description.replace(/\s*\(\d+\/\d+\)\s*$/, '');
       
+      // For multi-installment credit the backend stores per-installment amount,
+      // but update_credit_expense expects the total (it re-divides by installments).
+      const editAmount =
+        initialExpense.paymentType === 'credit' && initialExpense.installments > 1
+          ? initialExpense.amount * initialExpense.installments
+          : initialExpense.amount;
+
       return {
         description,
-        amount: initialExpense.amount,
+        amount: editAmount,
         date: initialExpense.date,
         category: { name: initialExpense.category },
         payerId: initialExpense.payerId,

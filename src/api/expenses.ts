@@ -125,9 +125,6 @@ export async function settleMonthlyBalance(year: number, month: number): Promise
 export async function recalculateMonthlyBalance(year: number, month: number): Promise<{ success: boolean; error: string | null }> {
   try {
     const token = localStorage.getItem('token');
-    console.log('Recalculating with token:', token?.substring(0, 10) + '...');
-    console.log(`Calling API: ${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${month}`);
-
     const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${month}`, {
       method: 'POST',
       headers: {
@@ -136,9 +133,7 @@ export async function recalculateMonthlyBalance(year: number, month: number): Pr
       },
     });
 
-    console.log('API Response:', response.status, response.statusText);
     const responseText = await response.text();
-    console.log('Response text:', responseText);
 
     if (!response.ok) {
       let errorDetail;
