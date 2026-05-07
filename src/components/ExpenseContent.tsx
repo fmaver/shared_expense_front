@@ -4,7 +4,7 @@ import { BalanceSummary } from './BalanceSummary';
 import { LoadingState } from './LoadingState';
 import { ConfirmationModal } from './ConfirmationModal';
 import { settleMonthlyBalance } from '../api/expenses';
-import { recalculateMonthlyShare } from '../api/shares';
+import { recalculateMonthlyShare, unsettleMonthlyShare } from '../api/shares';
 import type { MonthlyBalanceResponse, Member } from '../types/expense';
 
 interface ExpenseContentProps {
@@ -16,9 +16,11 @@ interface ExpenseContentProps {
 
 export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdated }: ExpenseContentProps) {
   const [isSettling, setIsSettling] = useState(false);
+  const [isUnsettling, setIsUnsettling] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [settleError, setSettleError] = useState<string | null>(null);
   const [showSettleConfirmation, setShowSettleConfirmation] = useState(false);
+  const [showUnsettleConfirmation, setShowUnsettleConfirmation] = useState(false);
 
   const handleSettle = async () => {
     if (!monthlyData || isSettling) return;
@@ -39,6 +41,25 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
       setSettleError(error instanceof Error ? error.message : 'Failed to settle balance');
     } finally {
       setIsSettling(false);
+    }
+  };
+
+  const handleUnsettle = async () => {
+    if (!monthlyData || isUnsettling) return;
+
+    try {
+      setIsUnsettling(true);
+      const result = await unsettleMonthlyShare(monthlyData.year, monthlyData.month);
+      if (result) {
+        onExpenseUpdated();
+        setShowUnsettleConfirmation(false);
+      } else {
+        throw new Error('Failed to reopen month');
+      }
+    } catch (error) {
+      console.error('Error unsettling month:', error);
+    } finally {
+      setIsUnsettling(false);
     }
   };
 
@@ -83,6 +104,8 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
             isSettled={monthlyData.isSettled}
             onSettle={() => setShowSettleConfirmation(true)}
             isSettling={isSettling}
+            onUnsettle={() => setShowUnsettleConfirmation(true)}
+            isUnsettling={isUnsettling}
             onRecalculate={handleRecalculate}
             isRecalculating={isRecalculating}
             expenses={monthlyData.expenses}
@@ -104,6 +127,16 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
         title="Settle Monthly Balance"
         message="Are you sure you want to settle this month's balance? This action cannot be undone."
         confirmText={isSettling ? "Settling..." : "Settle Balance"}
+        cancelText="Cancel"
+      />
+
+      <ConfirmationModal
+        isOpen={showUnsettleConfirmation}
+        onConfirm={handleUnsettle}
+        onCancel={() => setShowUnsettleConfirmation(false)}
+        title="Reopen Month"
+        message="This will delete the auto-generated balancing expenses and mark the month as unsettled. Manual loan expenses are kept. Are you sure?"
+        confirmText={isUnsettling ? "Reopening..." : "Reopen Month"}
         cancelText="Cancel"
       />
     </div>

@@ -9,17 +9,21 @@ interface BalanceSummaryProps {
   isSettled: boolean;
   onSettle: () => void;
   isSettling: boolean;
+  onUnsettle: () => void;
+  isUnsettling: boolean;
   onRecalculate: () => void;
   isRecalculating: boolean;
   expenses: ExpenseResponse[];
 }
 
-export function BalanceSummary({ 
-  balances, 
-  members, 
-  isSettled, 
-  onSettle, 
+export function BalanceSummary({
+  balances,
+  members,
+  isSettled,
+  onSettle,
   isSettling,
+  onUnsettle,
+  isUnsettling,
   onRecalculate,
   isRecalculating,
   expenses
@@ -48,13 +52,21 @@ export function BalanceSummary({
             <RefreshCw className={`h-3 w-3 mr-1 ${isRecalculating ? 'animate-spin' : ''}`} />
             Recalculate
           </button>
-          {!isSettled && (
+          {!isSettled ? (
             <button
               onClick={onSettle}
               disabled={isSettling}
               className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSettling ? 'Settling...' : 'Settle Balance'}
+            </button>
+          ) : (
+            <button
+              onClick={onUnsettle}
+              disabled={isUnsettling}
+              className="inline-flex items-center px-2.5 py-1.5 border border-orange-300 text-xs font-medium rounded shadow-sm text-orange-700 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUnsettling ? 'Reopening...' : 'Reopen Month'}
             </button>
           )}
         </div>
@@ -90,7 +102,7 @@ export function BalanceSummary({
 
       {isSettled && (
         <div className="mt-4 text-sm text-green-600 font-medium">
-          Monthly Share Settled
+          ✓ Month settled
         </div>
       )}
     </div>

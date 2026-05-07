@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, DollarSign, Users, Tag, CreditCard } from 'lucide-react';
-import type { ExpenseCreate, ExpenseResponse, Member } from '../types/expense';
+import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '../types/expense';
 import { useCategories } from '../hooks/useCategories';
 import { formatDate } from '../utils/format';
 
@@ -30,9 +30,15 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
         installments: initialExpense.installments,
         splitStrategy: {
           type: initialExpense.splitStrategy.type,
-          ...(initialExpense.splitStrategy.type === 'percentage' 
+          ...(initialExpense.splitStrategy.type === 'percentage'
             ? { percentages: initialExpense.splitStrategy.percentages }
-            : {})
+            : {}),
+          ...(initialExpense.splitStrategy.type === 'exact'
+            ? { amounts: initialExpense.splitStrategy.amounts }
+            : {}),
+          ...(initialExpense.splitStrategy.participantIds != null
+            ? { participantIds: initialExpense.splitStrategy.participantIds }
+            : {}),
         }
       };
     }
@@ -53,23 +59,20 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const submissionData = {
-      ...expense,
-      splitStrategy: {
-        type: expense.splitStrategy.type,
-        ...(expense.splitStrategy.type === 'percentage' 
-          ? { 
-              percentages: Object.fromEntries(
-                Object.entries(expense.splitStrategy.percentages || {}).map(([key, value]) => [
-                  key, 
-                  value === null ? 0 : value
-                ])
-              )
-            }
-          : {})
-      }
-    };
-    onSubmit(submissionData);
+    const { type, percentages, amounts, participantIds } = expense.splitStrategy;
+    const splitStrategy: SplitStrategy = { type };
+    if (type === 'percentage') {
+      splitStrategy.percentages = Object.fromEntries(
+        Object.entries(percentages || {}).map(([k, v]) => [k, v === null ? 0 : v])
+      );
+    } else if (type === 'exact') {
+      splitStrategy.amounts = Object.fromEntries(
+        Object.entries(amounts || {}).map(([k, v]) => [k, v === null ? 0 : v])
+      );
+    } else if (participantIds != null) {
+      splitStrategy.participantIds = participantIds;
+    }
+    onSubmit({ ...expense, splitStrategy });
   };
 
   return (
@@ -215,22 +218,65 @@ export function ExpenseForm({ onSubmit, members, initialExpense, mode = 'create'
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={expense.splitStrategy.type}
-              onChange={(e) => setExpense({
-                ...expense,
-                splitStrategy: { 
-                  type: e.target.value as 'equal' | 'percentage',
-                  percentages: e.target.value === 'percentage' 
-                    ? Object.fromEntries(members.map(m => [m.id.toString(), null]))
-                    : null 
-                }
-              })}
+              onChange={(e) => {
+                const t = e.target.value as SplitStrategy['type'];
+                setExpense({
+                  ...expense,
+                  splitStrategy: {
+                    type: t,
+                    percentages: t === 'percentage'
+                      ? Object.fromEntries(members.map(m => [m.id.toString(), null]))
+                      : null,
+                    amounts: t === 'exact'
+                      ? Object.fromEntries(members.map(m => [m.id.toString(), null]))
+                      : null,
+                    participantIds: null,
+                  }
+                });
+              }}
               disabled={isSettled}
             >
               <option value="equal">Equal</option>
               <option value="percentage">Percentage</option>
+              <option value="exact">Exact amounts</option>
             </select>
           </div>
         </div>
+
+        {expense.splitStrategy.type === 'exact' && (
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700">
+              Exact Amounts per Member
+            </label>
+            <div className="space-y-2">
+              {members.map((member) => (
+                <div key={member.id} className="flex items-center space-x-2">
+                  <span className="w-32">{member.name}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    placeholder="e.g., 250.00"
+                    className="block w-28 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none caret-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    value={expense.splitStrategy.amounts?.[member.id] === null ? '' : expense.splitStrategy.amounts?.[member.id]}
+                    onChange={(e) => {
+                      const value = e.target.value === '' ? null : parseFloat(e.target.value);
+                      setExpense({
+                        ...expense,
+                        splitStrategy: {
+                          ...expense.splitStrategy,
+                          amounts: { ...expense.splitStrategy.amounts, [member.id]: value }
+                        }
+                      });
+                    }}
+                    disabled={isSettled}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {expense.splitStrategy.type === 'percentage' && (
           <div className="space-y-4">
