@@ -43,7 +43,7 @@ export async function getGroup(groupId: number): Promise<Group> {
 
 export async function updateGroupName(groupId: number, name: string): Promise<Group> {
   const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: authHeaders(),
     body: JSON.stringify({ name }),
   });
@@ -88,9 +88,9 @@ export async function inviteMember(groupId: number, email: string): Promise<void
   }
 }
 
-export async function leaveGroup(groupId: number, memberId: number): Promise<void> {
+export async function leaveGroup(groupId: number): Promise<void> {
   const response = await fetch(
-    `${config.apiBaseUrl}/api/v1/groups/${groupId}/members/${memberId}`,
+    `${config.apiBaseUrl}/api/v1/groups/${groupId}/members/leave`,
     { method: 'DELETE', headers: authHeaders() }
   );
   if (!response.ok) {

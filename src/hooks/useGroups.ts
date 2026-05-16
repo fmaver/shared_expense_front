@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMyGroups } from '../api/groups';
+import { getMyGroups, getGroup } from '../api/groups';
 import type { Group } from '../types/expense';
 
 export function useGroups() {
@@ -22,6 +22,30 @@ export function useGroups() {
     };
     fetch();
   }, []);
+
+  return { data, isLoading, error };
+}
+
+export function useGroup(groupId: number) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<Group | null>(null);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await getGroup(groupId);
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch group');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (groupId) fetch();
+  }, [groupId]);
 
   return { data, isLoading, error };
 }
