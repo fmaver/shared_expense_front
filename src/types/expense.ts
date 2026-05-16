@@ -46,3 +46,22 @@ export interface MonthlyBalanceResponse {
   balances: Record<string, number>;
   isSettled: boolean;
 }
+
+export interface GroupMember {
+  memberId: number;
+  name: string;
+  email: string;
+  joinedAt?: string | null;
+}
+
+export type GroupStatus = 'active' | 'closed' | 'deleted';
+export type GroupType = 'regular' | 'personal';
+
+export interface Group {
+  id: number;
+  name: string;
+  status: GroupStatus;
+  groupType: GroupType;
+  createdAt?: string | null;
+  members: GroupMember[];
+}
