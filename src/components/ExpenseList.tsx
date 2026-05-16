@@ -10,13 +10,14 @@ type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'pay
 type SortOrder = 'asc' | 'desc';
 
 interface ExpenseListProps {
+  groupId: number;
   expenses: ExpenseResponse[];
   members: Member[];
   onExpenseUpdated: () => void;
   isSettled?: boolean;
 }
 
-export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = false }: ExpenseListProps) {
+export function ExpenseList({ groupId, expenses, members, onExpenseUpdated, isSettled = false }: ExpenseListProps) {
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [sortField, setSortField] = useState<SortField>('date');
@@ -87,7 +88,7 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
     
     try {
       setIsUpdating(true);
-      const result = await updateExpense(editingExpense.id, updatedExpense);
+      const result = await updateExpense(groupId, editingExpense.id, updatedExpense);
       if (!result.error && result.data) {
         onExpenseUpdated();
         setEditingExpense(null);
@@ -126,7 +127,7 @@ export function ExpenseList({ expenses, members, onExpenseUpdated, isSettled = f
 
     if (window.confirm(message)) {
       try {
-        const result = await deleteExpense(expenseToDelete);
+        const result = await deleteExpense(groupId, expenseToDelete);
         if (result.success) {
           onExpenseUpdated();
         } else {
