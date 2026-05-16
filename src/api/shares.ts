@@ -1,13 +1,14 @@
 import { config } from '../config/env';
 import type { MonthlyBalanceResponse } from '../types/expense';
 
-export async function getMonthlyBalance(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
+export async function getMonthlyBalance(groupId: number, year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
     const token = localStorage.getItem('token');
     const paddedMonth = month.toString().padStart(2, '0');
-    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/${year}/${paddedMonth}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
+    const response = await fetch(
+      `${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/${year}/${paddedMonth}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
     if (!response.ok) {
       throw new Error('Failed to fetch monthly balance');
     }
@@ -19,14 +20,14 @@ export async function getMonthlyBalance(year: number, month: number): Promise<Mo
   }
 }
 
-export async function settleMonthlyShare(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
+export async function settleMonthlyShare(groupId: number, year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
     const token = localStorage.getItem('token');
     const paddedMonth = month.toString().padStart(2, '0');
-    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/settle/${year}/${paddedMonth}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
+    const response = await fetch(
+      `${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/settle/${year}/${paddedMonth}`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+    );
     if (!response.ok) {
       throw new Error('Failed to settle monthly share');
     }
@@ -38,14 +39,14 @@ export async function settleMonthlyShare(year: number, month: number): Promise<M
   }
 }
 
-export async function unsettleMonthlyShare(year: number, month: number): Promise<MonthlyBalanceResponse | null> {
+export async function unsettleMonthlyShare(groupId: number, year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
     const token = localStorage.getItem('token');
     const paddedMonth = month.toString().padStart(2, '0');
-    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/unsettle/${year}/${paddedMonth}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
+    const response = await fetch(
+      `${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/unsettle/${year}/${paddedMonth}`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+    );
     if (!response.ok) {
       throw new Error('Failed to unsettle monthly share');
     }
@@ -57,36 +58,33 @@ export async function unsettleMonthlyShare(year: number, month: number): Promise
   }
 }
 
-export async function recalculateMonthlyShare(year: number, month: number): Promise<{ success: boolean; error: string | null }> {
+export async function recalculateMonthlyShare(groupId: number, year: number, month: number): Promise<{ success: boolean; error: string | null }> {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${config.apiBaseUrl}/api/v1/shares/recalculate/${year}/${month}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
+    const response = await fetch(
+      `${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/recalculate/${year}/${month}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      }
+    );
     if (!response.ok) {
       const text = await response.text();
       let errorMessage = 'Failed to recalculate monthly share';
       try {
-        const error = JSON.parse(text);
-        errorMessage = error.detail || errorMessage;
+        const err = JSON.parse(text);
+        errorMessage = err.detail || errorMessage;
       } catch {
-        // If JSON parsing fails, use the raw text if available
         if (text) errorMessage = text;
       }
       throw new Error(errorMessage);
     }
-
     return { success: true, error: null };
   } catch (error) {
     console.error('Error recalculating monthly share:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to recalculate monthly share'
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to recalculate monthly share',
     };
   }
 }
