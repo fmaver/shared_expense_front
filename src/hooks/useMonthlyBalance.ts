@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getMonthlyBalance } from '../api/shares';
 import type { MonthlyBalanceResponse } from '../types/expense';
 
-export function useMonthlyBalance(year: number, month: number) {
+export function useMonthlyBalance(groupId: number, year: number, month: number) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MonthlyBalanceResponse | null>(null);
@@ -11,14 +11,14 @@ export function useMonthlyBalance(year: number, month: number) {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await getMonthlyBalance(year, month);
+      const result = await getMonthlyBalance(groupId, year, month);
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch monthly balance');
     } finally {
       setIsLoading(false);
     }
-  }, [year, month]);
+  }, [groupId, year, month]);
 
   useEffect(() => {
     fetchMonthlyBalance();
