@@ -1,52 +1,50 @@
 import { useState, useEffect } from 'react';
-import { getMembers, getGroupMembersAsMember } from '../api/members';
-import type { Member } from '../types/expense';
+import { getMyGroups, getGroup } from '../api/groups';
+import type { Group } from '../types/expense';
 
-export function useMembers() {
+export function useGroups() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Member[]>([]);
+  const [data, setData] = useState<Group[]>([]);
 
   useEffect(() => {
-    const fetchMembers = async () => {
+    const fetch = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const result = await getMembers();
+        const result = await getMyGroups();
         setData(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch members');
+        setError(err instanceof Error ? err.message : 'Failed to fetch groups');
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchMembers();
+    fetch();
   }, []);
 
   return { data, isLoading, error };
 }
 
-export function useGroupMembers(groupId: number) {
+export function useGroup(groupId: number) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Member[]>([]);
+  const [data, setData] = useState<Group | null>(null);
 
   useEffect(() => {
-    const fetchMembers = async () => {
+    const fetch = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const result = await getGroupMembersAsMember(groupId);
+        const result = await getGroup(groupId);
         setData(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch group members');
+        setError(err instanceof Error ? err.message : 'Failed to fetch group');
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchMembers();
+    if (groupId) fetch();
   }, [groupId]);
 
   return { data, isLoading, error };

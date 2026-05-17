@@ -8,13 +8,14 @@ import { recalculateMonthlyShare, unsettleMonthlyShare } from '../api/shares';
 import type { MonthlyBalanceResponse, Member } from '../types/expense';
 
 interface ExpenseContentProps {
+  groupId: number;
   isLoading: boolean;
   monthlyData: MonthlyBalanceResponse | null;
   members: Member[];
   onExpenseUpdated: () => void;
 }
 
-export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdated }: ExpenseContentProps) {
+export function ExpenseContent({ groupId, isLoading, monthlyData, members, onExpenseUpdated }: ExpenseContentProps) {
   const [isSettling, setIsSettling] = useState(false);
   const [isUnsettling, setIsUnsettling] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
@@ -23,11 +24,9 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
 
   const handleSettle = async () => {
     if (!monthlyData || isSettling) return;
-
     try {
       setIsSettling(true);
-      const result = await settleMonthlyBalance(monthlyData.year, monthlyData.month);
-      
+      const result = await settleMonthlyBalance(groupId, monthlyData.year, monthlyData.month);
       if (result.success) {
         onExpenseUpdated();
         setShowSettleConfirmation(false);
@@ -43,10 +42,9 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
 
   const handleUnsettle = async () => {
     if (!monthlyData || isUnsettling) return;
-
     try {
       setIsUnsettling(true);
-      const result = await unsettleMonthlyShare(monthlyData.year, monthlyData.month);
+      const result = await unsettleMonthlyShare(groupId, monthlyData.year, monthlyData.month);
       if (result) {
         onExpenseUpdated();
         setShowUnsettleConfirmation(false);
@@ -62,11 +60,9 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
 
   const handleRecalculate = async () => {
     if (!monthlyData || isRecalculating) return;
-
     try {
       setIsRecalculating(true);
-      const result = await recalculateMonthlyShare(monthlyData.year, monthlyData.month);
-      
+      const result = await recalculateMonthlyShare(groupId, monthlyData.year, monthlyData.month);
       if (result.success) {
         onExpenseUpdated();
       } else {
@@ -109,6 +105,7 @@ export function ExpenseContent({ isLoading, monthlyData, members, onExpenseUpdat
           />
 
           <ExpenseList
+            groupId={groupId}
             expenses={monthlyData.expenses}
             members={members}
             onExpenseUpdated={onExpenseUpdated}
