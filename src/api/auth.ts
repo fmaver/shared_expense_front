@@ -33,6 +33,18 @@ export interface PasswordUpdate {
   new_password: string;
 }
 
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  telephone?: string;
+}
+
+export const register = async (data: RegisterRequest): Promise<MemberResponse> => {
+  const response = await axios.post(`${config.apiBaseUrl}/api/v1/auth/register`, data);
+  return response.data;
+};
+
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const formData = new URLSearchParams();
   formData.append('username', data.username);
