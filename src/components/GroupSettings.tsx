@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGroup } from '../hooks/useGroups';
-import { updateGroupName } from '../api/groups';
+import { updateGroupName, leaveGroup } from '../api/groups';
 
 export function GroupSettings() {
   const { groupId: groupIdParam } = useParams<{ groupId: string }>();
@@ -13,6 +13,24 @@ export function GroupSettings() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameSuccess, setNameSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [leaveConfirming, setLeaveConfirming] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  const handleLeave = async () => {
+    try {
+      setIsLeaving(true);
+      setLeaveError(null);
+      await leaveGroup(groupId);
+      navigate('/');
+    } catch (err) {
+      setLeaveError(err instanceof Error ? err.message : 'Failed to leave group');
+      setLeaveConfirming(false);
+    } finally {
+      setIsLeaving(false);
+    }
+  };
 
   const handleRename = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,12 +90,33 @@ export function GroupSettings() {
           <p className="text-sm text-gray-500 mb-4">
             You can only leave if your balance is settled.
           </p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
-          >
-            Back to Groups
-          </button>
+          {leaveError && <p className="text-red-600 text-sm mb-3">{leaveError}</p>}
+          {!leaveConfirming ? (
+            <button
+              onClick={() => setLeaveConfirming(true)}
+              className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+            >
+              Leave Group
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-gray-700">Are you sure you want to leave <strong>{group?.name}</strong>?</p>
+              <button
+                onClick={handleLeave}
+                disabled={isLeaving}
+                className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {isLeaving ? 'Leaving...' : 'Yes, leave'}
+              </button>
+              <button
+                onClick={() => { setLeaveConfirming(false); setLeaveError(null); }}
+                disabled={isLeaving}
+                className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
