@@ -50,8 +50,49 @@ export interface MonthlyBalanceResponse {
 export interface GroupMember {
   memberId: number;
   name: string;
-  email: string;
+  email?: string | null;
+  telephone?: string | null;
+  isStub?: boolean;
   joinedAt?: string | null;
+}
+
+export type InvitationChannel = 'email' | 'phone';
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+
+export interface Invitation {
+  id: number;
+  groupId: number;
+  groupName: string;
+  inviterName: string;
+  channel: InvitationChannel;
+  target: string;
+  status: InvitationStatus;
+  createdAt: string;
+  expiresAt: string;
+  shareUrl: string;
+}
+
+export interface InvitationResolveResponse {
+  groupName: string;
+  inviterName: string;
+  knownName?: string | null;
+  knownEmail?: string | null;
+  knownPhone?: string | null;
+  requiresEmail: boolean;
+  requiresPassword: boolean;
+  isExistingMember: boolean;
+  status: InvitationStatus;
+}
+
+export interface GroupJoinLink {
+  token: string;
+  url: string;
+  createdAt: string;
+}
+
+export interface GroupJoinResolveResponse {
+  groupName: string;
+  inviterName?: string | null;
 }
 
 export type GroupStatus = 'active' | 'closed' | 'deleted';

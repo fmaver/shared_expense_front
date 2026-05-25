@@ -8,6 +8,8 @@ import { GroupLayout } from './components/GroupLayout';
 import { ExpensesDashboard } from './components/ExpensesDashboard';
 import { GroupMembers } from './components/GroupMembers';
 import { GroupSettings } from './components/GroupSettings';
+import { InvitationLanding } from './components/InvitationLanding';
+import { GroupJoinLanding } from './components/GroupJoinLanding';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -51,20 +53,27 @@ function App() {
     setIsAuthenticated(false);
   };
 
-  if (!isAuthenticated) {
-    return <Login onLoginSuccess={handleLogin} />;
-  }
-
   return (
     <Routes>
-      <Route path="/" element={<GroupSelector onLogout={handleLogout} />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/groups/:groupId" element={<GroupLayout onLogout={handleLogout} />}>
-        <Route index element={<ExpensesDashboard />} />
-        <Route path="members" element={<GroupMembers />} />
-        <Route path="settings" element={<GroupSettings />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Public routes — accessible without auth */}
+      <Route path="/invite/:token" element={<InvitationLanding onLoginSuccess={handleLogin} />} />
+      <Route path="/join/:token" element={<GroupJoinLanding onLoginSuccess={handleLogin} />} />
+
+      {/* Protected routes */}
+      {!isAuthenticated ? (
+        <Route path="*" element={<Login onLoginSuccess={handleLogin} />} />
+      ) : (
+        <>
+          <Route path="/" element={<GroupSelector onLogout={handleLogout} />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/groups/:groupId" element={<GroupLayout onLogout={handleLogout} />}>
+            <Route index element={<ExpensesDashboard />} />
+            <Route path="members" element={<GroupMembers />} />
+            <Route path="settings" element={<GroupSettings />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      )}
     </Routes>
   );
 }
