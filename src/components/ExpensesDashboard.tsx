@@ -176,6 +176,7 @@ export function ExpensesDashboard() {
               `💰 $${duplicateMatches[0].amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
               `📅 ${new Date(duplicateMatches[0].date + 'T00:00:00').toLocaleDateString('es-AR')}`,
               `🏷️ ${duplicateMatches[0].category}`,
+              `💳 ${duplicateMatches[0].paymentType === 'debit' ? 'Débito' : 'Crédito'}`,
               `👤 ${members?.find(m => m.id === duplicateMatches[0].payerId)?.name ?? '—'}`,
               '',
               '¿Querés crearlo de todas formas?',
