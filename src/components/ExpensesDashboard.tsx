@@ -89,7 +89,9 @@ export function ExpensesDashboard() {
           showForm={showForm}
           showTransferForm={showTransferForm}
           monthlyData={monthlyData}
-          members={members || []}
+          groupId={groupId}
+          year={year}
+          month={month}
         />
 
         <MonthPicker year={year} month={month} onNavigate={handleMonthChange} />
