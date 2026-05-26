@@ -25,6 +25,36 @@ export async function createExpense(groupId: number, expense: ExpenseCreate): Pr
   }
 }
 
+export async function checkSimilarExpenses(
+  groupId: number,
+  year: number,
+  month: number,
+  amount: number,
+  description: string,
+  expenseDate: string,
+): Promise<{ data: ExpenseResponse[] | null; error: string | null }> {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return { data: null, error: 'No authentication token found' };
+    const params = new URLSearchParams({
+      year: year.toString(),
+      month: month.toString(),
+      amount: amount.toString(),
+      description,
+      date: expenseDate,
+    });
+    const response = await fetch(
+      `${config.apiBaseUrl}/api/v1/groups/${groupId}/expenses/similar?${params}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (!response.ok) return { data: null, error: null };
+    const result = await response.json();
+    return { data: result.data, error: null };
+  } catch {
+    return { data: null, error: null };
+  }
+}
+
 export async function getMonthlyExpenses(groupId: number, year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
     const token = localStorage.getItem('token');
