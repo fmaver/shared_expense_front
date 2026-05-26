@@ -55,9 +55,7 @@ export function ExpensesDashboard() {
   };
 
   const handleCreateExpense = async (expenseData: ExpenseCreate) => {
-    const expenseDate = new Date(expenseData.date);
-    const expYear = expenseDate.getFullYear();
-    const expMonth = expenseDate.getMonth() + 1;
+    const [expYear, expMonth] = expenseData.date.split('-').map(Number);
     const { data: similar } = await checkSimilarExpenses(
       groupId, expYear, expMonth, expenseData.amount, expenseData.description, expenseData.date,
     );
@@ -177,6 +175,8 @@ export function ExpensesDashboard() {
               `📋 ${duplicateMatches[0].description}`,
               `💰 $${duplicateMatches[0].amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
               `📅 ${new Date(duplicateMatches[0].date + 'T00:00:00').toLocaleDateString('es-AR')}`,
+              `🏷️ ${duplicateMatches[0].category}`,
+              `👤 ${members?.find(m => m.id === duplicateMatches[0].payerId)?.name ?? '—'}`,
               '',
               '¿Querés crearlo de todas formas?',
             ].join('\n')}
