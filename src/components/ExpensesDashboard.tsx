@@ -9,8 +9,9 @@ import { LoadingState } from './LoadingState';
 import { FormModal } from './FormModal';
 import { useMonthlyBalance } from '../hooks/useMonthlyBalance';
 import { useGroupMembers } from '../hooks/useMembers';
-import { createExpense } from '../api/expenses';
-import type { ExpenseCreate } from '../types/expense';
+import { checkSimilarExpenses, createExpense } from '../api/expenses';
+import { ConfirmationModal } from './ConfirmationModal';
+import type { ExpenseCreate, ExpenseResponse } from '../types/expense';
 
 export function ExpensesDashboard() {
   const { groupId: groupIdParam } = useParams<{ groupId: string }>();
@@ -21,6 +22,8 @@ export function ExpensesDashboard() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [createExpenseError, setCreateExpenseError] = useState<string | null>(null);
+  const [pendingExpense, setPendingExpense] = useState<ExpenseCreate | null>(null);
+  const [duplicateMatches, setDuplicateMatches] = useState<ExpenseResponse[]>([]);
 
   const { data: members, isLoading: isLoadingMembers } = useGroupMembers(groupId);
   const {
@@ -30,7 +33,7 @@ export function ExpensesDashboard() {
     refetch: refreshMonthlyData,
   } = useMonthlyBalance(groupId, year, month);
 
-  const handleCreateExpense = async (expenseData: ExpenseCreate) => {
+  const submitExpense = async (expenseData: ExpenseCreate) => {
     try {
       setCreateExpenseError(null);
       const { data: result, error } = await createExpense(groupId, expenseData);
@@ -39,6 +42,8 @@ export function ExpensesDashboard() {
       } else if (result) {
         setShowForm(false);
         setShowTransferForm(false);
+        setPendingExpense(null);
+        setDuplicateMatches([]);
         refreshMonthlyData();
       } else {
         throw new Error('Failed to create expense');
@@ -47,6 +52,30 @@ export function ExpensesDashboard() {
       console.error('Error creating expense:', error);
       setCreateExpenseError(error instanceof Error ? error.message : 'Failed to create expense');
     }
+  };
+
+  const handleCreateExpense = async (expenseData: ExpenseCreate) => {
+    const expenseDate = new Date(expenseData.date);
+    const expYear = expenseDate.getFullYear();
+    const expMonth = expenseDate.getMonth() + 1;
+    const { data: similar } = await checkSimilarExpenses(
+      groupId, expYear, expMonth, expenseData.amount, expenseData.description, expenseData.date,
+    );
+    if (similar && similar.length > 0) {
+      setPendingExpense(expenseData);
+      setDuplicateMatches(similar);
+      return;
+    }
+    await submitExpense(expenseData);
+  };
+
+  const handleDuplicateConfirm = async () => {
+    if (pendingExpense) await submitExpense(pendingExpense);
+  };
+
+  const handleDuplicateCancel = () => {
+    setPendingExpense(null);
+    setDuplicateMatches([]);
   };
 
   const handleMonthChange = (newYear: number, newMonth: number) => {
@@ -136,6 +165,26 @@ export function ExpensesDashboard() {
               onCancel={() => { setShowTransferForm(false); setCreateExpenseError(null); }}
             />
           </FormModal>
+        )}
+
+        {duplicateMatches.length > 0 && pendingExpense && (
+          <ConfirmationModal
+            isOpen={true}
+            title="Gasto similar encontrado"
+            message={[
+              'Ya existe un gasto similar en este mes:',
+              '',
+              `📋 ${duplicateMatches[0].description}`,
+              `💰 $${duplicateMatches[0].amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
+              `📅 ${new Date(duplicateMatches[0].date + 'T00:00:00').toLocaleDateString('es-AR')}`,
+              '',
+              '¿Querés crearlo de todas formas?',
+            ].join('\n')}
+            confirmText="Sí, crear de todas formas"
+            cancelText="Cancelar"
+            onConfirm={handleDuplicateConfirm}
+            onCancel={handleDuplicateCancel}
+          />
         )}
       </div>
     </div>
