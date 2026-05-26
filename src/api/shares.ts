@@ -1,6 +1,27 @@
 import { config } from '../config/env';
 import type { MonthlyBalanceResponse } from '../types/expense';
 
+export async function downloadMonthlyPdf(groupId: number, year: number, month: number): Promise<void> {
+  const token = localStorage.getItem('token');
+  const paddedMonth = month.toString().padStart(2, '0');
+  const response = await fetch(
+    `${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/${year}/${paddedMonth}/pdf`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!response.ok) {
+    throw new Error('Failed to download PDF');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `balance_${year}_${paddedMonth}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export async function getMonthlyBalance(groupId: number, year: number, month: number): Promise<MonthlyBalanceResponse | null> {
   try {
     const token = localStorage.getItem('token');
