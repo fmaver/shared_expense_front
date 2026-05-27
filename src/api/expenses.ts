@@ -16,6 +16,9 @@ export async function createExpense(groupId: number, expense: ExpenseCreate): Pr
     if (!response.ok) {
       const detail = result.detail;
       const msg = typeof detail === 'string' ? detail : JSON.stringify(detail);
+      if (response.status === 409) {
+        return { data: null, error: `${msg} Podés reabrir el mes desde el panel de balance.` };
+      }
       return { data: null, error: msg || 'Failed to create expense' };
     }
     return { data: result.data, error: null };
