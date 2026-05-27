@@ -16,7 +16,10 @@ import {
   Select,
   MenuItem,
   FormHelperText,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 export const Profile: React.FC = () => {
   const [user, setUser] = useState<MemberResponse | null>(null);
@@ -29,6 +32,8 @@ export const Profile: React.FC = () => {
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -183,9 +188,18 @@ export const Profile: React.FC = () => {
             fullWidth
             name="currentPassword"
             label="Current Password"
-            type="password"
+            type={showCurrentPassword ? 'text' : 'password'}
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowCurrentPassword(v => !v)} edge="end">
+                    {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
           <TextField
             margin="normal"
@@ -193,9 +207,18 @@ export const Profile: React.FC = () => {
             fullWidth
             name="newPassword"
             label="New Password"
-            type="password"
+            type={showNewPassword ? 'text' : 'password'}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowNewPassword(v => !v)} edge="end">
+                    {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
         </DialogContent>
         <DialogActions>

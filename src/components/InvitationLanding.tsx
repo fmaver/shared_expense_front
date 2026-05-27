@@ -17,6 +17,7 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
   // New-user (stub) form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -180,15 +181,25 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
             </div>
           )}
 
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Choose a password"
-            required
-            minLength={6}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Choose a password"
+              required
+              minLength={6}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              tabIndex={-1}
+              className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
 
           {submitError && <p className="text-red-600 text-sm">{submitError}</p>}
 
