@@ -11,7 +11,7 @@ export function AppShell({ onLogout }: AppShellProps) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block lg:flex-shrink-0 lg:w-56 lg:h-screen overflow-hidden">
+      <aside className="hidden lg:block lg:flex-shrink-0 lg:w-56 overflow-hidden">
         <Sidebar onLogout={onLogout} />
       </aside>
 
