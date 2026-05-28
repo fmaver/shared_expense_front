@@ -34,7 +34,7 @@ export function TopBar({ onLogout }: TopBarProps) {
       <button
         type="button"
         onClick={toggle}
-        className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+        className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
         aria-label="Toggle theme"
       >
         {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
