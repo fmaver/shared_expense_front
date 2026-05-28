@@ -14,6 +14,7 @@
 - Add a light/dark mode toggle
 - Mock Google sign-in on the login page
 - Redesign in-app navigation (remove the current top-right dropdown menu)
+- Responsive sidebar — full sidebar on desktop, hamburger + Sheet overlay on mobile
 
 ---
 
@@ -155,6 +156,16 @@ Two-panel layout: fixed sidebar + scrollable content area.
 
 **Light mode**: white background, `#E5E7EB` right border  
 **Dark mode**: `#1E1B2E` background, `rgba(255,255,255,0.07)` right border
+
+**Responsive behaviour:**
+- **Desktop (≥1024px / Tailwind `lg`)**: sidebar always visible (`block`), content area fills remaining width
+- **Mobile/tablet (<1024px)**: sidebar is hidden (`hidden lg:block`). A top bar appears (`lg:hidden`) with:
+  - Left: ☰ hamburger `Button` (ghost variant) — opens the sidebar as a shadcn `Sheet` sliding in from the left
+  - Center: ✦ Jirens wordmark
+  - Right: 🌙/☀️ theme toggle
+- The `Sheet` contains the identical sidebar content (groups list, footer with avatar + theme toggle)
+- Tapping any group link or the overlay backdrop closes the Sheet
+- A `useIsMobile()` hook (`window.innerWidth < 1024`, updates on `resize`) is available for any JS-side conditional logic, but most behaviour is handled by Tailwind breakpoint classes alone
 
 #### Content area
 
@@ -318,6 +329,7 @@ Both pages share a centered card layout on `#F5F5F5` background with the ✦ Jir
 - [ ] Change password
 - [ ] PDF export of expense list (existing `utils/export.ts` preserved, button kept in expense header)
 - [ ] Light / dark mode toggle (new)
+- [ ] Responsive sidebar — Sheet overlay on mobile, always-visible on desktop (new)
 - [ ] Accept invitation landing page
 - [ ] Register via join link landing page
 
@@ -327,6 +339,5 @@ Both pages share a centered card layout on `#F5F5F5` background with the ✦ Jir
 
 - Backend changes of any kind
 - New API endpoints
-- Mobile responsive sidebar (deferred — Sheet component is installed and ready for a follow-up sprint)
 - Real Google OAuth integration (mocked only)
 - PDF export redesign (existing `export.ts` util stays, button preserved in UI)

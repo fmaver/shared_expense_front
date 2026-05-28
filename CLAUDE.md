@@ -35,18 +35,31 @@ src/
 ├── api/
 │   ├── auth.ts              # POST /token, POST /register
 │   ├── categories.ts        # GET /categories, GET /categories/with-emojis
-│   ├── expenses.ts          # CRUD for expenses + settle/recalculate (shares)
+│   ├── expenses.ts          # CRUD for expenses
+│   ├── groups.ts            # CRUD, membership, invitations, join-link
+│   ├── invitations.ts       # resolve + accept invitation token
+│   ├── joinLinks.ts         # resolve + register-and-join via join link
 │   ├── members.ts           # GET /members, GET /me, PATCH /me
 │   └── shares.ts            # GET/settle/unsettle/recalculate monthly share
 ├── components/
-│   ├── App.tsx              # ← entry
+│   ├── App.tsx              # ← entry; also defines all react-router-dom routes
 │   ├── BalanceSummary.tsx   # monthly balance panel — settle + reopen buttons
 │   ├── ConfirmationModal.tsx
+│   ├── CreateGroupModal.tsx
 │   ├── ExpenseContent.tsx   # orchestrates BalanceSummary + ExpenseList
 │   ├── ExpenseForm.tsx      # create/edit expense — all split types
 │   ├── ExpenseHeader.tsx
 │   ├── ExpenseList.tsx      # sortable table + edit/delete per row
+│   ├── ExpensesDashboard.tsx  # main view inside a group (month picker + expense list)
 │   ├── FormModal.tsx
+│   ├── GroupJoinLanding.tsx # public page for /join/:token (register + join group)
+│   ├── GroupLayout.tsx      # authenticated group shell — nested router outlet
+│   ├── GroupMembers.tsx     # member list + invite flow
+│   ├── GroupSelector.tsx    # root authenticated page — pick or create a group
+│   ├── GroupSettings.tsx    # rename group, manage join link
+│   ├── InvitationLanding.tsx  # public page for /invite/:token (accept invitation)
+│   ├── LoadingSpinner.tsx
+│   ├── LoadingState.tsx
 │   ├── Login.tsx
 │   ├── MoneyTransferForm.tsx # submits a "prestamo" category expense
 │   ├── MonthPicker.tsx
@@ -63,6 +76,23 @@ src/
     ├── export.ts            # PDF export via jsPDF
     └── format.ts            # formatCurrency, formatDate, capitalize
 ```
+
+---
+
+## Routing
+
+Routes defined in `src/App.tsx` via `react-router-dom`:
+
+| Path | Component | Auth |
+|------|-----------|------|
+| `/invite/:token` | `InvitationLanding` | public |
+| `/join/:token` | `GroupJoinLanding` | public |
+| `/` | `GroupSelector` | required |
+| `/profile` | `Profile` | required |
+| `/groups/:groupId` | `GroupLayout` (outlet) | required |
+| `/groups/:groupId` (index) | `ExpensesDashboard` | required |
+| `/groups/:groupId/members` | `GroupMembers` | required |
+| `/groups/:groupId/settings` | `GroupSettings` | required |
 
 ---
 
@@ -117,6 +147,31 @@ interface MonthlyBalanceResponse {
 | `POST` | `/shares/settle/{year}/{month}` | close month, create balancing expenses |
 | `POST` | `/shares/unsettle/{year}/{month}` | reopen month, delete balancing expenses |
 | `POST` | `/shares/recalculate/{year}/{month}` | recalculate balances from current expenses |
+
+### Groups endpoints (JWT required)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `POST` | `/groups/` | create group |
+| `GET` | `/groups/` | list groups for current member |
+| `GET` | `/groups/{id}` | get group |
+| `PUT` | `/groups/{id}` | rename group |
+| `GET` | `/groups/{id}/members` | list members |
+| `POST` | `/groups/{id}/invitations` | create invitation (email or WhatsApp) |
+| `GET` | `/groups/{id}/invitations` | list pending invitations |
+| `DELETE` | `/groups/{id}/invitations/{token}` | revoke invitation |
+| `POST` | `/groups/{id}/join-link` | get or create join link |
+| `POST` | `/groups/{id}/join-link/rotate` | rotate join link token |
+| `DELETE` | `/groups/{id}/members/leave` | leave group |
+
+### Invitation / join-link endpoints (public — no JWT)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/invitations/resolve/{token}` | resolve token → group + stub member info |
+| `POST` | `/invitations/{token}/accept` | accept; returns `{ data: { accessToken, tokenType } }` |
+| `GET` | `/join/resolve/{token}` | resolve join-link → group info |
+| `POST` | `/join/{token}` | register new member and join; returns `{ data: { accessToken, tokenType } }` |
 
 ### Categories
 
