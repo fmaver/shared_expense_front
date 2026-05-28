@@ -45,7 +45,8 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('tokenExpiration');
     delete axios.defaults.headers.common['Authorization'];
-    setIsAuthenticated(false);
+    // Full page reload guarantees a clean redirect regardless of router state
+    window.location.href = '/';
   };
 
   return (
