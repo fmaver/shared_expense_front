@@ -32,7 +32,7 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
   const go = (to: string) => { navigate(to); onNavigate?.(); };
 
   return (
-    <div className="flex flex-col h-full bg-card dark:bg-sidebar border-r border-border">
+    <div className="flex flex-col w-full h-full bg-card dark:bg-sidebar border-r border-border">
       {/* Brand */}
       <div className="px-4 pt-5 pb-4">
         <button onClick={() => go('/groups')} className="flex items-center gap-2.5 w-full text-left">
