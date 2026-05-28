@@ -5,7 +5,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useCategories } from '@/hooks/useCategories';
@@ -118,11 +118,12 @@ export function AddExpenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen)}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg flex flex-col gap-0 overflow-hidden max-h-[90vh]" showCloseButton={false}>
+        <DialogHeader className="px-0 pb-2">
           <DialogTitle>{isEdit ? 'Edit expense' : 'Add expense'}</DialogTitle>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto">
         <form id="expense-form" onSubmit={handleSubmit} className="space-y-4 py-1">
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
@@ -161,7 +162,14 @@ export function AddExpenseDialog({
               <Label>Category</Label>
               <Select value={expense.category.name} disabled={loadingCats || disabled}
                 onValueChange={v => set({ category: { name: v } })}>
-                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectTrigger>
+                  <span className="flex-1 text-left truncate">
+                    {loadingCats ? 'Loading…' : (() => {
+                      const c = categories.find(c => c.name === expense.category.name);
+                      return c ? `${c.emoji} ${c.name}` : 'Select…';
+                    })()}
+                  </span>
+                </SelectTrigger>
                 <SelectContent>
                   {categories.map(c => (
                     <SelectItem key={c.name} value={c.name}>{c.emoji} {c.name}</SelectItem>
@@ -175,7 +183,11 @@ export function AddExpenseDialog({
               <Label>Payer</Label>
               <Select value={String(expense.payerId)} disabled={disabled}
                 onValueChange={v => set({ payerId: parseInt(v) })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <span className="flex-1 text-left truncate">
+                    {members.find(m => m.id === expense.payerId)?.name ?? 'Select…'}
+                  </span>
+                </SelectTrigger>
                 <SelectContent>
                   {members.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
                 </SelectContent>
@@ -189,7 +201,9 @@ export function AddExpenseDialog({
               <Label>Payment type</Label>
               <Select value={expense.paymentType} disabled={disabled}
                 onValueChange={v => set({ paymentType: v as 'debit' | 'credit' })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <span className="flex-1 text-left">{expense.paymentType === 'debit' ? 'Debit' : 'Credit'}</span>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="debit">Debit</SelectItem>
                   <SelectItem value="credit">Credit</SelectItem>
@@ -229,7 +243,11 @@ export function AddExpenseDialog({
                   },
                 });
               }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <span className="flex-1 text-left">
+                  {{ equal: 'Equal', percentage: 'Percentage', exact: 'Exact amounts' }[expense.splitStrategy.type]}
+                </span>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="equal">Equal</SelectItem>
                 <SelectItem value="percentage">Percentage</SelectItem>
@@ -331,6 +349,7 @@ export function AddExpenseDialog({
             </div>
           )}
         </form>
+        </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

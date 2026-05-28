@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { formatDate } from '@/utils/format';
 import type { ExpenseCreate, Member } from '@/types/expense';
 
@@ -66,7 +66,11 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members }: Transf
           <div className="space-y-1.5">
             <Label htmlFor="transfer-payer">Payer</Label>
             <Select value={String(payerId)} onValueChange={v => setPayerId(parseInt(v))}>
-              <SelectTrigger id="transfer-payer"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="transfer-payer">
+                <span className="flex-1 text-left truncate">
+                  {members.find(m => m.id === payerId)?.name ?? 'Select…'}
+                </span>
+              </SelectTrigger>
               <SelectContent>
                 {members.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
               </SelectContent>
