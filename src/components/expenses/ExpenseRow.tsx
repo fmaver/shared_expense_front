@@ -53,6 +53,20 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete }: Ex
         <p className="text-xs text-muted-foreground">
           {memberName(members, expense.payerId)} · {formatDate(expense.date, true)}
         </p>
+        {expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages && (
+          <p className="text-xs text-muted-foreground truncate">
+            {Object.entries(expense.splitStrategy.percentages)
+              .map(([id, pct]) => `${memberName(members, parseInt(id))} ${parseFloat(Number(pct).toFixed(1))}%`)
+              .join(' · ')}
+          </p>
+        )}
+        {expense.splitStrategy.type === 'exact' && expense.splitStrategy.amounts && (
+          <p className="text-xs text-muted-foreground truncate">
+            {Object.entries(expense.splitStrategy.amounts)
+              .map(([id, amt]) => `${memberName(members, parseInt(id))} ${formatCurrency(amt ?? 0)}`)
+              .join(' · ')}
+          </p>
+        )}
       </div>
 
       {/* Badges */}

@@ -6,7 +6,7 @@ import {
   checkSimilarExpenses, createExpense, updateExpense, deleteExpense,
 } from '@/api/expenses';
 import {
-  settleMonthlyShare, unsettleMonthlyShare, recalculateMonthlyShare, downloadMonthlyPdf,
+  settleMonthlyShare, unsettleMonthlyShare, downloadMonthlyPdf,
 } from '@/api/shares';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { BalancePanel } from '@/components/expenses/BalancePanel';
@@ -35,7 +35,6 @@ export function ExpensesDashboard() {
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
   const [isSettling, setIsSettling] = useState(false);
   const [isUnsettling, setIsUnsettling] = useState(false);
-  const [isRecalculating, setIsRecalculating] = useState(false);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -113,20 +112,6 @@ export function ExpensesDashboard() {
     }
   };
 
-  const handleRecalculate = async () => {
-    setIsRecalculating(true);
-    try {
-      const result = await recalculateMonthlyShare(groupId, year, month);
-      if (!result.success) throw new Error(result.error ?? 'Failed to recalculate');
-      refetch();
-      toast.success('Balances recalculated');
-    } catch {
-      toast.error('Failed to recalculate');
-    } finally {
-      setIsRecalculating(false);
-    }
-  };
-
   const handleExportPDF = async () => {
     try {
       await downloadMonthlyPdf(groupId, year, month);
@@ -152,7 +137,6 @@ export function ExpensesDashboard() {
           isSettled={isSettled}
           onSettle={handleSettle} isSettling={isSettling}
           onUnsettle={handleUnsettle} isUnsettling={isUnsettling}
-          onRecalculate={handleRecalculate} isRecalculating={isRecalculating}
           expenses={expenses}
         />
       )}

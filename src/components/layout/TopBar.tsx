@@ -31,9 +31,14 @@ export function TopBar({ onLogout }: TopBarProps) {
         <span className="font-extrabold text-sm tracking-tight text-foreground">Jirens</span>
       </div>
 
-      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={toggle} aria-label="Toggle theme">
+      <button
+        type="button"
+        onClick={toggle}
+        className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+        aria-label="Toggle theme"
+      >
         {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      </Button>
+      </button>
     </header>
   );
 }

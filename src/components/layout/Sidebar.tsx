@@ -3,7 +3,6 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useGroups } from '@/hooks/useGroups';
 import { useTheme } from '@/hooks/useTheme';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Moon, Sun, Plus, LogOut } from 'lucide-react';
 
@@ -81,12 +80,22 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
           <span className="text-sm text-muted-foreground truncate">{name || 'Profile'}</span>
         </button>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={toggle} aria-label="Toggle theme">
+          <button
+            type="button"
+            onClick={toggle}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label="Toggle theme"
+          >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={onLogout} aria-label="Logout">
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label="Logout"
+          >
             <LogOut className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>
