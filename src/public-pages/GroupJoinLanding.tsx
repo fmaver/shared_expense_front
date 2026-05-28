@@ -49,7 +49,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
       localStorage.setItem('tokenExpiration', expiration);
       axios.defaults.headers.common['Authorization'] = `Bearer ${result.accessToken}`;
       onLoginSuccess(result.accessToken);
-      toast.success('Welcome! You've joined the group.');
+      toast.success("Welcome! You've joined the group.");
       navigate('/groups');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to join group');

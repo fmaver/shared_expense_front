@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, updateProfile, updatePassword, MemberResponse, NotificationType } from '@/api/auth';
+import { getCurrentUser, updateProfile, updatePassword, NotificationType } from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,7 +25,6 @@ import { Eye, EyeOff } from 'lucide-react';
 
 export function ProfilePage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<MemberResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Profile form state
@@ -50,7 +49,6 @@ export function ProfilePage() {
     const loadUserData = async () => {
       try {
         const userData = await getCurrentUser();
-        setUser(userData);
         setName(userData.name);
         setEmail(userData.email);
         setTelephone(userData.telephone);
