@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
@@ -71,7 +71,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
         <span className="text-xs text-muted-foreground">Sort</span>
         <Select value={sortField} onValueChange={v => setSortField(v as SortField)}>
           <SelectTrigger className="h-7 text-xs w-36 bg-card">
-            <SelectValue />
+            <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label ?? sortField}</span>
           </SelectTrigger>
           <SelectContent>
             {SORT_FIELDS.map(f => (
@@ -90,7 +90,9 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
         <span className="text-xs text-muted-foreground">Payer</span>
         <Select value={filterPayer} onValueChange={setFilterPayer}>
           <SelectTrigger className="h-7 text-xs w-28 bg-card">
-            <SelectValue />
+            <span className="truncate">
+              {filterPayer === 'all' ? 'All' : members.find(m => m.id.toString() === filterPayer)?.name ?? filterPayer}
+            </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all" className="text-xs">All</SelectItem>
@@ -106,7 +108,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
         <span className="text-xs text-muted-foreground">Category</span>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="h-7 text-xs w-36 bg-card">
-            <SelectValue />
+            <span className="truncate capitalize">{filterCategory === 'all' ? 'All' : filterCategory}</span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all" className="text-xs">All</SelectItem>
