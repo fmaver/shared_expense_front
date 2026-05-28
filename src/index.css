@@ -2,17 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
+@layer base {
+  :root {
+    --background: 0 0% 96%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 270 33% 80%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 47%;
+    --accent: 270 33% 93%;
+    --accent-foreground: 270 30% 30%;
+    --destructive: 0 84% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 270 33% 70%;
+    --radius: 0.5rem;
+    --settle: 122 39% 49%;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 0 0% 98%;
+    --card: 215 28% 17%;
+    --card-foreground: 0 0% 98%;
+    --popover: 215 28% 17%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 270 33% 80%;
+    --primary-foreground: 270 30% 15%;
+    --secondary: 215 28% 22%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 215 28% 22%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 270 20% 25%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 28% 25%;
+    --input: 215 28% 25%;
+    --ring: 270 33% 70%;
+    --settle: 122 39% 49%;
   }
 }
 
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out forwards;
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
 }

@@ -1,47 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { Login } from './components/Login';
-import { Profile } from './components/Profile';
-import { GroupSelector } from './components/GroupSelector';
-import { GroupLayout } from './components/GroupLayout';
-import { ExpensesDashboard } from './components/ExpensesDashboard';
-import { GroupMembers } from './components/GroupMembers';
-import { GroupSettings } from './components/GroupSettings';
-import { InvitationLanding } from './components/InvitationLanding';
-import { GroupJoinLanding } from './components/GroupJoinLanding';
+import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
+import { AppShell } from './components/layout/AppShell';
+import { GroupSelectorPage } from './pages/GroupSelectorPage';
+import { GroupLayout } from './pages/GroupLayout';
+import { ExpensesDashboard } from './pages/ExpensesDashboard';
+import { GroupMembersPage } from './pages/GroupMembersPage';
+import { GroupSettingsPage } from './pages/GroupSettingsPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { InvitationLanding } from './public-pages/InvitationLanding';
+import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const tokenExpiration = localStorage.getItem('tokenExpiration');
-
+    const expiration = localStorage.getItem('tokenExpiration');
     if (token) {
-      if (tokenExpiration && new Date(tokenExpiration) <= new Date()) {
-        handleLogout();
-        return;
+      if (expiration && new Date(expiration) <= new Date()) {
+        handleLogout(); return;
       }
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setIsAuthenticated(true);
     }
-
-    const interceptor = axios.interceptors.response.use(
-      response => response,
-      error => {
-        if (error.response?.status === 401) handleLogout();
-        return Promise.reject(error);
-      }
+    const id = axios.interceptors.response.use(
+      r => r,
+      err => { if (err.response?.status === 401) handleLogout(); return Promise.reject(err); },
     );
-
-    return () => axios.interceptors.response.eject(interceptor);
+    return () => axios.interceptors.response.eject(id);
   }, []);
 
   const handleLogin = (token: string) => {
-    const expiration = new Date(new Date().getTime() + 30 * 60000);
+    const expiration = new Date(Date.now() + 30 * 60_000).toISOString();
     localStorage.setItem('token', token);
-    localStorage.setItem('tokenExpiration', expiration.toISOString());
+    localStorage.setItem('tokenExpiration', expiration);
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setIsAuthenticated(true);
   };
@@ -55,24 +50,26 @@ function App() {
 
   return (
     <Routes>
-      {/* Public routes — accessible without auth */}
+      {/* Public */}
+      <Route path="/" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LandingPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LoginPage onLoginSuccess={handleLogin} />} />
       <Route path="/invite/:token" element={<InvitationLanding onLoginSuccess={handleLogin} />} />
       <Route path="/join/:token" element={<GroupJoinLanding onLoginSuccess={handleLogin} />} />
 
-      {/* Protected routes */}
+      {/* Protected */}
       {!isAuthenticated ? (
-        <Route path="*" element={<Login onLoginSuccess={handleLogin} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       ) : (
-        <>
-          <Route path="/" element={<GroupSelector onLogout={handleLogout} />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/groups/:groupId" element={<GroupLayout onLogout={handleLogout} />}>
+        <Route element={<AppShell onLogout={handleLogout} />}>
+          <Route path="/groups" element={<GroupSelectorPage />} />
+          <Route path="/groups/:groupId" element={<GroupLayout />}>
             <Route index element={<ExpensesDashboard />} />
-            <Route path="members" element={<GroupMembers />} />
-            <Route path="settings" element={<GroupSettings />} />
+            <Route path="members" element={<GroupMembersPage />} />
+            <Route path="settings" element={<GroupSettingsPage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </>
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="*" element={<Navigate to="/groups" replace />} />
+        </Route>
       )}
     </Routes>
   );
