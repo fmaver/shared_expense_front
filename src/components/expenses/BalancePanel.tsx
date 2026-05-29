@@ -9,7 +9,7 @@ interface BalancePanelProps {
   balances: Record<string, number>;
   members: Member[];
   isSettled: boolean;
-  onSettle: () => void;
+  onSettleRequest: () => void;
   isSettling: boolean;
   onUnsettle: () => void;
   isUnsettling: boolean;
@@ -18,7 +18,7 @@ interface BalancePanelProps {
 
 export function BalancePanel({
   balances, members, isSettled,
-  onSettle, isSettling,
+  onSettleRequest, isSettling,
   onUnsettle, isUnsettling,
   expenses,
 }: BalancePanelProps) {
@@ -35,10 +35,9 @@ export function BalancePanel({
           {!isSettled ? (
             <button
               type="button"
-              onClick={onSettle}
+              onClick={onSettleRequest}
               disabled={isSettling}
-              className="h-7 px-3 text-xs rounded-md font-semibold text-white disabled:opacity-50 transition-colors"
-              style={{ backgroundColor: '#4CAF50' }}
+              className="h-7 px-3 text-xs rounded-md font-semibold border border-[#4CAF50] text-[#4CAF50] hover:bg-green-50 dark:hover:bg-green-950/40 disabled:opacity-50 transition-colors cursor-pointer"
             >
               {isSettling ? 'Settling…' : 'Settle up'}
             </button>
@@ -47,7 +46,7 @@ export function BalancePanel({
               type="button"
               onClick={onUnsettle}
               disabled={isUnsettling}
-              className="h-7 px-3 text-xs rounded-md font-medium border border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950 disabled:opacity-50 transition-colors"
+              className="h-7 px-3 text-xs rounded-md font-medium border border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950 disabled:opacity-50 transition-colors cursor-pointer"
             >
               {isUnsettling ? 'Reopening…' : 'Reopen month'}
             </button>

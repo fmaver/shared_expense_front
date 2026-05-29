@@ -35,6 +35,7 @@ export function ExpensesDashboard() {
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
   const [isSettling, setIsSettling] = useState(false);
   const [isUnsettling, setIsUnsettling] = useState(false);
+  const [showSettleConfirm, setShowSettleConfirm] = useState(false);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -135,7 +136,8 @@ export function ExpensesDashboard() {
           balances={monthlyData.balances}
           members={members}
           isSettled={isSettled}
-          onSettle={handleSettle} isSettling={isSettling}
+          onSettleRequest={() => setShowSettleConfirm(true)}
+          isSettling={isSettling}
           onUnsettle={handleUnsettle} isUnsettling={isUnsettling}
           expenses={expenses}
         />
@@ -211,6 +213,30 @@ export function ExpensesDashboard() {
             <Button className="bg-brand hover:bg-brand/90 text-white"
               onClick={async () => { if (pendingExpense) await submitExpense(pendingExpense); }}>
               Yes, add it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settle confirmation dialog */}
+      <Dialog open={showSettleConfirm} onOpenChange={(isOpen) => { if (!isOpen) setShowSettleConfirm(false); }}>
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              Settle {new Date(year, month - 1).toLocaleString('default', { month: 'long' })} {year}?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This will create balancing expenses and close the month. You can reopen it later if needed.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSettleConfirm(false)}>Cancel</Button>
+            <Button
+              className="cursor-pointer"
+              style={{ backgroundColor: '#4CAF50', color: 'white' }}
+              onClick={async () => { setShowSettleConfirm(false); await handleSettle(); }}
+            >
+              Settle up
             </Button>
           </DialogFooter>
         </DialogContent>
