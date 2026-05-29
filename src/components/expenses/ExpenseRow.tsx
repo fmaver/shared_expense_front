@@ -5,6 +5,20 @@ import { cn } from '@/lib/utils';
 import { formatCurrency, capitalize, formatDate } from '@/utils/format';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
+// Static emoji map for known categories (backend list is static)
+const CATEGORY_EMOJI: Record<string, string> = {
+  comida: '🍽️',
+  supermercado: '🛒',
+  entretenimiento: '🎮',
+  servicios: '⚡',
+  transporte: '🚗',
+  viajes: '✈️',
+  salud: '🏥',
+  otros: '📦',
+  balance: '⚖️',
+  prestamo: '💰',
+};
+
 const SPLIT_BADGE: Record<string, string> = {
   equal:      'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
   percentage: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40  dark:text-amber-300',
@@ -40,28 +54,33 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete }: Ex
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group">
-      {/* Category icon */}
-      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-base flex-shrink-0">
-        <span className="text-xs font-bold text-muted-foreground uppercase">
-          {expense.category.slice(0, 2)}
-        </span>
+      {/* Category icon — emoji from static map, first 2 letters as fallback */}
+      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+        {CATEGORY_EMOJI[expense.category]
+          ? <span className="text-lg leading-none">{CATEGORY_EMOJI[expense.category]}</span>
+          : <span className="text-xs font-bold text-muted-foreground uppercase">{expense.category.slice(0, 2)}</span>
+        }
       </div>
 
       {/* Description + meta */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{capitalize(expense.description)}</p>
+        <p className="text-sm font-medium text-foreground line-clamp-2">{capitalize(expense.description)}</p>
         <p className="text-xs text-muted-foreground">
           {memberName(members, expense.payerId)} · {formatDate(expense.date, true)}
         </p>
         {expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages && (
-          <p className="text-xs text-muted-foreground truncate">
+          <p className="text-xs text-muted-foreground line-clamp-2">
             {Object.entries(expense.splitStrategy.percentages)
-              .map(([id, pct]) => `${memberName(members, parseInt(id))} ${parseFloat(Number(pct).toFixed(1))}%`)
+              .map(([id, pct]) => {
+                const pctNum = parseFloat(Number(pct).toFixed(1));
+                const amt = formatCurrency((expense.amount * (pct ?? 0)) / 100);
+                return `${memberName(members, parseInt(id))} ${pctNum}% (${amt})`;
+              })
               .join(' · ')}
           </p>
         )}
         {expense.splitStrategy.type === 'exact' && expense.splitStrategy.amounts && (
-          <p className="text-xs text-muted-foreground truncate">
+          <p className="text-xs text-muted-foreground line-clamp-2">
             {Object.entries(expense.splitStrategy.amounts)
               .map(([id, amt]) => `${memberName(members, parseInt(id))} ${formatCurrency(amt ?? 0)}`)
               .join(' · ')}

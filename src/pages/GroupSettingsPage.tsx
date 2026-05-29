@@ -70,15 +70,15 @@ export function GroupSettingsPage() {
     <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">Settings</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('settings.title')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage your {group?.name} group
+          {t('settings.subtitle', { name: group?.name ?? '' })}
         </p>
       </div>
 
       {/* Rename section */}
       <div className="bg-card border border-border rounded-xl p-5">
-        <h2 className="font-semibold text-foreground text-sm mb-4">Rename group</h2>
+        <h2 className="font-semibold text-foreground text-sm mb-4">{t('settings.renameGroup')}</h2>
         <form onSubmit={handleRename} className="space-y-3">
           <div>
             <Label htmlFor="group-name" className="text-xs font-medium text-muted-foreground mb-1 block">

@@ -107,7 +107,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#25D366] hover:bg-[#1ebe59] text-white px-3 py-1.5 rounded-lg transition-colors"
             >
-              Share on WhatsApp
+              {t('members.shareOnWhatsapp')}
             </a>
             <Button
               size="sm"
@@ -127,11 +127,10 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
       <Dialog open={showRotateConfirm} onOpenChange={(isOpen) => setShowRotateConfirm(isOpen)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rotate join link?</DialogTitle>
+            <DialogTitle>{t('members.rotateTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            The current link will stop working immediately. Anyone who tries to use
-            it will get an error. A new link will be generated.
+            {t('members.rotateDesc')}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRotateConfirm(false)}>

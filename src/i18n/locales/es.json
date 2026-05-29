@@ -173,9 +173,16 @@
     "joinLinkDesc": "Creá un link para que cualquiera pueda unirse a este grupo.",
     "copy": "Copiar",
     "rotate": "Rotar",
-    "createLink": "Crear link"
+    "createLink": "Crear link",
+    "shareOnWhatsapp": "Compartir por WhatsApp",
+    "rotateTitle": "¿Rotar link?",
+    "rotateDesc": "El link actual dejará de funcionar inmediatamente. Se generará un nuevo link.",
+    "inviteFullName": "Nombre completo"
   },
   "settings": {
+    "title": "Configuración",
+    "subtitle": "Administrá el grupo {{name}}",
+    "renameGroup": "Renombrar grupo",
     "groupName": "Nombre del grupo",
     "dangerZone": "Zona de peligro",
     "save": "Guardar",

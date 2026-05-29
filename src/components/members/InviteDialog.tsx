@@ -75,7 +75,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="inviteName">Full name</Label>
+            <Label htmlFor="inviteName">{t('members.inviteFullName')}</Label>
             <Input
               id="inviteName"
               required

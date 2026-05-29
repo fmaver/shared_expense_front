@@ -173,9 +173,16 @@
     "joinLinkDesc": "Create a shareable link that lets anyone join this group.",
     "copy": "Copy",
     "rotate": "Rotate",
-    "createLink": "Create join link"
+    "createLink": "Create join link",
+    "shareOnWhatsapp": "Share on WhatsApp",
+    "rotateTitle": "Rotate join link?",
+    "rotateDesc": "The current link will stop working immediately. Anyone who tries to use it will get an error. A new link will be generated.",
+    "inviteFullName": "Full name"
   },
   "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your {{name}} group",
+    "renameGroup": "Rename group",
     "groupName": "Group name",
     "dangerZone": "Danger zone",
     "save": "Save",
