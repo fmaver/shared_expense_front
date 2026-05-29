@@ -42,7 +42,7 @@ export function CreateGroupDialog({ open, onOpenChange, onCreated }: CreateGroup
         <DialogHeader><DialogTitle>{t('groups.dialog.title')}</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="groupName">Group name</Label>
+            <Label htmlFor="groupName">{t('groups.dialog.nameLabel')}</Label>
             <Input id="groupName" required autoFocus placeholder={t('groups.dialog.namePlaceholder')}
               value={name} onChange={e => setName(e.target.value)} />
           </div>

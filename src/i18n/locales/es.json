@@ -67,6 +67,7 @@
     "memberCount_other": "{{count}} miembros",
     "dialog": {
       "title": "Nuevo grupo",
+      "nameLabel": "Nombre del grupo",
       "namePlaceholder": "ej. Casa, Viaje 2026",
       "creating": "Creando…",
       "create": "Crear grupo"
