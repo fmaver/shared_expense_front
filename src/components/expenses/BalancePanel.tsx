@@ -3,6 +3,7 @@ import { formatCurrency } from '@/utils/format';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import type { Member, ExpenseResponse } from '@/types/expense';
 
 interface BalancePanelProps {
@@ -22,6 +23,7 @@ export function BalancePanel({
   onUnsettle, isUnsettling,
   expenses,
 }: BalancePanelProps) {
+  const { t } = useTranslation();
   const name = (id: string) => members.find(m => m.id === parseInt(id))?.name ?? 'Unknown';
 
   const total = expenses.reduce((s, e) =>
@@ -30,7 +32,7 @@ export function BalancePanel({
   return (
     <div className="bg-card border border-border rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-foreground">Balance</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t('balance.title')}</h3>
         <div className="flex items-center gap-1.5">
           {!isSettled ? (
             <button
@@ -39,7 +41,7 @@ export function BalancePanel({
               disabled={isSettling}
               className="h-7 px-3 text-xs rounded-md font-semibold border border-[#4CAF50] text-[#4CAF50] hover:bg-green-50 dark:hover:bg-green-950/40 disabled:opacity-50 transition-colors cursor-pointer"
             >
-              {isSettling ? 'Settling…' : 'Settle up'}
+              {isSettling ? t('balance.settling') : t('balance.settleUp')}
             </button>
           ) : (
             <button
@@ -48,7 +50,7 @@ export function BalancePanel({
               disabled={isUnsettling}
               className="h-7 px-3 text-xs rounded-md font-medium border border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950 disabled:opacity-50 transition-colors cursor-pointer"
             >
-              {isUnsettling ? 'Reopening…' : 'Reopen month'}
+              {isUnsettling ? t('balance.reopening') : t('balance.reopenMonth')}
             </button>
           )}
         </div>
@@ -56,7 +58,7 @@ export function BalancePanel({
 
       {isSettled && (
         <div className="flex items-center gap-1.5 text-xs text-settle font-medium mb-3">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Month settled
+          <CheckCircle2 className="h-3.5 w-3.5" /> {t('balance.monthSettled')}
         </div>
       )}
 
@@ -75,7 +77,7 @@ export function BalancePanel({
       <Separator className="my-3" />
 
       <div className="flex justify-between items-center text-xs">
-        <span className="text-muted-foreground">Total expenses</span>
+        <span className="text-muted-foreground">{t('balance.totalExpenses')}</span>
         <span className="font-semibold text-foreground tabular-nums">{formatCurrency(total)}</span>
       </div>
     </div>
