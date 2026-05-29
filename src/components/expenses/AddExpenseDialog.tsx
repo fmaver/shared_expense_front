@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -69,6 +70,7 @@ function buildInitial(
 export function AddExpenseDialog({
   open, onOpenChange, onSubmit, members, initialExpense, isSettled = false,
 }: AddExpenseDialogProps) {
+  const { t } = useTranslation();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
   const [expense, setExpense] = useState<ExpenseCreate>(() =>
     buildInitial(initialExpense, members, categories[0]?.name ?? ''));
@@ -96,7 +98,7 @@ export function AddExpenseDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (expense.splitStrategy.type === 'exact' && Math.abs(exactRemaining) > 0.01) {
-      setError('Exact amounts must add up to the total.');
+      setError(t('expenseForm.exactError'));
       return;
     }
     const { type, percentages, amounts, participantIds } = expense.splitStrategy;
@@ -120,7 +122,7 @@ export function AddExpenseDialog({
     <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen)}>
       <DialogContent className="sm:max-w-lg flex flex-col gap-0 overflow-hidden max-h-[90vh]" showCloseButton={false}>
         <DialogHeader className="px-0 pb-2">
-          <DialogTitle>{isEdit ? 'Edit expense' : 'Add expense'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('expenseForm.editExpense') : t('expenseForm.addExpense')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -133,7 +135,7 @@ export function AddExpenseDialog({
 
           {/* Amount */}
           <div className="space-y-1.5">
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="amount">{t('expenseForm.amount')}</Label>
             <Input id="amount" type="number" step="0.01" min="0" required
               placeholder="e.g. 4500" disabled={disabled}
               value={expense.amount === '' ? '' : expense.amount}
@@ -142,7 +144,7 @@ export function AddExpenseDialog({
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="desc">Description</Label>
+            <Label htmlFor="desc">{t('expenseForm.description')}</Label>
             <Input id="desc" required maxLength={255} disabled={disabled}
               value={expense.description}
               onChange={e => set({ description: e.target.value })} />
@@ -150,7 +152,7 @@ export function AddExpenseDialog({
 
           {/* Date */}
           <div className="space-y-1.5">
-            <Label htmlFor="date">Date</Label>
+            <Label htmlFor="date">{t('expenseForm.date')}</Label>
             <Input id="date" type="date" required disabled={disabled}
               value={expense.date}
               onChange={e => set({ date: e.target.value })} />
@@ -159,14 +161,14 @@ export function AddExpenseDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Category */}
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label>{t('expenseForm.category')}</Label>
               <Select value={expense.category.name} disabled={loadingCats || disabled}
                 onValueChange={v => set({ category: { name: v } })}>
                 <SelectTrigger>
                   <span className="flex-1 text-left truncate">
-                    {loadingCats ? 'Loading…' : (() => {
+                    {loadingCats ? t('common.loading') : (() => {
                       const c = categories.find(c => c.name === expense.category.name);
-                      return c ? `${c.emoji} ${c.name}` : 'Select…';
+                      return c ? `${c.emoji} ${c.name}` : t('expenseForm.selectPlaceholder');
                     })()}
                   </span>
                 </SelectTrigger>
@@ -180,7 +182,7 @@ export function AddExpenseDialog({
 
             {/* Payer */}
             <div className="space-y-1.5">
-              <Label>Payer</Label>
+              <Label>{t('expenseForm.payer')}</Label>
               <Select value={String(expense.payerId)} disabled={disabled}
                 onValueChange={v => set({ payerId: parseInt(v) })}>
                 <SelectTrigger>
@@ -198,15 +200,15 @@ export function AddExpenseDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Payment type */}
             <div className="space-y-1.5">
-              <Label>Payment type</Label>
+              <Label>{t('expenseForm.paymentType')}</Label>
               <Select value={expense.paymentType} disabled={disabled}
                 onValueChange={v => set({ paymentType: v as 'debit' | 'credit' })}>
                 <SelectTrigger>
-                  <span className="flex-1 text-left">{expense.paymentType === 'debit' ? 'Debit' : 'Credit'}</span>
+                  <span className="flex-1 text-left">{expense.paymentType === 'debit' ? t('expenseForm.debit') : t('expenseForm.credit')}</span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="debit">Debit</SelectItem>
-                  <SelectItem value="credit">Credit</SelectItem>
+                  <SelectItem value="debit">{t('expenseForm.debit')}</SelectItem>
+                  <SelectItem value="credit">{t('expenseForm.credit')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -214,7 +216,7 @@ export function AddExpenseDialog({
             {/* Installments (credit only) */}
             {expense.paymentType === 'credit' && (
               <div className="space-y-1.5">
-                <Label htmlFor="installments">Installments</Label>
+                <Label htmlFor="installments">{t('expenseForm.installments')}</Label>
                 <Input id="installments" type="number" min="1" required disabled={disabled}
                   value={expense.installments}
                   onChange={e => set({ installments: parseInt(e.target.value) || 1 })} />
@@ -226,10 +228,10 @@ export function AddExpenseDialog({
 
           {/* Split strategy */}
           <div className="space-y-1.5">
-            <Label>Split type</Label>
+            <Label>{t('expenseForm.splitType')}</Label>
             <Select value={expense.splitStrategy.type} disabled={disabled}
-              onValueChange={t => {
-                const type = t as SplitStrategy['type'];
+              onValueChange={val => {
+                const type = val as SplitStrategy['type'];
                 set({
                   splitStrategy: {
                     type,
@@ -245,13 +247,13 @@ export function AddExpenseDialog({
               }}>
               <SelectTrigger>
                 <span className="flex-1 text-left">
-                  {{ equal: 'Equal', percentage: 'Percentage', exact: 'Exact amounts' }[expense.splitStrategy.type]}
+                  {{ equal: t('expenseForm.equal'), percentage: t('expenseForm.percentage'), exact: t('expenseForm.exact') }[expense.splitStrategy.type]}
                 </span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="equal">Equal</SelectItem>
-                <SelectItem value="percentage">Percentage</SelectItem>
-                <SelectItem value="exact">Exact amounts</SelectItem>
+                <SelectItem value="equal">{t('expenseForm.equal')}</SelectItem>
+                <SelectItem value="percentage">{t('expenseForm.percentage')}</SelectItem>
+                <SelectItem value="exact">{t('expenseForm.exact')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -260,7 +262,7 @@ export function AddExpenseDialog({
           {expense.splitStrategy.type === 'equal' && (
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">
-                Participants (leave all checked for a full equal split)
+                {t('expenseForm.participants')}
               </Label>
               <div className="flex flex-wrap gap-2">
                 {members.map(m => {
@@ -297,7 +299,7 @@ export function AddExpenseDialog({
           {/* Percentage inputs */}
           {expense.splitStrategy.type === 'percentage' && (
             <div className="space-y-2">
-              <Label>Percentages (must sum to 100)</Label>
+              <Label>{t('expenseForm.percentagesLabel')}</Label>
               {members.map(m => (
                 <div key={m.id} className="flex items-center gap-2">
                   <span className="text-sm w-24 truncate">{m.name}</span>
@@ -322,7 +324,7 @@ export function AddExpenseDialog({
           {/* Exact amount inputs */}
           {expense.splitStrategy.type === 'exact' && (
             <div className="space-y-2">
-              <Label>Exact amounts</Label>
+              <Label>{t('expenseForm.exactLabel')}</Label>
               {members.map(m => (
                 <div key={m.id} className="flex items-center gap-2">
                   <span className="text-sm w-24 truncate">{m.name}</span>
@@ -341,10 +343,10 @@ export function AddExpenseDialog({
               ))}
               <p className={cn('text-xs font-medium', Math.abs(exactRemaining) <= 0.01 ? 'text-settle' : 'text-destructive')}>
                 {Math.abs(exactRemaining) <= 0.01
-                  ? '✓ Amounts add up correctly'
+                  ? t('expenseForm.amountsCorrect')
                   : exactRemaining > 0
-                    ? `$${exactRemaining.toFixed(2)} still unassigned`
-                    : `Over by $${Math.abs(exactRemaining).toFixed(2)}`}
+                    ? t('expenseForm.unassigned', { amount: exactRemaining.toFixed(2) })
+                    : t('expenseForm.overBy', { amount: Math.abs(exactRemaining).toFixed(2) })}
               </p>
             </div>
           )}
@@ -352,10 +354,10 @@ export function AddExpenseDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
           <Button form="expense-form" type="submit" className="bg-brand hover:bg-brand/90 text-white"
             disabled={disabled}>
-            {isEdit ? 'Update expense' : 'Add expense'}
+            {isEdit ? t('expenseForm.update') : t('expenseForm.addExpense')}
           </Button>
         </DialogFooter>
       </DialogContent>
