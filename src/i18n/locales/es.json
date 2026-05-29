@@ -170,6 +170,7 @@
     "sendInvite": "Enviar invitación",
     "sending": "Enviando…",
     "joinLinkTitle": "Link para unirse",
+    "joinLinkDesc": "Creá un link para que cualquiera pueda unirse a este grupo.",
     "copy": "Copiar",
     "rotate": "Rotar",
     "createLink": "Crear link"
@@ -182,6 +183,7 @@
   },
   "profile": {
     "title": "Perfil",
+    "subtitle": "Administrá la configuración y preferencias de tu cuenta",
     "fullName": "Nombre completo",
     "email": "Email",
     "phone": "Teléfono de WhatsApp",
