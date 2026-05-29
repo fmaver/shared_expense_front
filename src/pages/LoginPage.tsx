@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { login, register } from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ interface LoginPageProps {
 
 export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +44,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       onLoginSuccess(res.access_token);
       navigate('/groups');
     } catch {
-      setError('Invalid email or password.');
+      setError(t('auth.invalidCredentials'));
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +52,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (password !== confirmPassword) { setError(t('auth.passwordMismatch')); return; }
     setError(''); setIsLoading(true);
     try {
       await register({ name, email, password, telephone: telephone.trim() || undefined });
@@ -63,7 +65,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       navigate('/groups');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg ?? 'Registration failed. Please try again.');
+      setError(msg ?? t('auth.registrationFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -78,26 +80,26 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Jirens</h1>
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-0.5">
-            Shared Expenses
+            {t('nav.sharedExpenses')}
           </p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
           {/* Google mock */}
           <Button type="button" variant="outline" className="w-full mb-4 font-medium"
-            onClick={() => toast.info('Google login coming soon 🚀')}>
+            onClick={() => toast.info(t('auth.googleSoon'))}>
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
-            Continue with Google
+            {t('auth.continueWithGoogle')}
           </Button>
 
           <div className="flex items-center gap-3 mb-4">
             <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">or</span>
+            <span className="text-xs text-muted-foreground">{t('auth.or')}</span>
             <Separator className="flex-1" />
           </div>
 
@@ -110,12 +112,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           {mode === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <Input id="email" type="email" required autoComplete="email" autoFocus
                   value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative">
                   <Input id="password" type={showPassword ? 'text' : 'password'} required
                     autoComplete="current-password" value={password}
@@ -127,37 +129,37 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 </div>
               </div>
               <Button type="submit" className="w-full bg-brand hover:bg-brand/90 text-white font-semibold" disabled={isLoading}>
-                {isLoading ? 'Signing in…' : 'Sign in'}
+                {isLoading ? t('auth.signingIn') : t('auth.signIn')}
               </Button>
               <p className="text-sm text-center text-muted-foreground">
-                Don't have an account?{' '}
+                {t('auth.noAccount')}{' '}
                 <button type="button" onClick={() => { reset(); setMode('register'); }}
-                  className="text-primary font-medium hover:underline">Create one</button>
+                  className="text-primary font-medium hover:underline">{t('auth.createOne')}</button>
               </p>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name">Full name</Label>
+                <Label htmlFor="name">{t('auth.fullName')}</Label>
                 <Input id="name" required autoComplete="name" autoFocus
                   value={name} onChange={e => setName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="reg-email">Email</Label>
+                <Label htmlFor="reg-email">{t('auth.email')}</Label>
                 <Input id="reg-email" type="email" required autoComplete="email"
                   value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone" className="flex items-center gap-1">
-                  <Phone className="h-3.5 w-3.5" /> WhatsApp phone
-                  <span className="text-muted-foreground font-normal">(optional)</span>
+                  <Phone className="h-3.5 w-3.5" /> {t('auth.whatsappPhone')}
+                  <span className="text-muted-foreground font-normal">{t('auth.optional')}</span>
                 </Label>
                 <Input id="phone" type="tel" placeholder="e.g. 541138718498"
                   value={telephone} onChange={e => setTelephone(e.target.value)} />
-                <p className="text-xs text-muted-foreground">Include country code, no + sign.</p>
+                <p className="text-xs text-muted-foreground">{t('auth.phoneHelp')}</p>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="reg-password">Password</Label>
+                <Label htmlFor="reg-password">{t('auth.password')}</Label>
                 <div className="relative">
                   <Input id="reg-password" type={showPassword ? 'text' : 'password'} required
                     autoComplete="new-password" minLength={6}
@@ -169,18 +171,18 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="confirm">Confirm password</Label>
+                <Label htmlFor="confirm">{t('auth.confirmPassword')}</Label>
                 <Input id="confirm" type={showPassword ? 'text' : 'password'} required
                   autoComplete="new-password" value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)} />
               </div>
               <Button type="submit" className="w-full bg-brand hover:bg-brand/90 text-white font-semibold" disabled={isLoading}>
-                {isLoading ? 'Creating account…' : 'Create account'}
+                {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
               </Button>
               <p className="text-sm text-center text-muted-foreground">
-                Already have an account?{' '}
+                {t('auth.alreadyHaveAccount')}{' '}
                 <button type="button" onClick={() => { reset(); setMode('login'); }}
-                  className="text-primary font-medium hover:underline">Sign in</button>
+                  className="text-primary font-medium hover:underline">{t('auth.signInLink')}</button>
               </p>
             </form>
           )}
