@@ -60,7 +60,7 @@ export function LandingPage() {
               Get started free <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button size="lg" variant="outline"
-              className="border-white/20 text-white hover:bg-white/10 font-semibold px-8"
+              className="border-white/20 bg-transparent text-white hover:bg-white/10 font-semibold px-8"
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}>
               Learn more
             </Button>
