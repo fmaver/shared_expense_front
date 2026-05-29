@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { ArrowUp, ArrowDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
 type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'paymentType' | 'splitStrategy';
@@ -13,18 +14,19 @@ interface ExpenseListHeaderProps {
   onSorted: (sorted: ExpenseResponse[]) => void;
 }
 
-const SORT_FIELDS: { value: SortField; label: string }[] = [
-  { value: 'date',          label: 'Date' },
-  { value: 'amount',        label: 'Amount' },
-  { value: 'description',   label: 'Description' },
-  { value: 'category',      label: 'Category' },
-  { value: 'payer',         label: 'Payer' },
-  { value: 'paymentType',   label: 'Payment type' },
-  { value: 'splitStrategy', label: 'Split type' },
-];
-
 export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHeaderProps) {
+  const { t } = useTranslation();
   const [sortField, setSortField] = useState<SortField>('date');
+
+  const SORT_FIELDS: { value: SortField; label: string }[] = [
+    { value: 'date',          label: t('expenses.sortFields.date') },
+    { value: 'amount',        label: t('expenses.sortFields.amount') },
+    { value: 'description',   label: t('expenses.sortFields.description') },
+    { value: 'category',      label: t('expenses.sortFields.category') },
+    { value: 'payer',         label: t('expenses.sortFields.payer') },
+    { value: 'paymentType',   label: t('expenses.sortFields.paymentType') },
+    { value: 'splitStrategy', label: t('expenses.sortFields.splitStrategy') },
+  ];
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [filterPayer, setFilterPayer] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -68,7 +70,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
     <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-border bg-muted/30">
       {/* Sort field */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">Sort</span>
+        <span className="text-xs text-muted-foreground">{t('expenses.sort')}</span>
         <Select value={sortField} onValueChange={v => setSortField(v as SortField)}>
           <SelectTrigger className="h-7 text-xs w-36 bg-card">
             <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label ?? sortField}</span>
@@ -87,15 +89,15 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
 
       {/* Filter by payer */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">Payer</span>
+        <span className="text-xs text-muted-foreground">{t('expenses.payer')}</span>
         <Select value={filterPayer} onValueChange={setFilterPayer}>
           <SelectTrigger className="h-7 text-xs w-28 bg-card">
             <span className="truncate">
-              {filterPayer === 'all' ? 'All' : members.find(m => m.id.toString() === filterPayer)?.name ?? filterPayer}
+              {filterPayer === 'all' ? t('expenses.all') : members.find(m => m.id.toString() === filterPayer)?.name ?? filterPayer}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">All</SelectItem>
+            <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
             {members.map(m => (
               <SelectItem key={m.id} value={m.id.toString()} className="text-xs">{m.name}</SelectItem>
             ))}
@@ -105,13 +107,13 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
 
       {/* Filter by category */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">Category</span>
+        <span className="text-xs text-muted-foreground">{t('expenses.category')}</span>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="h-7 text-xs w-36 bg-card">
-            <span className="truncate capitalize">{filterCategory === 'all' ? 'All' : filterCategory}</span>
+            <span className="truncate capitalize">{filterCategory === 'all' ? t('expenses.all') : filterCategory}</span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">All</SelectItem>
+            <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
             {categories.map(c => (
               <SelectItem key={c} value={c} className="text-xs capitalize">{c}</SelectItem>
             ))}

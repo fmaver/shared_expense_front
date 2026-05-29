@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGroups } from '@/hooks/useGroups';
 import { useTheme } from '@/hooks/useTheme';
 import { Separator } from '@/components/ui/separator';
@@ -27,6 +28,13 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
   const navigate = useNavigate();
   const { data: groups = [] } = useGroups();
   const { theme, toggle } = useTheme();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language.startsWith('es') ? 'es' : 'en';
+  const toggleLang = () => {
+    const next = currentLang === 'en' ? 'es' : 'en';
+    i18n.changeLanguage(next);
+    localStorage.setItem('language', next);
+  };
   const { initials, name } = getInitials(localStorage.getItem('token'));
 
   const go = (to: string) => { navigate(to); onNavigate?.(); };
@@ -82,9 +90,17 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             type="button"
+            onClick={toggleLang}
+            className="h-7 px-1.5 rounded-md text-[11px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+            aria-label="Switch language"
+          >
+            {t('language')}
+          </button>
+          <button
+            type="button"
             onClick={toggle}
             className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Toggle theme"
+            aria-label={t('nav.toggleTheme')}
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
@@ -92,7 +108,7 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
             type="button"
             onClick={onLogout}
             className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Logout"
+            aria-label={t('nav.logout')}
           >
             <LogOut className="h-4 w-4" />
           </button>

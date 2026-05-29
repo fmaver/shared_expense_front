@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
 import {
@@ -22,6 +23,7 @@ import { Plus, ArrowLeftRight } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 
 export function ExpensesDashboard() {
+  const { t } = useTranslation();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
 
@@ -35,6 +37,7 @@ export function ExpensesDashboard() {
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
   const [isSettling, setIsSettling] = useState(false);
   const [isUnsettling, setIsUnsettling] = useState(false);
+  const [showSettleConfirm, setShowSettleConfirm] = useState(false);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -52,7 +55,7 @@ export function ExpensesDashboard() {
     setPendingExpense(null);
     setDuplicates([]);
     refetch();
-    toast.success('Expense added');
+    toast.success(t('toasts.expenseAdded'));
   };
 
   const handleCreate = async (data: ExpenseCreate) => {
@@ -65,11 +68,11 @@ export function ExpensesDashboard() {
   const handleUpdate = async (data: ExpenseCreate) => {
     if (!editingExpense) return;
     const { data: result, error } = await updateExpense(groupId, editingExpense.id, data);
-    if (error || !result) { toast.error(error ?? 'Failed to update'); return; }
+    if (error || !result) { toast.error(error ?? t('toasts.failedDelete')); return; }
     setEditingExpense(null);
     setShowAdd(false);
     refetch();
-    toast.success('Expense updated');
+    toast.success(t('toasts.expenseUpdated'));
   };
 
   const handleDelete = async (expense: ExpenseResponse) => {
@@ -79,9 +82,9 @@ export function ExpensesDashboard() {
       : 'Delete this expense?';
     if (!window.confirm(msg)) return;
     const { success, error } = await deleteExpense(groupId, id);
-    if (!success) { toast.error(error ?? 'Failed to delete'); return; }
+    if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
     refetch();
-    toast.success('Expense deleted');
+    toast.success(t('toasts.expenseDeleted'));
   };
 
   const handleSettle = async () => {
@@ -90,9 +93,9 @@ export function ExpensesDashboard() {
       const result = await settleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to settle');
       refetch();
-      toast.success('Month settled');
+      toast.success(t('toasts.monthSettled'));
     } catch {
-      toast.error('Failed to settle');
+      toast.error(t('toasts.failedSettle'));
     } finally {
       setIsSettling(false);
     }
@@ -104,9 +107,9 @@ export function ExpensesDashboard() {
       const result = await unsettleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to reopen');
       refetch();
-      toast.success('Month reopened');
+      toast.success(t('toasts.monthReopened'));
     } catch {
-      toast.error('Failed to reopen');
+      toast.error(t('toasts.failedReopen'));
     } finally {
       setIsUnsettling(false);
     }
@@ -116,7 +119,7 @@ export function ExpensesDashboard() {
     try {
       await downloadMonthlyPdf(groupId, year, month);
     } catch {
-      toast.error('Failed to export PDF');
+      toast.error(t('toasts.failedExport'));
     }
   };
 
@@ -135,7 +138,8 @@ export function ExpensesDashboard() {
           balances={monthlyData.balances}
           members={members}
           isSettled={isSettled}
-          onSettle={handleSettle} isSettling={isSettling}
+          onSettleRequest={() => setShowSettleConfirm(true)}
+          isSettling={isSettling}
           onUnsettle={handleUnsettle} isUnsettling={isUnsettling}
           expenses={expenses}
         />
@@ -143,19 +147,19 @@ export function ExpensesDashboard() {
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold text-foreground">Expenses</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t('expenses.title')}</h3>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground"
               onClick={handleExportPDF}>
-              Export PDF
+              {t('expenses.exportPdf')}
             </Button>
             <Button size="sm" variant="outline" className="h-7 px-2.5 text-xs"
               onClick={() => { setShowTransfer(true); setShowAdd(false); }}>
-              <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" /> Transfer
+              <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" /> {t('expenses.transfer')}
             </Button>
             <Button size="sm" className="h-7 px-2.5 text-xs bg-brand hover:bg-brand/90 text-white"
               onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); }}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" /> Add
+              <Plus className="h-3.5 w-3.5 mr-1.5" /> {t('expenses.add')}
             </Button>
           </div>
         </div>
@@ -163,7 +167,7 @@ export function ExpensesDashboard() {
         {loadingExpenses ? (
           <div className="p-4 space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}</div>
         ) : expenses.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">No expenses this month.</div>
+          <div className="py-12 text-center text-sm text-muted-foreground">{t('expenses.noExpenses')}</div>
         ) : (
           <>
             <ExpenseListHeader expenses={expenses} members={members} onSorted={handleSorted} />
@@ -193,9 +197,9 @@ export function ExpensesDashboard() {
 
       <Dialog open={duplicates.length > 0} onOpenChange={(isOpen) => { if (!isOpen) { setPendingExpense(null); setDuplicates([]); } }}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>Similar expense found</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('expenses.duplicateTitle')}</DialogTitle></DialogHeader>
           <div className="text-sm space-y-1 text-muted-foreground">
-            <p>A similar expense already exists this month:</p>
+            <p>{t('expenses.duplicateDesc')}</p>
             {duplicates[0] && (
               <div className="mt-2 bg-muted rounded-lg p-3 text-foreground space-y-0.5">
                 <p className="font-medium">{duplicates[0].description}</p>
@@ -204,13 +208,37 @@ export function ExpensesDashboard() {
                 </p>
               </div>
             )}
-            <p className="mt-2">Add anyway?</p>
+            <p className="mt-2">{t('expenses.addAnywayQuestion')}</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setPendingExpense(null); setDuplicates([]); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setPendingExpense(null); setDuplicates([]); }}>{t('expenses.cancel')}</Button>
             <Button className="bg-brand hover:bg-brand/90 text-white"
               onClick={async () => { if (pendingExpense) await submitExpense(pendingExpense); }}>
-              Yes, add it
+              {t('expenses.addAnyway')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settle confirmation dialog */}
+      <Dialog open={showSettleConfirm} onOpenChange={(isOpen) => { if (!isOpen) setShowSettleConfirm(false); }}>
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              {t('balance.settleConfirmTitle', { month: new Date(year, month - 1).toLocaleString('default', { month: 'long' }), year })}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t('balance.settleConfirmDesc')}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSettleConfirm(false)}>{t('common.cancel')}</Button>
+            <Button
+              className="cursor-pointer"
+              style={{ backgroundColor: '#4CAF50', color: 'white' }}
+              onClick={async () => { setShowSettleConfirm(false); await handleSettle(); }}
+            >
+              {t('balance.settleUp')}
             </Button>
           </DialogFooter>
         </DialogContent>

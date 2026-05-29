@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ interface CreateGroupDialogProps {
 }
 
 export function CreateGroupDialog({ open, onOpenChange, onCreated }: CreateGroupDialogProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,18 +39,18 @@ export function CreateGroupDialog({ open, onOpenChange, onCreated }: CreateGroup
   return (
     <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen)}>
       <DialogContent className="sm:max-w-sm">
-        <DialogHeader><DialogTitle>New group</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t('groups.dialog.title')}</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="groupName">Group name</Label>
-            <Input id="groupName" required autoFocus placeholder="e.g. Casa, Viaje 2026"
+            <Label htmlFor="groupName">{t('groups.dialog.nameLabel')}</Label>
+            <Input id="groupName" required autoFocus placeholder={t('groups.dialog.namePlaceholder')}
               value={name} onChange={e => setName(e.target.value)} />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
             <Button type="submit" className="bg-brand hover:bg-brand/90 text-white" disabled={isLoading}>
-              {isLoading ? 'Creating…' : 'Create group'}
+              {isLoading ? t('groups.dialog.creating') : t('groups.dialog.create')}
             </Button>
           </DialogFooter>
         </form>

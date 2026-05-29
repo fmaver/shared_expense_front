@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, updateProfile, updatePassword, NotificationType } from '@/api/auth';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 
 export function ProfilePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -81,7 +83,7 @@ export function ProfilePage() {
         telephone,
         notification_preference: notificationPreference,
       });
-      toast.success('Profile updated successfully');
+      toast.success(t('toasts.profileUpdated'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
@@ -108,7 +110,7 @@ export function ProfilePage() {
         current_password: currentPassword,
         new_password: newPassword,
       });
-      toast.success('Password updated successfully');
+      toast.success(t('toasts.passwordChanged'));
       setOpenPasswordDialog(false);
       setCurrentPassword('');
       setNewPassword('');
@@ -140,7 +142,7 @@ export function ProfilePage() {
     <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">Profile</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('profile.title')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage your account settings and preferences
         </p>
@@ -152,7 +154,7 @@ export function ProfilePage() {
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">
-              Name
+              {t('profile.fullName')}
             </Label>
             <Input
               id="name"
@@ -168,7 +170,7 @@ export function ProfilePage() {
           {/* Email */}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">
-              Email
+              {t('profile.email')}
             </Label>
             <Input
               id="email"
@@ -184,7 +186,7 @@ export function ProfilePage() {
           {/* Telephone */}
           <div className="space-y-2">
             <Label htmlFor="telephone" className="text-sm font-medium">
-              WhatsApp Phone Number {notificationPreference === 'WHATSAPP' && <span className="text-destructive">*</span>}
+              {t('profile.phone')} {notificationPreference === 'WHATSAPP' && <span className="text-destructive">*</span>}
             </Label>
             <Input
               id="telephone"
@@ -204,7 +206,7 @@ export function ProfilePage() {
           {/* Notification Preference */}
           <div className="space-y-2">
             <Label htmlFor="notification-preference" className="text-sm font-medium">
-              Notification Preference
+              {t('profile.notifPref')}
             </Label>
             <Select
               value={notificationPreference}
@@ -214,9 +216,9 @@ export function ProfilePage() {
                 <SelectValue placeholder="Select notification method" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="NONE">No Notifications</SelectItem>
-                <SelectItem value="EMAIL">Email</SelectItem>
-                <SelectItem value="WHATSAPP">WhatsApp</SelectItem>
+                <SelectItem value="NONE">{t('profile.notifNone')}</SelectItem>
+                <SelectItem value="EMAIL">{t('profile.notifEmail')}</SelectItem>
+                <SelectItem value="WHATSAPP">{t('profile.notifWhatsapp')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -228,7 +230,7 @@ export function ProfilePage() {
           disabled={isSaving}
           className="bg-brand hover:bg-brand/90 text-white w-full"
         >
-          {isSaving ? 'Saving…' : 'Update Profile'}
+          {isSaving ? t('profile.saving') : t('profile.saveProfile')}
         </Button>
       </form>
 
@@ -237,14 +239,14 @@ export function ProfilePage() {
 
       {/* Change Password Section */}
       <div>
-        <h2 className="text-sm font-semibold text-foreground mb-3">Security</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-3">{t('profile.changePassword')}</h2>
         <Button
           type="button"
           variant="outline"
           className="w-full"
           onClick={() => setOpenPasswordDialog(true)}
         >
-          Change Password
+          {t('profile.changePasswordBtn')}
         </Button>
       </div>
 
@@ -252,13 +254,13 @@ export function ProfilePage() {
       <Dialog open={openPasswordDialog} onOpenChange={setOpenPasswordDialog}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>{t('profile.changePassword')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             {/* Current Password */}
             <div className="space-y-2">
               <Label htmlFor="current-password" className="text-sm font-medium">
-                Current Password
+                {t('profile.currentPassword')}
               </Label>
               <div className="relative">
                 <Input
@@ -287,7 +289,7 @@ export function ProfilePage() {
             {/* New Password */}
             <div className="space-y-2">
               <Label htmlFor="new-password" className="text-sm font-medium">
-                New Password
+                {t('profile.newPassword')}
               </Label>
               <div className="relative">
                 <Input
@@ -316,7 +318,7 @@ export function ProfilePage() {
             {/* Confirm New Password */}
             <div className="space-y-2">
               <Label htmlFor="confirm-password" className="text-sm font-medium">
-                Confirm New Password
+                {t('profile.confirmNewPassword')}
               </Label>
               <div className="relative">
                 <Input
@@ -348,14 +350,14 @@ export function ProfilePage() {
                 variant="outline"
                 onClick={() => setOpenPasswordDialog(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={isChangingPassword}
                 className="bg-brand hover:bg-brand/90 text-white"
               >
-                {isChangingPassword ? 'Updating…' : 'Update Password'}
+                {isChangingPassword ? t('profile.changingPassword') : t('profile.changePasswordBtn')}
               </Button>
             </DialogFooter>
           </form>

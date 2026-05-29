@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ interface TransferDialogProps {
 }
 
 export function TransferDialog({ open, onOpenChange, onSubmit, members }: TransferDialogProps) {
+  const { t } = useTranslation();
   const [payerId, setPayerId] = useState<number>(members[0]?.id ?? 0);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -59,12 +61,12 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members }: Transf
   return (
     <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen)}>
       <DialogContent className="sm:max-w-sm">
-        <DialogHeader><DialogTitle>Money transfer</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t('transfer.title')}</DialogTitle></DialogHeader>
         <form id="transfer-form" onSubmit={handleSubmit} className="space-y-4 py-1">
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="space-y-1.5">
-            <Label htmlFor="transfer-payer">Payer</Label>
+            <Label htmlFor="transfer-payer">{t('transfer.lender')}</Label>
             <Select value={String(payerId)} onValueChange={v => setPayerId(parseInt(v))}>
               <SelectTrigger id="transfer-payer">
                 <span className="flex-1 text-left truncate">
@@ -78,26 +80,26 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members }: Transf
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="transfer-amount">Amount</Label>
+            <Label htmlFor="transfer-amount">{t('transfer.amount')}</Label>
             <Input id="transfer-amount" type="number" step="0.01" min="0" required
               placeholder="e.g. 5000" value={amount} onChange={e => setAmount(e.target.value)} />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="transfer-description">Description</Label>
+            <Label htmlFor="transfer-description">{t('transfer.description')}</Label>
             <Input id="transfer-description" type="text" maxLength={255} required
               placeholder="e.g. Dinner" value={description} onChange={e => setDescription(e.target.value)} />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="transfer-date">Date</Label>
+            <Label htmlFor="transfer-date">{t('transfer.date')}</Label>
             <Input id="transfer-date" type="date" required value={date} onChange={e => setDate(e.target.value)} />
           </div>
         </form>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
           <Button form="transfer-form" type="submit" className="bg-brand hover:bg-brand/90 text-white" disabled={isLoading}>
-            {isLoading ? 'Saving…' : 'Save transfer'}
+            {isLoading ? t('transfer.saving') : t('transfer.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

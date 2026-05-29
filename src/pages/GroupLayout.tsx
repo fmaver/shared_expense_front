@@ -1,19 +1,21 @@
 import React from 'react';
 import { Outlet, NavLink, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGroup } from '@/hooks/useGroups';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const TABS = [
-  { label: 'Expenses', path: '' },
-  { label: 'Members',  path: 'members' },
-  { label: 'Settings', path: 'settings' },
-];
 
 export function GroupLayout() {
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
   const { data: group, isLoading } = useGroup(groupId);
+  const { t } = useTranslation();
+
+  const TABS = [
+    { label: t('tabs.expenses'), path: '' },
+    { label: t('tabs.members'),  path: 'members' },
+    { label: t('tabs.settings'), path: 'settings' },
+  ];
 
   return (
     <div className="flex flex-col h-full">

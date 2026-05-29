@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ interface InviteDialogProps {
 }
 
 export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteDialogProps) {
+  const { t } = useTranslation();
   const [channel, setChannel] = useState<InvitationChannel>('email');
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
@@ -54,7 +56,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
         channel,
         contact: contact.trim(),
       });
-      toast.success('Invitation sent!');
+      toast.success(t('toasts.invitationSent'));
       reset();
       onInvited();
       onOpenChange(false);
@@ -69,7 +71,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
     <Dialog open={open} onOpenChange={(isOpen) => handleOpenChange(isOpen)}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Invite member</DialogTitle>
+          <DialogTitle>{t('members.inviteTitle')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -85,21 +87,21 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="inviteChannel">Send via</Label>
+            <Label htmlFor="inviteChannel">{t('members.channel')}</Label>
             <Select value={channel} onValueChange={(v) => setChannel(v as InvitationChannel)}>
               <SelectTrigger id="inviteChannel" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="phone">WhatsApp / Phone</SelectItem>
+                <SelectItem value="email">{t('members.emailChannel')}</SelectItem>
+                <SelectItem value="phone">{t('members.whatsappChannel')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="inviteContact">
-              {channel === 'email' ? 'Email address' : 'Phone number'}
+              {channel === 'email' ? t('members.emailAddress') : t('members.phoneNumber')}
             </Label>
             <Input
               id="inviteContact"
@@ -113,7 +115,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
             />
             {channel === 'phone' && (
               <p className="text-xs text-muted-foreground">
-                Include country code, e.g. 541138718498
+                {t('members.phoneHelp')}
               </p>
             )}
           </div>
@@ -124,14 +126,14 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
               variant="outline"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               className="bg-brand hover:bg-brand/90 text-white"
               disabled={isLoading || !name.trim() || !contact.trim()}
             >
-              {isLoading ? 'Sending…' : 'Send invite'}
+              {isLoading ? t('members.sending') : t('members.sendInvite')}
             </Button>
           </DialogFooter>
         </form>
