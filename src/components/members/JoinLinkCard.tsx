@@ -69,7 +69,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
       {!joinLink ? (
         <div>
           <p className="text-sm text-muted-foreground mb-3">
-            Create a shareable link that lets anyone join this group.
+            {t('members.joinLinkDesc')}
           </p>
           <Button
             size="sm"

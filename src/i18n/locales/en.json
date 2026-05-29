@@ -170,6 +170,7 @@
     "sendInvite": "Send invite",
     "sending": "Sending…",
     "joinLinkTitle": "Shareable join link",
+    "joinLinkDesc": "Create a shareable link that lets anyone join this group.",
     "copy": "Copy",
     "rotate": "Rotate",
     "createLink": "Create join link"
@@ -182,6 +183,7 @@
   },
   "profile": {
     "title": "Profile",
+    "subtitle": "Manage your account settings and preferences",
     "fullName": "Full name",
     "email": "Email",
     "phone": "WhatsApp phone",
