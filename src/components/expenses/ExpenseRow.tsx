@@ -3,21 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Pen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, capitalize, formatDate } from '@/utils/format';
+import { useCategories } from '@/hooks/useCategories';
 import type { ExpenseResponse, Member } from '@/types/expense';
-
-// Static emoji map for known categories (backend list is static)
-const CATEGORY_EMOJI: Record<string, string> = {
-  comida: '🍽️',
-  supermercado: '🛒',
-  entretenimiento: '🎮',
-  servicios: '⚡',
-  transporte: '🚗',
-  viajes: '✈️',
-  salud: '🏥',
-  otros: '📦',
-  balance: '⚖️',
-  prestamo: '💰',
-};
 
 const SPLIT_BADGE: Record<string, string> = {
   equal:      'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
@@ -44,6 +31,8 @@ function memberName(members: Member[], id: number) {
 
 export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
+  const { data: categories = [] } = useCategories();
+  const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji;
 
   const splitLabel = (() => {
     if (expense.splitStrategy.type === 'equal' && expense.splitStrategy.participantIds?.length) {
@@ -54,10 +43,10 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete }: Ex
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group">
-      {/* Category icon — emoji from static map, first 2 letters as fallback */}
+      {/* Category icon — emoji from API, first 2 letters as fallback */}
       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-        {CATEGORY_EMOJI[expense.category]
-          ? <span className="text-lg leading-none">{CATEGORY_EMOJI[expense.category]}</span>
+        {categoryEmoji
+          ? <span className="text-lg leading-none">{categoryEmoji}</span>
           : <span className="text-xs font-bold text-muted-foreground uppercase">{expense.category.slice(0, 2)}</span>
         }
       </div>
