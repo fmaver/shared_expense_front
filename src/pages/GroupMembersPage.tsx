@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -34,6 +35,7 @@ function formatDate(iso: string) {
 }
 
 export function GroupMembersPage() {
+  const { t } = useTranslation();
   const { groupId: groupIdParam } = useParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam!, 10);
   const navigate = useNavigate();
@@ -82,7 +84,7 @@ export function GroupMembersPage() {
     try {
       await revokeInvitation(groupId, token);
       setInvitations((prev) => prev.filter((i) => i.id !== inv.id));
-      toast.success('Invitation revoked');
+      toast.success(t('toasts.invitationRevoked'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to revoke invitation');
     }
@@ -92,7 +94,7 @@ export function GroupMembersPage() {
     setIsLeaving(true);
     try {
       await leaveGroup(groupId);
-      toast.success('You have left the group');
+      toast.success(t('toasts.leftGroup'));
       navigate('/');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to leave group');
@@ -105,14 +107,14 @@ export function GroupMembersPage() {
     <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Members</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('members.title')}</h1>
         <Button
           size="sm"
           className="bg-brand hover:bg-brand/90 text-white"
           onClick={() => setShowInvite(true)}
         >
           <UserPlus className="h-4 w-4 mr-1.5" />
-          Invite
+          {t('members.invite')}
         </Button>
       </div>
 
@@ -144,7 +146,7 @@ export function GroupMembersPage() {
                   </p>
                   {member.isStub && (
                     <span className="inline-flex items-center text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                      Pending
+                      {t('members.pending')}
                     </span>
                   )}
                 </div>
@@ -163,7 +165,7 @@ export function GroupMembersPage() {
       {/* Pending invitations */}
       {(invitationsLoading || invitations.length > 0) && (
         <div className="bg-card border border-border rounded-xl p-5">
-          <h3 className="font-semibold text-foreground text-sm mb-3">Pending invitations</h3>
+          <h3 className="font-semibold text-foreground text-sm mb-3">{t('members.pendingInvitations')}</h3>
           {invitationsLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-10 w-full" />
@@ -207,7 +209,7 @@ export function GroupMembersPage() {
           onClick={() => setShowLeaveConfirm(true)}
         >
           <LogOut className="h-4 w-4 mr-1.5" />
-          Leave group
+          {t('members.leaveGroup')}
         </Button>
       </div>
 
@@ -223,22 +225,21 @@ export function GroupMembersPage() {
       <Dialog open={showLeaveConfirm} onOpenChange={(isOpen) => setShowLeaveConfirm(isOpen)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Leave group?</DialogTitle>
+            <DialogTitle>{t('members.leaveTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            You will lose access to this group's expenses and history. This action
-            cannot be undone if you have a non-zero balance.
+            {t('members.leaveDesc')}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLeaveConfirm(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleLeave}
               disabled={isLeaving}
             >
-              {isLeaving ? 'Leaving…' : 'Leave group'}
+              {isLeaving ? t('members.leaving') : t('members.leaveGroup')}
             </Button>
           </DialogFooter>
         </DialogContent>

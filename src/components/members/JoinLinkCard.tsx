@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,6 +18,7 @@ interface JoinLinkCardProps {
 }
 
 export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
+  const { t } = useTranslation();
   const [joinLink, setJoinLink] = useState<GroupJoinLink | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -38,6 +40,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
     if (!joinLink) return;
     navigator.clipboard.writeText(joinLink.url).then(() => {
       setCopied(true);
+      toast.success(t('toasts.linkCopied'));
       setTimeout(() => setCopied(false), 2000);
     });
   };
@@ -48,7 +51,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
     try {
       const link = await rotateJoinLink(groupId);
       setJoinLink(link);
-      toast.success('Join link rotated. The old link is now invalid.');
+      toast.success(t('toasts.linkRotated'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to rotate join link');
     } finally {
@@ -60,7 +63,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
     <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center gap-2 mb-3">
         <Link className="h-4 w-4 text-brand" />
-        <h3 className="font-semibold text-foreground text-sm">Share link</h3>
+        <h3 className="font-semibold text-foreground text-sm">{t('members.joinLinkTitle')}</h3>
       </div>
 
       {!joinLink ? (
@@ -74,7 +77,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
             onClick={handleGetLink}
             disabled={isLoading}
           >
-            {isLoading ? 'Loading…' : 'Get share link'}
+            {isLoading ? t('common.loading') : t('members.createLink')}
           </Button>
         </div>
       ) : (
@@ -114,7 +117,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
               disabled={isLoading}
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-              Rotate link
+              {t('members.rotate')}
             </Button>
           </div>
         </div>
@@ -132,13 +135,13 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRotateConfirm(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               className="bg-orange-500 hover:bg-orange-600 text-white"
               onClick={handleRotate}
             >
-              Rotate link
+              {t('members.rotate')}
             </Button>
           </DialogFooter>
         </DialogContent>

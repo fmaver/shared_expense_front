@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGroup } from '@/hooks/useGroups';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { toast } from 'sonner';
 import { LogOut } from 'lucide-react';
 
 export function GroupSettingsPage() {
+  const { t } = useTranslation();
   const { groupId: groupIdParam } = useParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam!, 10);
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ export function GroupSettingsPage() {
     setIsRenaming(true);
     try {
       await updateGroupName(groupId, name.trim());
-      toast.success('Group renamed successfully');
+      toast.success(t('toasts.groupRenamed'));
       setName('');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to rename group');
@@ -47,7 +49,7 @@ export function GroupSettingsPage() {
     setIsLeaving(true);
     try {
       await leaveGroup(groupId);
-      toast.success('You have left the group');
+      toast.success(t('toasts.leftGroup'));
       navigate('/');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to leave group');
@@ -80,7 +82,7 @@ export function GroupSettingsPage() {
         <form onSubmit={handleRename} className="space-y-3">
           <div>
             <Label htmlFor="group-name" className="text-xs font-medium text-muted-foreground mb-1 block">
-              Current name: <span className="font-semibold text-foreground">{group?.name}</span>
+              {t('settings.groupName')}: <span className="font-semibold text-foreground">{group?.name}</span>
             </Label>
             <Input
               id="group-name"
@@ -96,7 +98,7 @@ export function GroupSettingsPage() {
             disabled={isRenaming || !name.trim()}
             className="bg-brand hover:bg-brand/90 text-white w-full"
           >
-            {isRenaming ? 'Saving…' : 'Save'}
+            {isRenaming ? t('settings.saving') : t('settings.save')}
           </Button>
         </form>
       </div>
@@ -108,7 +110,7 @@ export function GroupSettingsPage() {
       <div className="pt-2">
         <div className="border-t border-destructive/20 pt-6">
           <h2 className="font-semibold text-foreground text-sm mb-3 text-destructive">
-            Danger zone
+            {t('settings.dangerZone')}
           </h2>
           <Button
             variant="ghost"
@@ -117,7 +119,7 @@ export function GroupSettingsPage() {
             onClick={() => setShowLeaveConfirm(true)}
           >
             <LogOut className="h-4 w-4 mr-1.5" />
-            Leave group
+            {t('members.leaveGroup')}
           </Button>
         </div>
       </div>
@@ -126,22 +128,21 @@ export function GroupSettingsPage() {
       <Dialog open={showLeaveConfirm} onOpenChange={(isOpen) => setShowLeaveConfirm(isOpen)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Leave {group?.name}?</DialogTitle>
+            <DialogTitle>{t('members.leaveTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            You will lose access to this group's expenses and history. You can only leave
-            if your balance is settled.
+            {t('members.leaveDesc')}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLeaveConfirm(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleLeave}
               disabled={isLeaving}
             >
-              {isLeaving ? 'Leaving…' : 'Leave group'}
+              {isLeaving ? t('members.leaving') : t('members.leaveGroup')}
             </Button>
           </DialogFooter>
         </DialogContent>
