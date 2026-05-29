@@ -97,6 +97,7 @@
     "noExpenses": "No expenses this month.",
     "duplicateTitle": "Similar expense found",
     "duplicateDesc": "A similar expense already exists this month:",
+    "addAnywayQuestion": "Add anyway?",
     "addAnyway": "Yes, add it",
     "cancel": "Cancel",
     "sort": "Sort",

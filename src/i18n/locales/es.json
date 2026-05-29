@@ -97,6 +97,7 @@
     "noExpenses": "Sin gastos este mes.",
     "duplicateTitle": "Gasto similar encontrado",
     "duplicateDesc": "Ya existe un gasto similar este mes:",
+    "addAnywayQuestion": "¿Agregar igual?",
     "addAnyway": "Sí, agregar igual",
     "cancel": "Cancelar",
     "sort": "Ordenar",

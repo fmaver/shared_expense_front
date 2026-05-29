@@ -208,7 +208,7 @@ export function ExpensesDashboard() {
                 </p>
               </div>
             )}
-            <p className="mt-2">Add anyway?</p>
+            <p className="mt-2">{t('expenses.addAnywayQuestion')}</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setPendingExpense(null); setDuplicates([]); }}>{t('expenses.cancel')}</Button>
