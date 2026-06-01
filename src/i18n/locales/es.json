@@ -262,6 +262,12 @@
     "variableIncomeTitle": "Ingresos variables",
     "addVariableDesc": "Agregar un ingreso puntual para este mes",
     "noIncome": "Sin ingresos registrados este mes.",
-    "viewInGroup": "Ver en grupo"
+    "viewInGroup": "Ver en grupo",
+    "recurringTitle": "Ingreso recurrente",
+    "recurringDesc": "Se repite automáticamente cada mes (sueldo, alquiler, etc.)",
+    "variableTitle": "Ingreso puntual",
+    "variableDesc": "Solo para este mes (freelance, bono, regalo, etc.)",
+    "add": "Agregar",
+    "personalExpenses": "Gastos personales"
   }
 }

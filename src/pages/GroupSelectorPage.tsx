@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGroups } from '@/hooks/useGroups';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
@@ -10,9 +10,10 @@ import type { Group } from '@/types/expense';
 
 export function GroupSelectorPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useTranslation();
   const { data: groups = [], isLoading, error } = useGroups();
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(searchParams.get('new') === '1');
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
