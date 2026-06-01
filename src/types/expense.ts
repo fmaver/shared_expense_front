@@ -106,3 +106,76 @@ export interface Group {
   createdAt?: string | null;
   members: GroupMember[];
 }
+
+// Personal income types
+export interface RecurringIncomeResponse {
+  id: number;
+  ownerMemberId: number;
+  personalGroupId: number;
+  label: string;
+  amount: number;
+  active: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface IncomeInstanceResponse {
+  id: number;
+  personalGroupId: number;
+  ownerMemberId: number;
+  year: number;
+  month: number;
+  source: 'recurring' | 'variable';
+  recurringIncomeId?: number | null;
+  label: string;
+  amount: number;
+}
+
+export interface MirroredShareItem {
+  sourceGroupId: number;
+  sourceGroupName: string;
+  sourceExpenseId: number;
+  description: string;
+  category: string;
+  date: string;
+  shareAmount: number;
+  status: 'pending' | 'realized';
+}
+
+export interface PersonalLedgerResponse {
+  year: number;
+  month: number;
+  totalIncome: number;
+  incomes: IncomeInstanceResponse[];
+  totalPersonalExpenses: number;
+  personalExpenses: ExpenseResponse[];
+  totalSharesPending: number;
+  totalSharesRealized: number;
+  mirroredShares: MirroredShareItem[];
+  projectedBalance: number;
+  realizedBalance: number;
+  pendingSettlementsTotal: number;
+}
+
+export interface RecurringIncomeCreate {
+  label: string;
+  amount: number;
+}
+
+export interface RecurringIncomeUpdate {
+  label?: string;
+  amount?: number;
+  active?: boolean;
+}
+
+export interface VariableIncomeCreate {
+  year: number;
+  month: number;
+  label: string;
+  amount: number;
+}
+
+export interface VariableIncomeUpdate {
+  label?: string;
+  amount?: number;
+}
