@@ -5,7 +5,8 @@
     "newGroup": "New group",
     "profile": "Profile",
     "toggleTheme": "Toggle theme",
-    "logout": "Logout"
+    "logout": "Logout",
+    "personal": "Personal"
   },
   "landing": {
     "nav": { "features": "Features", "signIn": "Sign in", "getStarted": "Get started" },
@@ -232,5 +233,35 @@
     "save": "Save",
     "loading": "Loading…"
   },
-  "language": "ES"
+  "language": "ES",
+  "personal": {
+    "title": "Personal Finance",
+    "subtitle": "Track your income and spending across all groups",
+    "salary": "Salary",
+    "income": "Income",
+    "addSalary": "Add salary",
+    "editSalary": "Edit salary",
+    "addVariable": "Add income",
+    "totalIncome": "Total income",
+    "totalExpenses": "Personal expenses",
+    "projectedBalance": "Projected balance",
+    "realizedBalance": "Realized balance",
+    "pendingSettlements": "Pending settlements",
+    "mirroredShares": "Shared group expenses",
+    "noShares": "No shared expenses this month",
+    "pending": "Pending",
+    "realized": "Settled",
+    "fromGroup": "from {{groupName}}",
+    "salaryLabel": "Label",
+    "salaryAmount": "Amount",
+    "saveSalary": "Save",
+    "cancel": "Cancel",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate": "Deactivate",
+    "variableIncomeTitle": "Variable income",
+    "addVariableDesc": "Add a one-off income for this month",
+    "noIncome": "No income recorded this month.",
+    "viewInGroup": "View in group"
+  }
 }

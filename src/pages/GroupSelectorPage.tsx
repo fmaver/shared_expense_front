@@ -5,7 +5,7 @@ import { useGroups } from '@/hooks/useGroups';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRight, Plus, Users } from 'lucide-react';
+import { ChevronRight, Plus, Users, User } from 'lucide-react';
 import type { Group } from '@/types/expense';
 
 export function GroupSelectorPage() {
@@ -24,6 +24,23 @@ export function GroupSelectorPage() {
       </div>
 
       {error && <div className="bg-destructive/10 text-destructive text-sm rounded-lg px-4 py-3 mb-4">{t('groups.failedToFetch')}</div>}
+
+      {/* Personal Finance section */}
+      <div className="mb-6">
+        <button onClick={() => navigate('/personal')}
+          className="w-full bg-card border border-brand/20 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-brand/50 hover:bg-accent/50 transition-colors text-left">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-brand/10 flex items-center justify-center">
+              <User className="h-4 w-4 text-brand" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground text-sm">{t('personal.title')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('personal.subtitle')}</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        </button>
+      </div>
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
