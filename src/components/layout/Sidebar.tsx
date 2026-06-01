@@ -70,7 +70,7 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
             </NavLink>
           ))}
         </nav>
-        <button onClick={() => go('/groups')}
+        <button onClick={() => go('/groups?new=1')}
           className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-primary hover:bg-accent w-full mt-1">
           <Plus className="h-3.5 w-3.5" /> New group
         </button>

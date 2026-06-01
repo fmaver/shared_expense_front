@@ -48,14 +48,14 @@ export async function getPersonalLedger(year: number, month: number): Promise<Pe
 // Recurring income
 
 export async function listRecurringIncomes(): Promise<RecurringIncomeResponse[]> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/recurring-incomes`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring`, {
     headers: authHeaders(),
   });
   return handleResponse<RecurringIncomeResponse[]>(response);
 }
 
 export async function createRecurringIncome(data: RecurringIncomeCreate): Promise<RecurringIncomeResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/recurring-incomes`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(data),
@@ -68,7 +68,7 @@ export async function createRecurringIncome(data: RecurringIncomeCreate): Promis
 }
 
 export async function updateRecurringIncome(id: number, data: RecurringIncomeUpdate): Promise<RecurringIncomeResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/recurring-incomes/${id}`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify(data),
@@ -77,7 +77,7 @@ export async function updateRecurringIncome(id: number, data: RecurringIncomeUpd
 }
 
 export async function deleteRecurringIncome(id: number): Promise<RecurringIncomeResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/recurring-incomes/${id}`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -88,14 +88,14 @@ export async function deleteRecurringIncome(id: number): Promise<RecurringIncome
 
 export async function listVariableIncomes(year: number, month: number): Promise<IncomeInstanceResponse[]> {
   const response = await fetch(
-    `${config.apiBaseUrl}/api/v1/personal/variable-incomes?year=${year}&month=${month}`,
+    `${config.apiBaseUrl}/api/v1/personal/income/variable/${year}/${month}`,
     { headers: authHeaders() }
   );
   return handleResponse<IncomeInstanceResponse[]>(response);
 }
 
 export async function createVariableIncome(data: VariableIncomeCreate): Promise<IncomeInstanceResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/variable-incomes`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/variable`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(data),
@@ -104,7 +104,7 @@ export async function createVariableIncome(data: VariableIncomeCreate): Promise<
 }
 
 export async function updateVariableIncome(id: number, data: VariableIncomeUpdate): Promise<IncomeInstanceResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/variable-incomes/${id}`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/variable/${id}`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify(data),
@@ -113,7 +113,7 @@ export async function updateVariableIncome(id: number, data: VariableIncomeUpdat
 }
 
 export async function deleteVariableIncome(id: number): Promise<void> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/variable-incomes/${id}`, {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/variable/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });

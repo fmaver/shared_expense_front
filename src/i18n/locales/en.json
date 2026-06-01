@@ -262,6 +262,12 @@
     "variableIncomeTitle": "Variable income",
     "addVariableDesc": "Add a one-off income for this month",
     "noIncome": "No income recorded this month.",
-    "viewInGroup": "View in group"
+    "viewInGroup": "View in group",
+    "recurringTitle": "Recurring income",
+    "recurringDesc": "Repeats every month automatically (salary, rent income, etc.)",
+    "variableTitle": "One-off income",
+    "variableDesc": "For this month only (freelance, bonus, gift, etc.)",
+    "add": "Add",
+    "personalExpenses": "Personal expenses"
   }
 }
