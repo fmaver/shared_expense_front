@@ -5,7 +5,8 @@
     "newGroup": "Nuevo grupo",
     "profile": "Perfil",
     "toggleTheme": "Cambiar tema",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "personal": "Personal"
   },
   "landing": {
     "nav": { "features": "Funciones", "signIn": "Iniciar sesión", "getStarted": "Comenzar" },
@@ -232,5 +233,35 @@
     "save": "Guardar",
     "loading": "Cargando…"
   },
-  "language": "EN"
+  "language": "EN",
+  "personal": {
+    "title": "Finanzas Personales",
+    "subtitle": "Seguí tus ingresos y gastos en todos los grupos",
+    "salary": "Sueldo",
+    "income": "Ingresos",
+    "addSalary": "Agregar sueldo",
+    "editSalary": "Editar sueldo",
+    "addVariable": "Agregar ingreso",
+    "totalIncome": "Total ingresos",
+    "totalExpenses": "Gastos personales",
+    "projectedBalance": "Balance proyectado",
+    "realizedBalance": "Balance realizado",
+    "pendingSettlements": "Pendientes de liquidación",
+    "mirroredShares": "Gastos compartidos",
+    "noShares": "Sin gastos compartidos este mes",
+    "pending": "Pendiente",
+    "realized": "Liquidado",
+    "fromGroup": "de {{groupName}}",
+    "salaryLabel": "Etiqueta",
+    "salaryAmount": "Monto",
+    "saveSalary": "Guardar",
+    "cancel": "Cancelar",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "deactivate": "Desactivar",
+    "variableIncomeTitle": "Ingresos variables",
+    "addVariableDesc": "Agregar un ingreso puntual para este mes",
+    "noIncome": "Sin ingresos registrados este mes.",
+    "viewInGroup": "Ver en grupo"
+  }
 }

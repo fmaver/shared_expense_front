@@ -10,6 +10,7 @@ import { ExpensesDashboard } from './pages/ExpensesDashboard';
 import { GroupMembersPage } from './pages/GroupMembersPage';
 import { GroupSettingsPage } from './pages/GroupSettingsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { PersonalDashboard } from './pages/PersonalDashboard';
 import { InvitationLanding } from './public-pages/InvitationLanding';
 import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 
@@ -68,6 +69,7 @@ function App() {
             <Route path="members" element={<GroupMembersPage />} />
             <Route path="settings" element={<GroupSettingsPage />} />
           </Route>
+          <Route path="/personal" element={<PersonalDashboard />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/groups" replace />} />
         </Route>
