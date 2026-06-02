@@ -365,7 +365,7 @@ export function PersonalDashboard() {
             <input type="number" placeholder={t('expenseForm.amount')} value={expAmount} onChange={e => setExpAmount(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
             <input type="date" value={expDate} onChange={e => setExpDate(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand [color-scheme:auto]" />
+              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand [color-scheme:light] dark:[color-scheme:dark]" />
             <select value={expCategory} onChange={e => setExpCategory(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand">
               {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
