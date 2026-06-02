@@ -34,17 +34,11 @@ export function PersonalDashboard() {
     getCurrentUser().then(u => setCurrentMemberId(u.id)).catch(() => {});
   }, []);
 
-  // Salary form state
-  const [showSalaryForm, setShowSalaryForm] = useState(false);
-  const [salaryLabel, setSalaryLabel] = useState('');
-  const [salaryAmount, setSalaryAmount] = useState('');
-  const [savingSalary, setSavingSalary] = useState(false);
-
-  // Variable income form
-  const [showVariableForm, setShowVariableForm] = useState(false);
-  const [varLabel, setVarLabel] = useState('');
-  const [varAmount, setVarAmount] = useState('');
-  const [savingVar, setSavingVar] = useState(false);
+  // Income form state — null=hidden, 'recurring'=salary form, 'variable'=one-off form, 'pick'=type picker
+  const [incomeForm, setIncomeForm] = useState<'pick' | 'recurring' | 'variable' | null>(null);
+  const [incomeLabel, setIncomeLabel] = useState('');
+  const [incomeAmount, setIncomeAmount] = useState('');
+  const [savingIncome, setSavingIncome] = useState(false);
 
   // Personal expense form
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -66,37 +60,24 @@ export function PersonalDashboard() {
     setMonth(newMonth);
   };
 
-  const handleSaveSalary = async () => {
-    if (!salaryLabel || !salaryAmount) return;
-    setSavingSalary(true);
+  const handleSaveIncome = async () => {
+    if (!incomeLabel || !incomeAmount || !incomeForm || incomeForm === 'pick') return;
+    setSavingIncome(true);
     try {
-      await createRecurringIncome({ label: salaryLabel, amount: parseFloat(salaryAmount) });
+      if (incomeForm === 'recurring') {
+        await createRecurringIncome({ label: incomeLabel, amount: parseFloat(incomeAmount) });
+      } else {
+        await createVariableIncome({ year, month, label: incomeLabel, amount: parseFloat(incomeAmount) });
+      }
       toast.success(t('toasts.expenseAdded'));
-      setShowSalaryForm(false);
-      setSalaryLabel('');
-      setSalaryAmount('');
+      setIncomeForm(null);
+      setIncomeLabel('');
+      setIncomeAmount('');
       refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save');
     } finally {
-      setSavingSalary(false);
-    }
-  };
-
-  const handleSaveVariable = async () => {
-    if (!varLabel || !varAmount) return;
-    setSavingVar(true);
-    try {
-      await createVariableIncome({ year, month, label: varLabel, amount: parseFloat(varAmount) });
-      toast.success(t('toasts.expenseAdded'));
-      setShowVariableForm(false);
-      setVarLabel('');
-      setVarAmount('');
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSavingVar(false);
+      setSavingIncome(false);
     }
   };
 
@@ -194,77 +175,66 @@ export function PersonalDashboard() {
 
       {/* Income section */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <div className="flex items-center gap-1.5 mb-3">
-          <TrendingUp className="h-4 w-4 text-green-600" />
-          <h2 className="text-sm font-semibold text-foreground">{t('personal.income')}</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
+          </h2>
+          <Button variant="outline" size="sm" onClick={() => setIncomeForm(f => f ? null : 'pick')}>
+            <Plus className="h-3.5 w-3.5 mr-1" />{t('personal.add')}
+          </Button>
         </div>
 
-        {/* Recurring income (salary) */}
-        <div className="border border-border rounded-lg p-3 mb-2">
-          <div className="flex items-center justify-between">
-            <div>
+        {/* Step 1: pick type */}
+        {incomeForm === 'pick' && (
+          <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-1.5">
+            <button onClick={() => setIncomeForm('recurring')}
+              className="w-full text-left px-3 py-2.5 rounded-md border border-border bg-background hover:border-brand/50 hover:bg-accent/50 transition-colors">
               <p className="text-sm font-medium text-foreground">{t('personal.recurringTitle')}</p>
               <p className="text-xs text-muted-foreground">{t('personal.recurringDesc')}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setShowSalaryForm(v => !v)}>
-              <Plus className="h-3.5 w-3.5 mr-1" />{t('personal.add')}
-            </Button>
-          </div>
-          {showSalaryForm && (
-            <div className="mt-3 space-y-2 text-sm">
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                placeholder={t('personal.salaryLabel')} value={salaryLabel} onChange={e => setSalaryLabel(e.target.value)} />
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                type="number" placeholder={t('personal.salaryAmount')} value={salaryAmount} onChange={e => setSalaryAmount(e.target.value)} />
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setShowSalaryForm(false)}>{t('common.cancel')}</Button>
-                <Button size="sm" disabled={savingSalary} onClick={handleSaveSalary}
-                  className="bg-brand hover:bg-brand/90 text-white">
-                  {savingSalary ? t('common.loading') : t('personal.saveSalary')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Variable income (one-off) */}
-        <div className="border border-border rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div>
+            </button>
+            <button onClick={() => setIncomeForm('variable')}
+              className="w-full text-left px-3 py-2.5 rounded-md border border-border bg-background hover:border-brand/50 hover:bg-accent/50 transition-colors">
               <p className="text-sm font-medium text-foreground">{t('personal.variableTitle')}</p>
               <p className="text-xs text-muted-foreground">{t('personal.variableDesc')}</p>
+            </button>
+            <div className="flex justify-end pt-1">
+              <Button variant="ghost" size="sm" onClick={() => setIncomeForm(null)}>{t('common.cancel')}</Button>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowVariableForm(v => !v)}>
-              <Plus className="h-3.5 w-3.5 mr-1" />{t('personal.add')}
-            </Button>
           </div>
-          {showVariableForm && (
-            <div className="mt-3 space-y-2 text-sm">
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                placeholder={t('personal.salaryLabel')} value={varLabel} onChange={e => setVarLabel(e.target.value)} />
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                type="number" placeholder={t('personal.salaryAmount')} value={varAmount} onChange={e => setVarAmount(e.target.value)} />
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setShowVariableForm(false)}>{t('common.cancel')}</Button>
-                <Button size="sm" disabled={savingVar} onClick={handleSaveVariable}
-                  className="bg-brand hover:bg-brand/90 text-white">
-                  {savingVar ? t('common.loading') : t('personal.saveSalary')}
-                </Button>
-              </div>
+        )}
+
+        {/* Step 2: fill in details */}
+        {(incomeForm === 'recurring' || incomeForm === 'variable') && (
+          <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {incomeForm === 'recurring' ? t('personal.recurringTitle') : t('personal.variableTitle')}
+            </p>
+            <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
+              placeholder={t('personal.salaryLabel')} value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} />
+            <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
+              type="number" placeholder={t('personal.salaryAmount')} value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} />
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" size="sm" onClick={() => { setIncomeForm('pick'); setIncomeLabel(''); setIncomeAmount(''); }}>
+                ← Back
+              </Button>
+              <Button size="sm" disabled={savingIncome} onClick={handleSaveIncome}
+                className="bg-brand hover:bg-brand/90 text-white">
+                {savingIncome ? t('common.loading') : t('personal.saveSalary')}
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Income list */}
-        {ledger && ledger.incomes.length === 0 ? (
-          <p className="text-sm text-muted-foreground mt-3">{t('personal.noIncome')}</p>
+        {ledger && ledger.incomes.length === 0 && !incomeForm ? (
+          <p className="text-sm text-muted-foreground">{t('personal.noIncome')}</p>
         ) : (
-          <div className="space-y-1.5 mt-3">
+          <div className="space-y-1.5">
             {ledger?.incomes.map(income => (
               <div key={income.id} className="flex items-center justify-between py-1.5 text-sm">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${income.source === 'recurring' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                    {income.source === 'recurring' ? t('personal.salary') : t('personal.variableTitle')}
+                    {income.source === 'recurring' ? t('personal.recurringTitle') : t('personal.variableTitle')}
                   </span>
                   <span className="text-foreground">{income.label}</span>
                 </div>
