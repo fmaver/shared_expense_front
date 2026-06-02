@@ -437,7 +437,7 @@ export function PersonalDashboard() {
                     )}
                   </div>
                   <Link
-                    to={`/groups/${share.sourceGroupId}?year=${share.date.slice(0, 4)}&month=${parseInt(share.date.slice(5, 7), 10)}&highlight=${share.sourceExpenseId}`}
+                    to={`/groups/${share.sourceGroupId}?year=${year}&month=${month}&highlight=${share.sourceExpenseId}`}
                     className="text-xs text-muted-foreground hover:text-brand transition-colors flex items-center gap-0.5"
                     title={t('personal.viewInGroup')}
                   >
