@@ -407,19 +407,20 @@ export function PersonalDashboard() {
       </div>
 
       {/* Mirrored shares from shared groups */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-3">
-          <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.mirroredShares')}
-        </h2>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="px-4 pt-4 pb-3">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.mirroredShares')}
+          </h2>
+        </div>
         {ledger && ledger.mirroredShares.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('personal.noShares')}</p>
+          <p className="text-sm text-muted-foreground px-4 pb-4">{t('personal.noShares')}</p>
         ) : (
-          <div className="space-y-2">
+          <div>
             {ledger?.mirroredShares.map(share => (
-              <div key={`${share.sourceExpenseId}`}
-                className="flex items-start justify-between gap-3 py-2 border-b border-border/50 last:border-0">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+              <div key={share.sourceExpenseId} className="border-b border-border/50 last:border-0">
+                <div className="flex items-center justify-between px-4 pt-2">
+                  <div className="flex items-center gap-2">
                     {share.status === 'pending' ? (
                       <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 font-medium">
                         <Clock className="h-3 w-3" />{t('personal.pending')}
@@ -429,19 +430,33 @@ export function PersonalDashboard() {
                         <CheckCircle2 className="h-3 w-3" />{t('personal.realized')}
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">{t('personal.fromGroup', { groupName: share.sourceGroupName })}</span>
                   </div>
-                  <p className="text-sm text-foreground truncate mt-0.5">{share.description}</p>
-                  <p className="text-xs text-muted-foreground">{share.category} · {share.date}</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="font-semibold text-sm text-red-500">-{formatCurrency(share.shareAmount)}</span>
-                  <Link to={`/groups/${share.sourceGroupId}`}
-                    className="text-muted-foreground hover:text-brand transition-colors"
-                    title={t('personal.viewInGroup')}>
-                    <ExternalLink className="h-3.5 w-3.5" />
+                  <Link
+                    to={`/groups/${share.sourceGroupId}?year=${share.date.slice(0, 4)}&month=${parseInt(share.date.slice(5, 7), 10)}&highlight=${share.sourceExpenseId}`}
+                    className="text-xs text-muted-foreground hover:text-brand transition-colors flex items-center gap-0.5"
+                    title={t('personal.viewInGroup')}
+                  >
+                    {t('personal.viewInGroup')} <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>
+                <ExpenseRow
+                  expense={{
+                    id: share.sourceExpenseId,
+                    description: share.description,
+                    amount: share.shareAmount,
+                    date: share.date,
+                    category: share.category,
+                    payerId: 0,
+                    paymentType: 'debit',
+                    installments: 1,
+                    installmentNo: 1,
+                    splitStrategy: { type: 'equal' },
+                  }}
+                  members={[{ id: 0, name: share.sourceGroupName, telephone: '' }]}
+                  isSettled={share.status === 'realized'}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                />
               </div>
             ))}
           </div>

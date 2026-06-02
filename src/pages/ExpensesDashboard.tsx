@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
@@ -27,8 +27,16 @@ export function ExpensesDashboard() {
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
 
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [searchParams] = useSearchParams();
+  const [year, setYear] = useState(() => {
+    const y = searchParams.get('year');
+    return y ? parseInt(y, 10) : new Date().getFullYear();
+  });
+  const [month, setMonth] = useState(() => {
+    const m = searchParams.get('month');
+    return m ? parseInt(m, 10) : new Date().getMonth() + 1;
+  });
+  const highlightId = searchParams.get('highlight') ? parseInt(searchParams.get('highlight')!, 10) : null;
   const [showAdd, setShowAdd] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
@@ -174,6 +182,7 @@ export function ExpensesDashboard() {
             <div className="divide-y divide-border">
               {sortedExpenses.map(e => (
                 <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
+                  highlight={e.id === highlightId}
                   onEdit={exp => { setEditingExpense(exp); setShowAdd(true); }}
                   onDelete={handleDelete} />
               ))}
