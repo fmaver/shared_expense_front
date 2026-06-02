@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { TrendingUp, TrendingDown, Clock, CheckCircle2, ExternalLink, Plus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, CheckCircle2, ExternalLink, Plus, Pencil, Trash2 } from 'lucide-react';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -10,12 +10,19 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/utils/format';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
+import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import {
   createRecurringIncome,
   createVariableIncome,
+  updateRecurringIncome,
+  updateVariableIncome,
+  deleteRecurringIncome,
+  deleteVariableIncome,
   getPersonalGroup,
 } from '@/api/personal';
+import { updateExpense, deleteExpense } from '@/api/expenses';
 import { getCurrentUser } from '@/api/auth';
+import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse } from '@/types/expense';
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -40,6 +47,12 @@ export function PersonalDashboard() {
   const [incomeAmount, setIncomeAmount] = useState('');
   const [savingIncome, setSavingIncome] = useState(false);
 
+  // Income edit state
+  const [editingIncomeId, setEditingIncomeId] = useState<number | null>(null);
+  const [editIncomeLabel, setEditIncomeLabel] = useState('');
+  const [editIncomeAmount, setEditIncomeAmount] = useState('');
+  const [savingEditIncome, setSavingEditIncome] = useState(false);
+
   // Personal expense form
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expDesc, setExpDesc] = useState('');
@@ -47,6 +60,10 @@ export function PersonalDashboard() {
   const [expDate, setExpDate] = useState(today.toISOString().slice(0, 10));
   const [expCategory, setExpCategory] = useState('');
   const [savingExp, setSavingExp] = useState(false);
+
+  // Expense edit state
+  const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
+  const [showExpenseEdit, setShowExpenseEdit] = useState(false);
 
   // Keep expCategory in sync when categories load
   useEffect(() => {
@@ -81,6 +98,46 @@ export function PersonalDashboard() {
     }
   };
 
+  const handleSaveEditIncome = async (income: IncomeInstanceResponse) => {
+    if (!editIncomeLabel || !editIncomeAmount) return;
+    setSavingEditIncome(true);
+    try {
+      if (income.source === 'recurring' && income.recurringIncomeId) {
+        await updateRecurringIncome(income.recurringIncomeId, {
+          label: editIncomeLabel,
+          amount: parseFloat(editIncomeAmount),
+        });
+      } else {
+        await updateVariableIncome(income.id, {
+          label: editIncomeLabel,
+          amount: parseFloat(editIncomeAmount),
+        });
+      }
+      toast.success(t('toasts.expenseUpdated'));
+      setEditingIncomeId(null);
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update');
+    } finally {
+      setSavingEditIncome(false);
+    }
+  };
+
+  const handleDeleteIncome = async (income: IncomeInstanceResponse) => {
+    if (!window.confirm('Delete this income entry?')) return;
+    try {
+      if (income.source === 'recurring' && income.recurringIncomeId) {
+        await deleteRecurringIncome(income.recurringIncomeId);
+      } else {
+        await deleteVariableIncome(income.id);
+      }
+      toast.success(t('toasts.expenseDeleted'));
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete');
+    }
+  };
+
   const handleSaveExpense = async () => {
     if (!expDesc || !expAmount || !expDate || !expCategory || !personalGroupId || !currentMemberId) return;
     setSavingExp(true);
@@ -112,6 +169,17 @@ export function PersonalDashboard() {
     } finally {
       setSavingExp(false);
     }
+  };
+
+  const handleUpdateExpense = async (data: ExpenseCreate) => {
+    if (!editingExpense || !personalGroupId) return;
+    const id = editingExpense.parentExpenseId ?? editingExpense.id;
+    const { error } = await updateExpense(personalGroupId, id, data);
+    if (error) { toast.error(error); return; }
+    toast.success(t('toasts.expenseUpdated'));
+    setShowExpenseEdit(false);
+    setEditingExpense(null);
+    refetch();
   };
 
   if (isLoading) {
@@ -231,14 +299,48 @@ export function PersonalDashboard() {
         ) : (
           <div className="space-y-1.5">
             {ledger?.incomes.map(income => (
-              <div key={income.id} className="flex items-center justify-between py-1.5 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${income.source === 'recurring' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                    {income.source === 'recurring' ? t('personal.recurringTitle') : t('personal.variableTitle')}
-                  </span>
-                  <span className="text-foreground">{income.label}</span>
+              <div key={income.id}>
+                <div className="flex items-center justify-between py-1.5 text-sm gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${income.source === 'recurring' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                      {income.source === 'recurring' ? t('personal.recurringBadge') : t('personal.variableBadge')}
+                    </span>
+                    <span className="text-foreground truncate">{income.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}
+                      className="text-muted-foreground hover:text-brand transition-colors p-0.5">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteIncome(income)}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="font-semibold text-green-600">{formatCurrency(income.amount)}</span>
+                  </div>
                 </div>
-                <span className="font-semibold text-green-600">{formatCurrency(income.amount)}</span>
+                {editingIncomeId === income.id && (
+                  <div className="mt-1 mb-2 p-2 bg-muted/40 rounded-md space-y-1.5">
+                    <input
+                      className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                      value={editIncomeLabel}
+                      onChange={e => setEditIncomeLabel(e.target.value)} />
+                    <input
+                      type="number"
+                      className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                      value={editIncomeAmount}
+                      onChange={e => setEditIncomeAmount(e.target.value)} />
+                    <div className="flex gap-1.5 justify-end">
+                      <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingIncomeId(null)}>{t('common.cancel')}</Button>
+                      <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
+                        disabled={savingEditIncome} onClick={() => handleSaveEditIncome(income)}>
+                        {savingEditIncome ? '…' : t('common.save')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -288,8 +390,16 @@ export function PersonalDashboard() {
                 expense={exp}
                 members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
                 isSettled={false}
-                onEdit={() => {}}
-                onDelete={() => {}}
+                onEdit={e => { setEditingExpense(e); setShowExpenseEdit(true); }}
+                onDelete={async e => {
+                  const id = e.parentExpenseId ?? e.id;
+                  if (!window.confirm('Delete this expense?')) return;
+                  if (!personalGroupId) return;
+                  const { success, error } = await deleteExpense(personalGroupId, id);
+                  if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
+                  toast.success(t('toasts.expenseDeleted'));
+                  refetch();
+                }}
               />
             ))}
           </div>
@@ -337,6 +447,18 @@ export function PersonalDashboard() {
           </div>
         )}
       </div>
+
+      {/* Edit expense dialog */}
+      {showExpenseEdit && editingExpense && personalGroupId && currentMemberId && (
+        <AddExpenseDialog
+          open={showExpenseEdit}
+          onOpenChange={open => { setShowExpenseEdit(open); if (!open) setEditingExpense(null); }}
+          onSubmit={handleUpdateExpense}
+          members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
+          initialExpense={editingExpense}
+          isSettled={false}
+        />
+      )}
     </div>
   );
 }
