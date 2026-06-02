@@ -430,6 +430,11 @@ export function PersonalDashboard() {
                         <CheckCircle2 className="h-3 w-3" />{t('personal.realized')}
                       </span>
                     )}
+                    {share.installments > 1 && (
+                      <span className="text-xs text-muted-foreground">
+                        {share.installmentNo}/{share.installments}
+                      </span>
+                    )}
                   </div>
                   <Link
                     to={`/groups/${share.sourceGroupId}?year=${share.date.slice(0, 4)}&month=${parseInt(share.date.slice(5, 7), 10)}&highlight=${share.sourceExpenseId}`}
