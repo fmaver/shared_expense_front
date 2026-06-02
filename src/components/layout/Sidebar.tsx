@@ -5,11 +5,12 @@ import { useGroups } from '@/hooks/useGroups';
 import { useTheme } from '@/hooks/useTheme';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { Moon, Sun, Plus, LogOut } from 'lucide-react';
+import { Moon, Sun, Plus, LogOut, User } from 'lucide-react';
 
 interface SidebarProps {
   onLogout: () => void;
   onNavigate?: () => void;
+  onNewGroup?: () => void;
 }
 
 function getInitials(token: string | null): { initials: string; name: string } {
@@ -24,7 +25,7 @@ function getInitials(token: string | null): { initials: string; name: string } {
   }
 }
 
-export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
+export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
   const navigate = useNavigate();
   const { data: groups = [] } = useGroups();
   const { theme, toggle } = useTheme();
@@ -54,9 +55,22 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
 
       <Separator />
 
-      {/* Groups */}
+      {/* Personal + Groups */}
       <div className="flex-1 overflow-y-auto px-2 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 mb-2">Groups</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 mb-2">{t('personal.title')}</p>
+        <nav className="space-y-0.5 mb-3">
+          <NavLink to="/personal" onClick={onNavigate}
+            className={({ isActive }) => cn(
+              'flex items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors',
+              isActive
+                ? 'bg-primary/10 text-foreground font-semibold border-l-2 border-brand'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            )}>
+            <User className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{t('nav.personal')}</span>
+          </NavLink>
+        </nav>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 mb-2">{t('nav.groups')}</p>
         <nav className="space-y-0.5">
           {groups.map(group => (
             <NavLink key={group.id} to={`/groups/${group.id}`} onClick={onNavigate}
@@ -70,9 +84,9 @@ export function Sidebar({ onLogout, onNavigate }: SidebarProps) {
             </NavLink>
           ))}
         </nav>
-        <button onClick={() => go('/groups?new=1')}
+        <button onClick={() => { onNewGroup?.(); onNavigate?.(); }}
           className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-primary hover:bg-accent w-full mt-1">
-          <Plus className="h-3.5 w-3.5" /> New group
+          <Plus className="h-3.5 w-3.5" /> {t('groups.newGroup')}
         </button>
       </div>
 

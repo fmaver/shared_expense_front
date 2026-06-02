@@ -7,9 +7,10 @@ import { Menu, Moon, Sun } from 'lucide-react';
 
 interface TopBarProps {
   onLogout: () => void;
+  onNewGroup?: () => void;
 }
 
-export function TopBar({ onLogout }: TopBarProps) {
+export function TopBar({ onLogout, onNewGroup }: TopBarProps) {
   const [open, setOpen] = useState(false);
   const { theme, toggle } = useTheme();
 
@@ -22,7 +23,7 @@ export function TopBar({ onLogout }: TopBarProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-64">
-          <Sidebar onLogout={onLogout} onNavigate={() => setOpen(false)} />
+          <Sidebar onLogout={onLogout} onNavigate={() => setOpen(false)} onNewGroup={() => { onNewGroup?.(); setOpen(false); }} />
         </SheetContent>
       </Sheet>
 
