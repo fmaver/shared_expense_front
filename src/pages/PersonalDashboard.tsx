@@ -223,21 +223,47 @@ export function PersonalDashboard() {
         </div>
       )}
 
-      {/* Realized balance + pending settlements */}
-      {ledger && (ledger.totalSharesPending > 0 || ledger.totalSharesRealized > 0) && (
-        <div className="bg-card border border-border rounded-xl p-4 flex justify-between items-center gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground">{t('personal.realizedBalance')}</p>
-            <p className={`text-base font-semibold mt-0.5 ${ledger.realizedBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-              {formatCurrency(ledger.realizedBalance)}
-            </p>
+      {/* Settlement positions (per-group net balances) */}
+      {ledger && ledger.groupBalances.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t('personal.settlementPositions')}</h2>
+          <div className="space-y-1.5">
+            {ledger.groupBalances.map(gb => (
+              <div key={gb.sourceGroupId} className="flex items-center justify-between text-sm">
+                <span className="text-foreground">{gb.sourceGroupName}</span>
+                <div className="flex items-center gap-2">
+                  {gb.isSettled && (
+                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                      {t('personal.realized')}
+                    </span>
+                  )}
+                  <span className={gb.netBalance >= 0 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'}>
+                    {gb.netBalance >= 0 ? '+' : ''}{formatCurrency(gb.netBalance)}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-          {ledger.pendingSettlementsTotal > 0 && (
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">{t('personal.pendingSettlements')}</p>
-              <p className="text-base font-semibold text-amber-600 mt-0.5">{formatCurrency(ledger.pendingSettlementsTotal)}</p>
-            </div>
-          )}
+          {/* Divider + net total */}
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm">
+            <span className="text-muted-foreground font-medium">{t('personal.pendingSettlements')}</span>
+            {Math.abs(ledger.pendingSettlementsTotal) > 0.01 ? (
+              <span className={ledger.pendingSettlementsTotal > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'}>
+                {ledger.pendingSettlementsTotal > 0
+                  ? `+${formatCurrency(ledger.pendingSettlementsTotal)} ${t('personal.willReceive')}`
+                  : `-${formatCurrency(Math.abs(ledger.pendingSettlementsTotal))} ${t('personal.willPay')}`}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">{t('personal.balanced')}</span>
+            )}
+          </div>
+          {/* Realized balance */}
+          <div className="mt-2 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">{t('personal.realizedBalance')}</span>
+            <span className={ledger.realizedBalance >= 0 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'}>
+              {formatCurrency(ledger.realizedBalance)}
+            </span>
+          </div>
         </div>
       )}
 
