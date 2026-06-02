@@ -67,8 +67,16 @@ export async function createRecurringIncome(data: RecurringIncomeCreate): Promis
   return handleResponse<RecurringIncomeResponse>(response);
 }
 
-export async function updateRecurringIncome(id: number, data: RecurringIncomeUpdate): Promise<RecurringIncomeResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}`, {
+export async function updateRecurringIncome(
+  id: number,
+  data: RecurringIncomeUpdate,
+  viewedYear?: number,
+  viewedMonth?: number,
+): Promise<RecurringIncomeResponse> {
+  const params = viewedYear && viewedMonth
+    ? `?viewed_year=${viewedYear}&viewed_month=${viewedMonth}`
+    : '';
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}${params}`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify(data),

@@ -106,7 +106,7 @@ export function PersonalDashboard() {
         await updateRecurringIncome(income.recurringIncomeId, {
           label: editIncomeLabel,
           amount: parseFloat(editIncomeAmount),
-        });
+        }, year, month);
       } else {
         await updateVariableIncome(income.id, {
           label: editIncomeLabel,
