@@ -106,7 +106,7 @@ export function PersonalDashboard() {
         await updateRecurringIncome(income.recurringIncomeId, {
           label: editIncomeLabel,
           amount: parseFloat(editIncomeAmount),
-        });
+        }, year, month);
       } else {
         await updateVariableIncome(income.id, {
           label: editIncomeLabel,
@@ -248,7 +248,7 @@ export function PersonalDashboard() {
           <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm">
             <span className="text-muted-foreground font-medium">{t('personal.pendingSettlements')}</span>
             {Math.abs(ledger.pendingSettlementsTotal) > 0.01 ? (
-              <span className={ledger.pendingSettlementsTotal > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'}>
+              <span className="text-amber-600 font-bold">
                 {ledger.pendingSettlementsTotal > 0
                   ? `+${formatCurrency(ledger.pendingSettlementsTotal)} ${t('personal.willReceive')}`
                   : `-${formatCurrency(Math.abs(ledger.pendingSettlementsTotal))} ${t('personal.willPay')}`}
