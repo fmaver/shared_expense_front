@@ -270,6 +270,10 @@
     "add": "Agregar",
     "personalExpenses": "Gastos personales",
     "recurringBadge": "Recurrente",
-    "variableBadge": "Puntual"
+    "variableBadge": "Puntual",
+    "settlementPositions": "Posiciones de liquidación",
+    "willReceive": "a recibir",
+    "willPay": "a pagar",
+    "balanced": "Balanceado"
   }
 }

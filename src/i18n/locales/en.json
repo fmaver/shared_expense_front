@@ -270,6 +270,10 @@
     "add": "Add",
     "personalExpenses": "Personal expenses",
     "recurringBadge": "Recurring",
-    "variableBadge": "One-off"
+    "variableBadge": "One-off",
+    "settlementPositions": "Settlement positions",
+    "willReceive": "to receive",
+    "willPay": "to pay",
+    "balanced": "Balanced"
   }
 }

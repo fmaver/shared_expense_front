@@ -131,6 +131,13 @@ export interface IncomeInstanceResponse {
   amount: number;
 }
 
+export interface GroupBalanceItem {
+  sourceGroupId: number;
+  sourceGroupName: string;
+  netBalance: number;   // positive = creditor (will receive), negative = debtor (will pay)
+  isSettled: boolean;
+}
+
 export interface MirroredShareItem {
   sourceGroupId: number;
   sourceGroupName: string;
@@ -157,6 +164,7 @@ export interface PersonalLedgerResponse {
   projectedBalance: number;
   realizedBalance: number;
   pendingSettlementsTotal: number;
+  groupBalances: GroupBalanceItem[];
 }
 
 export interface RecurringIncomeCreate {
