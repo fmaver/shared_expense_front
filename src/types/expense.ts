@@ -140,6 +140,8 @@ export interface MirroredShareItem {
   date: string;
   shareAmount: number;
   status: 'pending' | 'realized';
+  installmentNo: number;
+  installments: number;
 }
 
 export interface PersonalLedgerResponse {

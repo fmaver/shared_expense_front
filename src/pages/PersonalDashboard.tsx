@@ -365,7 +365,7 @@ export function PersonalDashboard() {
             <input type="number" placeholder={t('expenseForm.amount')} value={expAmount} onChange={e => setExpAmount(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
             <input type="date" value={expDate} onChange={e => setExpDate(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand [color-scheme:auto]" />
+              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand [color-scheme:light] dark:[color-scheme:dark]" />
             <select value={expCategory} onChange={e => setExpCategory(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand">
               {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
@@ -430,9 +430,14 @@ export function PersonalDashboard() {
                         <CheckCircle2 className="h-3 w-3" />{t('personal.realized')}
                       </span>
                     )}
+                    {share.installments > 1 && (
+                      <span className="text-xs text-muted-foreground">
+                        {share.installmentNo}/{share.installments}
+                      </span>
+                    )}
                   </div>
                   <Link
-                    to={`/groups/${share.sourceGroupId}?year=${share.date.slice(0, 4)}&month=${parseInt(share.date.slice(5, 7), 10)}&highlight=${share.sourceExpenseId}`}
+                    to={`/groups/${share.sourceGroupId}?year=${year}&month=${month}&highlight=${share.sourceExpenseId}`}
                     className="text-xs text-muted-foreground hover:text-brand transition-colors flex items-center gap-0.5"
                     title={t('personal.viewInGroup')}
                   >

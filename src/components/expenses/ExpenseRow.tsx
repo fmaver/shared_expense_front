@@ -17,6 +17,12 @@ const PAYMENT_BADGE: Record<string, string> = {
   credit: 'bg-blue-100    text-blue-700    dark:bg-blue-900/40    dark:text-blue-300',
 };
 
+// Internal categories are filtered from the API — hardcode their emojis here
+const INTERNAL_EMOJI: Record<string, string> = {
+  balance:  '⚖️',
+  prestamo: '🤝',
+};
+
 interface ExpenseRowProps {
   expense: ExpenseResponse;
   members: Member[];
@@ -33,7 +39,8 @@ function memberName(members: Member[], id: number) {
 export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
   const { data: categories = [] } = useCategories();
-  const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji;
+  const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
+    ?? INTERNAL_EMOJI[expense.category];
   const rowRef = useRef<HTMLDivElement>(null);
   const [isFlashing, setIsFlashing] = useState(highlight);
 
