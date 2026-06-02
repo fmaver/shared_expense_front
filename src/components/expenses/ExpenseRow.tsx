@@ -36,7 +36,10 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete }: Ex
 
   const splitLabel = (() => {
     if (expense.splitStrategy.type === 'equal' && expense.splitStrategy.participantIds?.length) {
-      return `equal (${expense.splitStrategy.participantIds.length})`;
+      const names = expense.splitStrategy.participantIds
+        .map(id => memberName(members, id))
+        .join(', ');
+      return `equal: ${names}`;
     }
     return expense.splitStrategy.type;
   })();

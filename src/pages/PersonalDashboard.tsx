@@ -9,6 +9,7 @@ import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/utils/format';
+import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import {
   createRecurringIncome,
   createVariableIncome,
@@ -292,7 +293,7 @@ export function PersonalDashboard() {
             <input type="number" placeholder={t('expenseForm.amount')} value={expAmount} onChange={e => setExpAmount(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
             <input type="date" value={expDate} onChange={e => setExpDate(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand [color-scheme:auto]" />
             <select value={expCategory} onChange={e => setExpCategory(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand">
               {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
@@ -310,15 +311,16 @@ export function PersonalDashboard() {
         {ledger && ledger.personalExpenses.length === 0 && !showExpenseForm ? (
           <p className="text-sm text-muted-foreground">{t('expenses.noExpenses')}</p>
         ) : (
-          <div className="space-y-1.5">
+          <div className="-mx-4">
             {ledger?.personalExpenses.map(exp => (
-              <div key={exp.id} className="flex items-center justify-between py-1.5 text-sm">
-                <div>
-                  <p className="text-foreground">{exp.description}</p>
-                  <p className="text-xs text-muted-foreground">{exp.category} · {exp.date}</p>
-                </div>
-                <span className="font-semibold text-red-500">-{formatCurrency(exp.amount)}</span>
-              </div>
+              <ExpenseRow
+                key={exp.id}
+                expense={exp}
+                members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
+                isSettled={false}
+                onEdit={() => {}}
+                onDelete={() => {}}
+              />
             ))}
           </div>
         )}
