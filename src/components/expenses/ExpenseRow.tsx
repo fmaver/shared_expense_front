@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Pen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,16 +23,26 @@ interface ExpenseRowProps {
   isSettled: boolean;
   onEdit: (expense: ExpenseResponse) => void;
   onDelete: (expense: ExpenseResponse) => void;
+  highlight?: boolean;
 }
 
 function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete }: ExpenseRowProps) {
+export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
   const { data: categories = [] } = useCategories();
   const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji;
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [isFlashing, setIsFlashing] = useState(highlight);
+
+  useEffect(() => {
+    if (!highlight) return;
+    rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const timer = setTimeout(() => setIsFlashing(false), 2000);
+    return () => clearTimeout(timer);
+  }, [highlight]);
 
   const splitLabel = (() => {
     if (expense.splitStrategy.type === 'equal' && expense.splitStrategy.participantIds?.length) {
@@ -45,7 +55,13 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete }: Ex
   })();
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group">
+    <div
+      ref={rowRef}
+      className={cn(
+        'flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group',
+        isFlashing && 'bg-brand/10'
+      )}
+    >
       {/* Category icon — emoji from API, first 2 letters as fallback */}
       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
         {categoryEmoji

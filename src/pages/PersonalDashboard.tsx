@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { TrendingUp, TrendingDown, Clock, CheckCircle2, ExternalLink, Plus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, CheckCircle2, ExternalLink, Plus, Pencil, Trash2 } from 'lucide-react';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -10,12 +10,19 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/utils/format';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
+import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import {
   createRecurringIncome,
   createVariableIncome,
+  updateRecurringIncome,
+  updateVariableIncome,
+  deleteRecurringIncome,
+  deleteVariableIncome,
   getPersonalGroup,
 } from '@/api/personal';
+import { updateExpense, deleteExpense } from '@/api/expenses';
 import { getCurrentUser } from '@/api/auth';
+import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse } from '@/types/expense';
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -34,17 +41,17 @@ export function PersonalDashboard() {
     getCurrentUser().then(u => setCurrentMemberId(u.id)).catch(() => {});
   }, []);
 
-  // Salary form state
-  const [showSalaryForm, setShowSalaryForm] = useState(false);
-  const [salaryLabel, setSalaryLabel] = useState('');
-  const [salaryAmount, setSalaryAmount] = useState('');
-  const [savingSalary, setSavingSalary] = useState(false);
+  // Income form state — null=hidden, 'recurring'=salary form, 'variable'=one-off form, 'pick'=type picker
+  const [incomeForm, setIncomeForm] = useState<'pick' | 'recurring' | 'variable' | null>(null);
+  const [incomeLabel, setIncomeLabel] = useState('');
+  const [incomeAmount, setIncomeAmount] = useState('');
+  const [savingIncome, setSavingIncome] = useState(false);
 
-  // Variable income form
-  const [showVariableForm, setShowVariableForm] = useState(false);
-  const [varLabel, setVarLabel] = useState('');
-  const [varAmount, setVarAmount] = useState('');
-  const [savingVar, setSavingVar] = useState(false);
+  // Income edit state
+  const [editingIncomeId, setEditingIncomeId] = useState<number | null>(null);
+  const [editIncomeLabel, setEditIncomeLabel] = useState('');
+  const [editIncomeAmount, setEditIncomeAmount] = useState('');
+  const [savingEditIncome, setSavingEditIncome] = useState(false);
 
   // Personal expense form
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -53,6 +60,10 @@ export function PersonalDashboard() {
   const [expDate, setExpDate] = useState(today.toISOString().slice(0, 10));
   const [expCategory, setExpCategory] = useState('');
   const [savingExp, setSavingExp] = useState(false);
+
+  // Expense edit state
+  const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
+  const [showExpenseEdit, setShowExpenseEdit] = useState(false);
 
   // Keep expCategory in sync when categories load
   useEffect(() => {
@@ -66,37 +77,64 @@ export function PersonalDashboard() {
     setMonth(newMonth);
   };
 
-  const handleSaveSalary = async () => {
-    if (!salaryLabel || !salaryAmount) return;
-    setSavingSalary(true);
+  const handleSaveIncome = async () => {
+    if (!incomeLabel || !incomeAmount || !incomeForm || incomeForm === 'pick') return;
+    setSavingIncome(true);
     try {
-      await createRecurringIncome({ label: salaryLabel, amount: parseFloat(salaryAmount) });
+      if (incomeForm === 'recurring') {
+        await createRecurringIncome({ label: incomeLabel, amount: parseFloat(incomeAmount) });
+      } else {
+        await createVariableIncome({ year, month, label: incomeLabel, amount: parseFloat(incomeAmount) });
+      }
       toast.success(t('toasts.expenseAdded'));
-      setShowSalaryForm(false);
-      setSalaryLabel('');
-      setSalaryAmount('');
+      setIncomeForm(null);
+      setIncomeLabel('');
+      setIncomeAmount('');
       refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save');
     } finally {
-      setSavingSalary(false);
+      setSavingIncome(false);
     }
   };
 
-  const handleSaveVariable = async () => {
-    if (!varLabel || !varAmount) return;
-    setSavingVar(true);
+  const handleSaveEditIncome = async (income: IncomeInstanceResponse) => {
+    if (!editIncomeLabel || !editIncomeAmount) return;
+    setSavingEditIncome(true);
     try {
-      await createVariableIncome({ year, month, label: varLabel, amount: parseFloat(varAmount) });
-      toast.success(t('toasts.expenseAdded'));
-      setShowVariableForm(false);
-      setVarLabel('');
-      setVarAmount('');
+      if (income.source === 'recurring' && income.recurringIncomeId) {
+        await updateRecurringIncome(income.recurringIncomeId, {
+          label: editIncomeLabel,
+          amount: parseFloat(editIncomeAmount),
+        });
+      } else {
+        await updateVariableIncome(income.id, {
+          label: editIncomeLabel,
+          amount: parseFloat(editIncomeAmount),
+        });
+      }
+      toast.success(t('toasts.expenseUpdated'));
+      setEditingIncomeId(null);
       refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
+      toast.error(err instanceof Error ? err.message : 'Failed to update');
     } finally {
-      setSavingVar(false);
+      setSavingEditIncome(false);
+    }
+  };
+
+  const handleDeleteIncome = async (income: IncomeInstanceResponse) => {
+    if (!window.confirm('Delete this income entry?')) return;
+    try {
+      if (income.source === 'recurring' && income.recurringIncomeId) {
+        await deleteRecurringIncome(income.recurringIncomeId);
+      } else {
+        await deleteVariableIncome(income.id);
+      }
+      toast.success(t('toasts.expenseDeleted'));
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete');
     }
   };
 
@@ -131,6 +169,17 @@ export function PersonalDashboard() {
     } finally {
       setSavingExp(false);
     }
+  };
+
+  const handleUpdateExpense = async (data: ExpenseCreate) => {
+    if (!editingExpense || !personalGroupId) return;
+    const id = editingExpense.parentExpenseId ?? editingExpense.id;
+    const { error } = await updateExpense(personalGroupId, id, data);
+    if (error) { toast.error(error); return; }
+    toast.success(t('toasts.expenseUpdated'));
+    setShowExpenseEdit(false);
+    setEditingExpense(null);
+    refetch();
   };
 
   if (isLoading) {
@@ -194,81 +243,104 @@ export function PersonalDashboard() {
 
       {/* Income section */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <div className="flex items-center gap-1.5 mb-3">
-          <TrendingUp className="h-4 w-4 text-green-600" />
-          <h2 className="text-sm font-semibold text-foreground">{t('personal.income')}</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
+          </h2>
+          <Button variant="outline" size="sm" onClick={() => setIncomeForm(f => f ? null : 'pick')}>
+            <Plus className="h-3.5 w-3.5 mr-1" />{t('personal.add')}
+          </Button>
         </div>
 
-        {/* Recurring income (salary) */}
-        <div className="border border-border rounded-lg p-3 mb-2">
-          <div className="flex items-center justify-between">
-            <div>
+        {/* Step 1: pick type */}
+        {incomeForm === 'pick' && (
+          <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-1.5">
+            <button onClick={() => setIncomeForm('recurring')}
+              className="w-full text-left px-3 py-2.5 rounded-md border border-border bg-background hover:border-brand/50 hover:bg-accent/50 transition-colors">
               <p className="text-sm font-medium text-foreground">{t('personal.recurringTitle')}</p>
               <p className="text-xs text-muted-foreground">{t('personal.recurringDesc')}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setShowSalaryForm(v => !v)}>
-              <Plus className="h-3.5 w-3.5 mr-1" />{t('personal.add')}
-            </Button>
-          </div>
-          {showSalaryForm && (
-            <div className="mt-3 space-y-2 text-sm">
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                placeholder={t('personal.salaryLabel')} value={salaryLabel} onChange={e => setSalaryLabel(e.target.value)} />
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                type="number" placeholder={t('personal.salaryAmount')} value={salaryAmount} onChange={e => setSalaryAmount(e.target.value)} />
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setShowSalaryForm(false)}>{t('common.cancel')}</Button>
-                <Button size="sm" disabled={savingSalary} onClick={handleSaveSalary}
-                  className="bg-brand hover:bg-brand/90 text-white">
-                  {savingSalary ? t('common.loading') : t('personal.saveSalary')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Variable income (one-off) */}
-        <div className="border border-border rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div>
+            </button>
+            <button onClick={() => setIncomeForm('variable')}
+              className="w-full text-left px-3 py-2.5 rounded-md border border-border bg-background hover:border-brand/50 hover:bg-accent/50 transition-colors">
               <p className="text-sm font-medium text-foreground">{t('personal.variableTitle')}</p>
               <p className="text-xs text-muted-foreground">{t('personal.variableDesc')}</p>
+            </button>
+            <div className="flex justify-end pt-1">
+              <Button variant="ghost" size="sm" onClick={() => setIncomeForm(null)}>{t('common.cancel')}</Button>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowVariableForm(v => !v)}>
-              <Plus className="h-3.5 w-3.5 mr-1" />{t('personal.add')}
-            </Button>
           </div>
-          {showVariableForm && (
-            <div className="mt-3 space-y-2 text-sm">
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                placeholder={t('personal.salaryLabel')} value={varLabel} onChange={e => setVarLabel(e.target.value)} />
-              <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-                type="number" placeholder={t('personal.salaryAmount')} value={varAmount} onChange={e => setVarAmount(e.target.value)} />
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setShowVariableForm(false)}>{t('common.cancel')}</Button>
-                <Button size="sm" disabled={savingVar} onClick={handleSaveVariable}
-                  className="bg-brand hover:bg-brand/90 text-white">
-                  {savingVar ? t('common.loading') : t('personal.saveSalary')}
-                </Button>
-              </div>
+        )}
+
+        {/* Step 2: fill in details */}
+        {(incomeForm === 'recurring' || incomeForm === 'variable') && (
+          <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {incomeForm === 'recurring' ? t('personal.recurringTitle') : t('personal.variableTitle')}
+            </p>
+            <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
+              placeholder={t('personal.salaryLabel')} value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} />
+            <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
+              type="number" placeholder={t('personal.salaryAmount')} value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} />
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" size="sm" onClick={() => { setIncomeForm('pick'); setIncomeLabel(''); setIncomeAmount(''); }}>
+                ← Back
+              </Button>
+              <Button size="sm" disabled={savingIncome} onClick={handleSaveIncome}
+                className="bg-brand hover:bg-brand/90 text-white">
+                {savingIncome ? t('common.loading') : t('personal.saveSalary')}
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Income list */}
-        {ledger && ledger.incomes.length === 0 ? (
-          <p className="text-sm text-muted-foreground mt-3">{t('personal.noIncome')}</p>
+        {ledger && ledger.incomes.length === 0 && !incomeForm ? (
+          <p className="text-sm text-muted-foreground">{t('personal.noIncome')}</p>
         ) : (
-          <div className="space-y-1.5 mt-3">
+          <div className="space-y-1.5">
             {ledger?.incomes.map(income => (
-              <div key={income.id} className="flex items-center justify-between py-1.5 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${income.source === 'recurring' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                    {income.source === 'recurring' ? t('personal.salary') : t('personal.variableTitle')}
-                  </span>
-                  <span className="text-foreground">{income.label}</span>
+              <div key={income.id}>
+                <div className="flex items-center justify-between py-1.5 text-sm gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${income.source === 'recurring' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                      {income.source === 'recurring' ? t('personal.recurringBadge') : t('personal.variableBadge')}
+                    </span>
+                    <span className="text-foreground truncate">{income.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}
+                      className="text-muted-foreground hover:text-brand transition-colors p-0.5">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteIncome(income)}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="font-semibold text-green-600">{formatCurrency(income.amount)}</span>
+                  </div>
                 </div>
-                <span className="font-semibold text-green-600">{formatCurrency(income.amount)}</span>
+                {editingIncomeId === income.id && (
+                  <div className="mt-1 mb-2 p-2 bg-muted/40 rounded-md space-y-1.5">
+                    <input
+                      className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                      value={editIncomeLabel}
+                      onChange={e => setEditIncomeLabel(e.target.value)} />
+                    <input
+                      type="number"
+                      className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                      value={editIncomeAmount}
+                      onChange={e => setEditIncomeAmount(e.target.value)} />
+                    <div className="flex gap-1.5 justify-end">
+                      <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingIncomeId(null)}>{t('common.cancel')}</Button>
+                      <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
+                        disabled={savingEditIncome} onClick={() => handleSaveEditIncome(income)}>
+                        {savingEditIncome ? '…' : t('common.save')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -318,8 +390,16 @@ export function PersonalDashboard() {
                 expense={exp}
                 members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
                 isSettled={false}
-                onEdit={() => {}}
-                onDelete={() => {}}
+                onEdit={e => { setEditingExpense(e); setShowExpenseEdit(true); }}
+                onDelete={async e => {
+                  const id = e.parentExpenseId ?? e.id;
+                  if (!window.confirm('Delete this expense?')) return;
+                  if (!personalGroupId) return;
+                  const { success, error } = await deleteExpense(personalGroupId, id);
+                  if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
+                  toast.success(t('toasts.expenseDeleted'));
+                  refetch();
+                }}
               />
             ))}
           </div>
@@ -327,19 +407,20 @@ export function PersonalDashboard() {
       </div>
 
       {/* Mirrored shares from shared groups */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-3">
-          <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.mirroredShares')}
-        </h2>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="px-4 pt-4 pb-3">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.mirroredShares')}
+          </h2>
+        </div>
         {ledger && ledger.mirroredShares.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('personal.noShares')}</p>
+          <p className="text-sm text-muted-foreground px-4 pb-4">{t('personal.noShares')}</p>
         ) : (
-          <div className="space-y-2">
+          <div>
             {ledger?.mirroredShares.map(share => (
-              <div key={`${share.sourceExpenseId}`}
-                className="flex items-start justify-between gap-3 py-2 border-b border-border/50 last:border-0">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+              <div key={share.sourceExpenseId} className="border-b border-border/50 last:border-0">
+                <div className="flex items-center justify-between px-4 pt-2">
+                  <div className="flex items-center gap-2">
                     {share.status === 'pending' ? (
                       <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 font-medium">
                         <Clock className="h-3 w-3" />{t('personal.pending')}
@@ -349,24 +430,50 @@ export function PersonalDashboard() {
                         <CheckCircle2 className="h-3 w-3" />{t('personal.realized')}
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">{t('personal.fromGroup', { groupName: share.sourceGroupName })}</span>
                   </div>
-                  <p className="text-sm text-foreground truncate mt-0.5">{share.description}</p>
-                  <p className="text-xs text-muted-foreground">{share.category} · {share.date}</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="font-semibold text-sm text-red-500">-{formatCurrency(share.shareAmount)}</span>
-                  <Link to={`/groups/${share.sourceGroupId}`}
-                    className="text-muted-foreground hover:text-brand transition-colors"
-                    title={t('personal.viewInGroup')}>
-                    <ExternalLink className="h-3.5 w-3.5" />
+                  <Link
+                    to={`/groups/${share.sourceGroupId}?year=${share.date.slice(0, 4)}&month=${parseInt(share.date.slice(5, 7), 10)}&highlight=${share.sourceExpenseId}`}
+                    className="text-xs text-muted-foreground hover:text-brand transition-colors flex items-center gap-0.5"
+                    title={t('personal.viewInGroup')}
+                  >
+                    {t('personal.viewInGroup')} <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>
+                <ExpenseRow
+                  expense={{
+                    id: share.sourceExpenseId,
+                    description: share.description,
+                    amount: share.shareAmount,
+                    date: share.date,
+                    category: share.category,
+                    payerId: 0,
+                    paymentType: 'debit',
+                    installments: 1,
+                    installmentNo: 1,
+                    splitStrategy: { type: 'equal' },
+                  }}
+                  members={[{ id: 0, name: share.sourceGroupName, telephone: '' }]}
+                  isSettled={share.status === 'realized'}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                />
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Edit expense dialog */}
+      {showExpenseEdit && editingExpense && personalGroupId && currentMemberId && (
+        <AddExpenseDialog
+          open={showExpenseEdit}
+          onOpenChange={open => { setShowExpenseEdit(open); if (!open) setEditingExpense(null); }}
+          onSubmit={handleUpdateExpense}
+          members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
+          initialExpense={editingExpense}
+          isSettled={false}
+        />
+      )}
     </div>
   );
 }

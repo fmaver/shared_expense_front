@@ -268,6 +268,8 @@
     "variableTitle": "One-off income",
     "variableDesc": "For this month only (freelance, bonus, gift, etc.)",
     "add": "Add",
-    "personalExpenses": "Personal expenses"
+    "personalExpenses": "Personal expenses",
+    "recurringBadge": "Recurring",
+    "variableBadge": "One-off"
   }
 }
