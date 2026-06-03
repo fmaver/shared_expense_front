@@ -30,13 +30,14 @@ interface ExpenseRowProps {
   onEdit: (expense: ExpenseResponse) => void;
   onDelete: (expense: ExpenseResponse) => void;
   highlight?: boolean;
+  hideSplitBadge?: boolean;
 }
 
 function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false }: ExpenseRowProps) {
+export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
   const { data: categories = [] } = useCategories();
   const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
@@ -103,9 +104,11 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
         )}
         {/* Mobile-only badges row */}
         <div className="flex sm:hidden items-center flex-wrap gap-1 mt-1">
-          <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', SPLIT_BADGE[expense.splitStrategy.type])}>
-            {splitLabel}
-          </span>
+          {!hideSplitBadge && (
+            <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', SPLIT_BADGE[expense.splitStrategy.type])}>
+              {splitLabel}
+            </span>
+          )}
           <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', PAYMENT_BADGE[expense.paymentType])}>
             {expense.paymentType}
             {expense.paymentType === 'credit' && expense.installments > 1 && ` ${expense.installmentNo}/${expense.installments}`}
@@ -118,9 +121,11 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Badges */}
       <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', SPLIT_BADGE[expense.splitStrategy.type])}>
-          {splitLabel}
-        </span>
+        {!hideSplitBadge && (
+          <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', SPLIT_BADGE[expense.splitStrategy.type])}>
+            {splitLabel}
+          </span>
+        )}
         <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', PAYMENT_BADGE[expense.paymentType])}>
           {expense.paymentType}
           {expense.paymentType === 'credit' && expense.installments > 1 && ` ${expense.installmentNo}/${expense.installments}`}
