@@ -274,6 +274,8 @@
     "settlementPositions": "Posiciones de liquidación",
     "willReceive": "a recibir",
     "willPay": "a pagar",
-    "balanced": "Balanceado"
+    "balanced": "Balanceado",
+    "addRecurringExpense": "Recurrente",
+    "recurringExpenseTitle": "Gasto recurrente (se repite cada mes)"
   }
 }

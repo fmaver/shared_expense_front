@@ -167,6 +167,7 @@ export interface PersonalLedgerResponse {
   realizedBalance: number;
   pendingSettlementsTotal: number;
   groupBalances: GroupBalanceItem[];
+  recurringPersonalExpenses: RecurringPersonalExpenseInstanceResponse[];
 }
 
 export interface RecurringIncomeCreate {
@@ -192,4 +193,44 @@ export interface VariableIncomeCreate {
 export interface VariableIncomeUpdate {
   label?: string;
   amount?: number;
+}
+
+export interface RecurringPersonalExpenseCreate {
+  label: string;
+  amount: number;
+  categoryName: string;
+  startYear?: number;
+  startMonth?: number;
+}
+
+export interface RecurringPersonalExpenseUpdate {
+  label?: string;
+  amount?: number;
+  categoryName?: string;
+  active?: boolean;
+}
+
+export interface RecurringPersonalExpenseResponse {
+  id: number;
+  personalGroupId: number;
+  ownerMemberId: number;
+  label: string;
+  amount: number;
+  categoryName: string;
+  active: boolean;
+  startYear?: number | null;
+  startMonth?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface RecurringPersonalExpenseInstanceResponse {
+  id: number;
+  personalGroupId: number;
+  recurringExpenseId: number;
+  year: number;
+  month: number;
+  label: string;
+  amount: number;
+  categoryName: string;
 }

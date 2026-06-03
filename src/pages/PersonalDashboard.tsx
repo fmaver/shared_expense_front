@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { TrendingUp, TrendingDown, Clock, CheckCircle2, ExternalLink, Plus, Pencil, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, CheckCircle2, ExternalLink, Plus, Pencil, Trash2, Repeat } from 'lucide-react';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -19,10 +19,13 @@ import {
   deleteRecurringIncome,
   deleteVariableIncome,
   getPersonalGroup,
+  createRecurringPersonalExpense,
+  updateRecurringPersonalExpense,
+  deleteRecurringPersonalExpense,
 } from '@/api/personal';
 import { updateExpense, deleteExpense } from '@/api/expenses';
 import { getCurrentUser } from '@/api/auth';
-import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse } from '@/types/expense';
+import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringPersonalExpenseInstanceResponse } from '@/types/expense';
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -65,12 +68,33 @@ export function PersonalDashboard() {
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
   const [showExpenseEdit, setShowExpenseEdit] = useState(false);
 
+  // Recurring expense add form
+  const [showRecurringExpForm, setShowRecurringExpForm] = useState(false);
+  const [recExpLabel, setRecExpLabel] = useState('');
+  const [recExpAmount, setRecExpAmount] = useState('');
+  const [recExpCategory, setRecExpCategory] = useState('');
+  const [savingRecExp, setSavingRecExp] = useState(false);
+
+  // Recurring expense edit state
+  const [editingRecExpId, setEditingRecExpId] = useState<number | null>(null);
+  const [editRecExpLabel, setEditRecExpLabel] = useState('');
+  const [editRecExpAmount, setEditRecExpAmount] = useState('');
+  const [editRecExpCategory, setEditRecExpCategory] = useState('');
+  const [savingEditRecExp, setSavingEditRecExp] = useState(false);
+
   // Keep expCategory in sync when categories load
   useEffect(() => {
     if (categories.length > 0 && !expCategory) {
       setExpCategory(categories[0].name);
     }
   }, [categories, expCategory]);
+
+  // Keep recExpCategory in sync when categories load
+  useEffect(() => {
+    if (categories.length > 0 && !recExpCategory) {
+      setRecExpCategory(categories[0].name);
+    }
+  }, [categories, recExpCategory]);
 
   const handleNavigate = (newYear: number, newMonth: number) => {
     setYear(newYear);
@@ -131,6 +155,58 @@ export function PersonalDashboard() {
       } else {
         await deleteVariableIncome(income.id);
       }
+      toast.success(t('toasts.expenseDeleted'));
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete');
+    }
+  };
+
+  const handleSaveRecurringExpense = async () => {
+    if (!recExpLabel || !recExpAmount || !recExpCategory) return;
+    setSavingRecExp(true);
+    try {
+      await createRecurringPersonalExpense({
+        label: recExpLabel,
+        amount: parseFloat(recExpAmount),
+        categoryName: recExpCategory,
+        startYear: year,
+        startMonth: month,
+      });
+      toast.success(t('toasts.expenseAdded'));
+      setShowRecurringExpForm(false);
+      setRecExpLabel(''); setRecExpAmount(''); setRecExpCategory(categories[0]?.name ?? '');
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSavingRecExp(false);
+    }
+  };
+
+  const handleSaveEditRecurringExpense = async (instance: RecurringPersonalExpenseInstanceResponse) => {
+    if (!editRecExpLabel || !editRecExpAmount) return;
+    setSavingEditRecExp(true);
+    try {
+      await updateRecurringPersonalExpense(instance.recurringExpenseId, {
+        label: editRecExpLabel,
+        amount: parseFloat(editRecExpAmount),
+        categoryName: editRecExpCategory || instance.categoryName,
+      }, year, month);
+      toast.success(t('toasts.expenseUpdated'));
+      setEditingRecExpId(null);
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update');
+    } finally {
+      setSavingEditRecExp(false);
+    }
+  };
+
+  const handleDeleteRecurringExpense = async (instance: RecurringPersonalExpenseInstanceResponse) => {
+    if (!window.confirm('Delete this recurring expense from this month onwards?')) return;
+    try {
+      await deleteRecurringPersonalExpense(instance.recurringExpenseId, year, month);
       toast.success(t('toasts.expenseDeleted'));
       refetch();
     } catch (err) {
@@ -379,9 +455,14 @@ export function PersonalDashboard() {
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.personalExpenses')}
           </h2>
-          <Button variant="outline" size="sm" onClick={() => setShowExpenseForm(v => !v)}>
-            <Plus className="h-3.5 w-3.5 mr-1" />{t('expenses.add')}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowExpenseForm(v => !v)}>
+              <Plus className="h-3.5 w-3.5 mr-1" />{t('expenses.add')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowRecurringExpForm(v => !v)}>
+              <Repeat className="h-3.5 w-3.5 mr-1" />{t('personal.addRecurringExpense')}
+            </Button>
+          </div>
         </div>
 
         {showExpenseForm && personalGroupId && currentMemberId && (
@@ -406,10 +487,80 @@ export function PersonalDashboard() {
           </div>
         )}
 
-        {ledger && ledger.personalExpenses.length === 0 && !showExpenseForm ? (
+        {showRecurringExpForm && personalGroupId && (
+          <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2 text-sm">
+            <p className="text-xs text-muted-foreground font-medium">{t('personal.recurringExpenseTitle')}</p>
+            <input placeholder={t('expenseForm.description')} value={recExpLabel} onChange={e => setRecExpLabel(e.target.value)}
+              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+            <input type="number" placeholder={t('expenseForm.amount')} value={recExpAmount} onChange={e => setRecExpAmount(e.target.value)}
+              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+            <select value={recExpCategory} onChange={e => setRecExpCategory(e.target.value)}
+              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand">
+              {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
+            </select>
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" size="sm" onClick={() => setShowRecurringExpForm(false)}>{t('common.cancel')}</Button>
+              <Button size="sm" disabled={savingRecExp} onClick={handleSaveRecurringExpense}
+                className="bg-brand hover:bg-brand/90 text-white">
+                {savingRecExp ? t('common.loading') : t('personal.saveSalary')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {ledger && ledger.personalExpenses.length === 0 && ledger.recurringPersonalExpenses.length === 0 && !showExpenseForm ? (
           <p className="text-sm text-muted-foreground">{t('expenses.noExpenses')}</p>
         ) : (
           <div className="-mx-4">
+            {/* Recurring personal expenses for this month */}
+            {ledger?.recurringPersonalExpenses.map(instance => (
+              <div key={`rec-exp-${instance.id}`} className="border-b border-border/50 last:border-0">
+                <div className="flex items-center justify-between px-4 py-3 group hover:bg-accent/40 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                      <Repeat className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm text-foreground truncate">{instance.label}</p>
+                      <p className="text-xs text-muted-foreground">{instance.categoryName}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}
+                      className="text-muted-foreground hover:text-brand transition-colors p-0.5 opacity-0 group-hover:opacity-100">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => handleDeleteRecurringExpense(instance)}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5 opacity-0 group-hover:opacity-100">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="font-semibold text-sm text-red-500">-{formatCurrency(instance.amount)}</span>
+                  </div>
+                </div>
+                {/* Inline edit form */}
+                {editingRecExpId === instance.id && (
+                  <div className="px-4 pb-3">
+                    <div className="p-2 bg-muted/40 rounded-md space-y-1.5">
+                      <input className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                        value={editRecExpLabel} onChange={e => setEditRecExpLabel(e.target.value)} />
+                      <input type="number" className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                        value={editRecExpAmount} onChange={e => setEditRecExpAmount(e.target.value)} />
+                      <select className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                        value={editRecExpCategory} onChange={e => setEditRecExpCategory(e.target.value)}>
+                        {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
+                      </select>
+                      <div className="flex gap-1.5 justify-end">
+                        <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingRecExpId(null)}>{t('common.cancel')}</Button>
+                        <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
+                          disabled={savingEditRecExp} onClick={() => handleSaveEditRecurringExpense(instance)}>
+                          {savingEditRecExp ? '…' : t('common.save')}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
             {ledger?.personalExpenses.map(exp => (
               <ExpenseRow
                 key={exp.id}
