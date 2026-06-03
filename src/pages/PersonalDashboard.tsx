@@ -409,18 +409,16 @@ export function PersonalDashboard() {
                     </span>
                     <span className="text-foreground truncate">{income.label}</span>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="font-semibold text-green-600 tabular-nums w-24 text-right">{formatCurrency(income.amount)}</span>
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
-                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={() => handleDeleteIncome(income)}>
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    </div>
+                  <span className="font-semibold text-green-600 tabular-nums w-24 text-right flex-shrink-0">{formatCurrency(income.amount)}</span>
+                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={() => handleDeleteIncome(income)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
                   </div>
                 </div>
                 {editingIncomeId === income.id && (
@@ -548,19 +546,20 @@ export function PersonalDashboard() {
                       {instance.categoryName}
                     </span>
                   </div>
-                  {/* Amount then actions */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatCurrency(instance.amount)}</span>
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}>
-                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={() => handleDeleteRecurringExpense(instance)}>
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    </div>
+                  {/* Amount — separate child so gap-3 spacing matches ExpenseRow */}
+                  <div className="text-sm font-semibold text-foreground tabular-nums flex-shrink-0 w-24 text-right">
+                    {formatCurrency(instance.amount)}
+                  </div>
+                  {/* Actions */}
+                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}>
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={() => handleDeleteRecurringExpense(instance)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
                   </div>
                 </div>
                 {/* Inline edit form */}
