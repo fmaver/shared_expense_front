@@ -20,6 +20,7 @@ interface AddExpenseDialogProps {
   members: Member[];
   initialExpense?: ExpenseResponse;
   isSettled?: boolean;
+  hidePayerAndSplit?: boolean;
 }
 
 function buildInitial(
@@ -68,7 +69,7 @@ function buildInitial(
 }
 
 export function AddExpenseDialog({
-  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false,
+  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false,
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
@@ -158,7 +159,7 @@ export function AddExpenseDialog({
               onChange={e => set({ date: e.target.value })} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={hidePayerAndSplit ? '' : 'grid grid-cols-2 gap-4'}>
             {/* Category */}
             <div className="space-y-1.5">
               <Label>{t('expenseForm.category')}</Label>
@@ -180,21 +181,23 @@ export function AddExpenseDialog({
               </Select>
             </div>
 
-            {/* Payer */}
-            <div className="space-y-1.5">
-              <Label>{t('expenseForm.payer')}</Label>
-              <Select value={String(expense.payerId)} disabled={disabled}
-                onValueChange={v => set({ payerId: parseInt(v) })}>
-                <SelectTrigger>
-                  <span className="flex-1 text-left truncate">
-                    {members.find(m => m.id === expense.payerId)?.name ?? 'Select…'}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  {members.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Payer — hidden for single-member personal context */}
+            {!hidePayerAndSplit && (
+              <div className="space-y-1.5">
+                <Label>{t('expenseForm.payer')}</Label>
+                <Select value={String(expense.payerId)} disabled={disabled}
+                  onValueChange={v => set({ payerId: parseInt(v) })}>
+                  <SelectTrigger>
+                    <span className="flex-1 text-left truncate">
+                      {members.find(m => m.id === expense.payerId)?.name ?? 'Select…'}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -224,9 +227,10 @@ export function AddExpenseDialog({
             )}
           </div>
 
-          <Separator />
+          {!hidePayerAndSplit && <Separator />}
 
-          {/* Split strategy */}
+          {/* Split strategy — hidden for single-member personal context */}
+          {!hidePayerAndSplit && (<>
           <div className="space-y-1.5">
             <Label>{t('expenseForm.splitType')}</Label>
             <Select value={expense.splitStrategy.type} disabled={disabled}
@@ -350,6 +354,7 @@ export function AddExpenseDialog({
               </p>
             </div>
           )}
+          </>)}
         </form>
         </div>
 
