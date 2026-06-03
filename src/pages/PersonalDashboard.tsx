@@ -534,7 +534,7 @@ export function PersonalDashboard() {
                       className="text-muted-foreground hover:text-destructive transition-colors p-0.5 opacity-0 group-hover:opacity-100">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                    <span className="font-semibold text-sm text-red-500">-{formatCurrency(instance.amount)}</span>
+                    <span className="font-semibold text-sm text-foreground">{formatCurrency(instance.amount)}</span>
                   </div>
                 </div>
                 {/* Inline edit form */}
