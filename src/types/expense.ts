@@ -115,6 +115,8 @@ export interface RecurringIncomeResponse {
   label: string;
   amount: number;
   active: boolean;
+  startYear?: number | null;
+  startMonth?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -170,6 +172,8 @@ export interface PersonalLedgerResponse {
 export interface RecurringIncomeCreate {
   label: string;
   amount: number;
+  startYear: number;
+  startMonth: number;
 }
 
 export interface RecurringIncomeUpdate {

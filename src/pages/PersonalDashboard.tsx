@@ -82,7 +82,7 @@ export function PersonalDashboard() {
     setSavingIncome(true);
     try {
       if (incomeForm === 'recurring') {
-        await createRecurringIncome({ label: incomeLabel, amount: parseFloat(incomeAmount) });
+        await createRecurringIncome({ label: incomeLabel, amount: parseFloat(incomeAmount), startYear: year, startMonth: month });
       } else {
         await createVariableIncome({ year, month, label: incomeLabel, amount: parseFloat(incomeAmount) });
       }
@@ -127,7 +127,7 @@ export function PersonalDashboard() {
     if (!window.confirm('Delete this income entry?')) return;
     try {
       if (income.source === 'recurring' && income.recurringIncomeId) {
-        await deleteRecurringIncome(income.recurringIncomeId);
+        await deleteRecurringIncome(income.recurringIncomeId, year, month);
       } else {
         await deleteVariableIncome(income.id);
       }

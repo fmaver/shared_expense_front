@@ -84,8 +84,9 @@ export async function updateRecurringIncome(
   return handleResponse<RecurringIncomeResponse>(response);
 }
 
-export async function deleteRecurringIncome(id: number): Promise<RecurringIncomeResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}`, {
+export async function deleteRecurringIncome(id: number, year?: number, month?: number): Promise<RecurringIncomeResponse> {
+  const params = year && month ? `?viewed_year=${year}&viewed_month=${month}` : '';
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}${params}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
