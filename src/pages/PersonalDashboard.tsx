@@ -401,7 +401,7 @@ export function PersonalDashboard() {
         ) : (
           <div className="space-y-1.5">
             {ledger?.incomes.map(income => (
-              <div key={income.id}>
+              <div key={income.id} className="group">
                 <div className="flex items-center justify-between py-1.5 text-sm gap-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${income.source === 'recurring' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
@@ -409,19 +409,17 @@ export function PersonalDashboard() {
                     </span>
                     <span className="text-foreground truncate">{income.label}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <span className="font-semibold text-green-600 tabular-nums w-24 text-right">{formatCurrency(income.amount)}</span>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}
-                        className="text-muted-foreground hover:text-brand transition-colors p-0.5">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteIncome(income)}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => handleDeleteIncome(income)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -551,17 +549,17 @@ export function PersonalDashboard() {
                     </span>
                   </div>
                   {/* Amount then actions */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatCurrency(instance.amount)}</span>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}
-                        className="text-muted-foreground hover:text-brand transition-colors p-0.5">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => handleDeleteRecurringExpense(instance)}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}>
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => handleDeleteRecurringExpense(instance)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                 </div>
