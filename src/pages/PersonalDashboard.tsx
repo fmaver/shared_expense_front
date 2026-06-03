@@ -513,18 +513,42 @@ export function PersonalDashboard() {
         ) : (
           <div className="-mx-4">
             {/* Recurring personal expenses for this month */}
-            {ledger?.recurringPersonalExpenses.map(instance => (
+            {ledger?.recurringPersonalExpenses.map(instance => {
+              const catEmoji = categories.find(c => c.name === instance.categoryName)?.emoji;
+              return (
               <div key={`rec-exp-${instance.id}`} className="border-b border-border/50 last:border-0">
-                <div className="flex items-center justify-between px-4 py-3 group hover:bg-accent/40 transition-colors">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
-                      <Repeat className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm text-foreground truncate">{instance.label}</p>
-                      <p className="text-xs text-muted-foreground">{instance.categoryName}</p>
+                <div className="flex items-center gap-3 px-4 py-3 group hover:bg-accent/40 transition-colors">
+                  {/* Category icon — matches ExpenseRow */}
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                    {catEmoji
+                      ? <span className="text-lg leading-none">{catEmoji}</span>
+                      : <span className="text-xs font-bold text-muted-foreground uppercase">{instance.categoryName.slice(0, 2)}</span>
+                    }
+                  </div>
+                  {/* Label + meta */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground line-clamp-2">{instance.label}</p>
+                    <p className="text-xs text-muted-foreground">↺ {t('personal.addRecurringExpense')}</p>
+                    {/* Mobile badges */}
+                    <div className="flex sm:hidden items-center gap-1 mt-1">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                        {t('personal.addRecurringExpense')}
+                      </span>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                        {instance.categoryName}
+                      </span>
                     </div>
                   </div>
+                  {/* Desktop badges */}
+                  <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                      {t('personal.addRecurringExpense')}
+                    </span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      {instance.categoryName}
+                    </span>
+                  </div>
+                  {/* Actions + amount */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}
                       className="text-muted-foreground hover:text-brand transition-colors p-0.5 opacity-0 group-hover:opacity-100">
@@ -534,7 +558,7 @@ export function PersonalDashboard() {
                       className="text-muted-foreground hover:text-destructive transition-colors p-0.5 opacity-0 group-hover:opacity-100">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                    <span className="font-semibold text-sm text-foreground">{formatCurrency(instance.amount)}</span>
+                    <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatCurrency(instance.amount)}</span>
                   </div>
                 </div>
                 {/* Inline edit form */}
@@ -560,13 +584,14 @@ export function PersonalDashboard() {
                   </div>
                 )}
               </div>
-            ))}
+            );})}
             {ledger?.personalExpenses.map(exp => (
               <ExpenseRow
                 key={exp.id}
                 expense={exp}
                 members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
                 isSettled={false}
+                hideSplitBadge
                 onEdit={e => { setEditingExpense(e); setShowExpenseEdit(true); }}
                 onDelete={async e => {
                   const id = e.parentExpenseId ?? e.id;
@@ -636,6 +661,7 @@ export function PersonalDashboard() {
                   }}
                   members={[{ id: 0, name: share.sourceGroupName, telephone: '' }]}
                   isSettled={share.status === 'realized'}
+                  hideSplitBadge
                   onEdit={() => {}}
                   onDelete={() => {}}
                 />
