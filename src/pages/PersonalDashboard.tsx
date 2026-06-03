@@ -621,6 +621,7 @@ export function PersonalDashboard() {
           members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
           initialExpense={editingExpense ?? undefined}
           isSettled={false}
+          hidePayerAndSplit
         />
       )}
     </div>
