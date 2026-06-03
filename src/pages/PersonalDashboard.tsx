@@ -410,17 +410,19 @@ export function PersonalDashboard() {
                     <span className="text-foreground truncate">{income.label}</span>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button
-                      onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}
-                      className="text-muted-foreground hover:text-brand transition-colors p-0.5">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteIncome(income)}
-                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="font-semibold text-green-600">{formatCurrency(income.amount)}</span>
+                    <span className="font-semibold text-green-600 tabular-nums w-24 text-right">{formatCurrency(income.amount)}</span>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}
+                        className="text-muted-foreground hover:text-brand transition-colors p-0.5">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteIncome(income)}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {editingIncomeId === income.id && (
@@ -548,17 +550,19 @@ export function PersonalDashboard() {
                       {instance.categoryName}
                     </span>
                   </div>
-                  {/* Actions + amount */}
+                  {/* Amount then actions */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}
-                      className="text-muted-foreground hover:text-brand transition-colors p-0.5 opacity-0 group-hover:opacity-100">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => handleDeleteRecurringExpense(instance)}
-                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5 opacity-0 group-hover:opacity-100">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
                     <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatCurrency(instance.amount)}</span>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}
+                        className="text-muted-foreground hover:text-brand transition-colors p-0.5">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => handleDeleteRecurringExpense(instance)}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {/* Inline edit form */}
