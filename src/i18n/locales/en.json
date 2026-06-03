@@ -274,6 +274,8 @@
     "settlementPositions": "Settlement positions",
     "willReceive": "to receive",
     "willPay": "to pay",
-    "balanced": "Balanced"
+    "balanced": "Balanced",
+    "addRecurringExpense": "Recurring",
+    "recurringExpenseTitle": "Recurring expense (repeats each month)"
   }
 }

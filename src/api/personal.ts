@@ -8,6 +8,9 @@ import type {
   RecurringIncomeUpdate,
   VariableIncomeCreate,
   VariableIncomeUpdate,
+  RecurringPersonalExpenseCreate,
+  RecurringPersonalExpenseUpdate,
+  RecurringPersonalExpenseResponse,
 } from '../types/expense';
 
 function authHeaders(): HeadersInit {
@@ -84,8 +87,9 @@ export async function updateRecurringIncome(
   return handleResponse<RecurringIncomeResponse>(response);
 }
 
-export async function deleteRecurringIncome(id: number): Promise<RecurringIncomeResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}`, {
+export async function deleteRecurringIncome(id: number, year?: number, month?: number): Promise<RecurringIncomeResponse> {
+  const params = year && month ? `?viewed_year=${year}&viewed_month=${month}` : '';
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/income/recurring/${id}${params}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -129,4 +133,52 @@ export async function deleteVariableIncome(id: number): Promise<void> {
     const result = await response.json();
     throw new Error(result.detail || 'Failed to delete variable income');
   }
+}
+
+// Recurring personal expenses
+
+export async function listRecurringPersonalExpenses(): Promise<RecurringPersonalExpenseResponse[]> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/expenses/recurring`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<RecurringPersonalExpenseResponse[]>(response);
+}
+
+export async function createRecurringPersonalExpense(data: RecurringPersonalExpenseCreate): Promise<RecurringPersonalExpenseResponse> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/expenses/recurring`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (response.status === 201) {
+    const result = await response.json();
+    return result.data as RecurringPersonalExpenseResponse;
+  }
+  return handleResponse<RecurringPersonalExpenseResponse>(response);
+}
+
+export async function updateRecurringPersonalExpense(
+  id: number,
+  data: RecurringPersonalExpenseUpdate,
+  viewedYear?: number,
+  viewedMonth?: number,
+): Promise<RecurringPersonalExpenseResponse> {
+  const params = viewedYear && viewedMonth
+    ? `?viewed_year=${viewedYear}&viewed_month=${viewedMonth}`
+    : '';
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/expenses/recurring/${id}${params}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse<RecurringPersonalExpenseResponse>(response);
+}
+
+export async function deleteRecurringPersonalExpense(id: number, year?: number, month?: number): Promise<RecurringPersonalExpenseResponse> {
+  const params = year && month ? `?viewed_year=${year}&viewed_month=${month}` : '';
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/personal/expenses/recurring/${id}${params}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  return handleResponse<RecurringPersonalExpenseResponse>(response);
 }
