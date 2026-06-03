@@ -56,17 +56,9 @@ export function PersonalDashboard() {
   const [editIncomeAmount, setEditIncomeAmount] = useState('');
   const [savingEditIncome, setSavingEditIncome] = useState(false);
 
-  // Personal expense form
-  const [showExpenseForm, setShowExpenseForm] = useState(false);
-  const [expDesc, setExpDesc] = useState('');
-  const [expAmount, setExpAmount] = useState('');
-  const [expDate, setExpDate] = useState(today.toISOString().slice(0, 10));
-  const [expCategory, setExpCategory] = useState('');
-  const [savingExp, setSavingExp] = useState(false);
-
-  // Expense edit state
+  // Personal expense dialog — shared for create and edit
+  const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
-  const [showExpenseEdit, setShowExpenseEdit] = useState(false);
 
   // Recurring expense add form
   const [showRecurringExpForm, setShowRecurringExpForm] = useState(false);
@@ -81,13 +73,6 @@ export function PersonalDashboard() {
   const [editRecExpAmount, setEditRecExpAmount] = useState('');
   const [editRecExpCategory, setEditRecExpCategory] = useState('');
   const [savingEditRecExp, setSavingEditRecExp] = useState(false);
-
-  // Keep expCategory in sync when categories load
-  useEffect(() => {
-    if (categories.length > 0 && !expCategory) {
-      setExpCategory(categories[0].name);
-    }
-  }, [categories, expCategory]);
 
   // Keep recExpCategory in sync when categories load
   useEffect(() => {
@@ -214,46 +199,22 @@ export function PersonalDashboard() {
     }
   };
 
-  const handleSaveExpense = async () => {
-    if (!expDesc || !expAmount || !expDate || !expCategory || !personalGroupId || !currentMemberId) return;
-    setSavingExp(true);
-    try {
+  const handleSubmitExpense = async (data: ExpenseCreate) => {
+    if (!personalGroupId || !currentMemberId) return;
+    if (editingExpense) {
+      // Edit mode
+      const id = editingExpense.parentExpenseId ?? editingExpense.id;
+      const { error } = await updateExpense(personalGroupId, id, data);
+      if (error) { toast.error(error); return; }
+      toast.success(t('toasts.expenseUpdated'));
+    } else {
+      // Create mode
       const { createExpense } = await import('@/api/expenses');
-      const result = await createExpense(personalGroupId, {
-        description: expDesc,
-        amount: parseFloat(expAmount),
-        date: expDate,
-        category: { name: expCategory },
-        payerId: currentMemberId,
-        paymentType: 'debit',
-        installments: 1,
-        splitStrategy: { type: 'equal' },
-      });
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
+      const result = await createExpense(personalGroupId, { ...data, payerId: currentMemberId, splitStrategy: { type: 'equal' } });
+      if (result.error) { toast.error(result.error); return; }
       toast.success(t('toasts.expenseAdded'));
-      setShowExpenseForm(false);
-      setExpDesc('');
-      setExpAmount('');
-      setExpDate(today.toISOString().slice(0, 10));
-      setExpCategory(categories[0]?.name ?? '');
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSavingExp(false);
     }
-  };
-
-  const handleUpdateExpense = async (data: ExpenseCreate) => {
-    if (!editingExpense || !personalGroupId) return;
-    const id = editingExpense.parentExpenseId ?? editingExpense.id;
-    const { error } = await updateExpense(personalGroupId, id, data);
-    if (error) { toast.error(error); return; }
-    toast.success(t('toasts.expenseUpdated'));
-    setShowExpenseEdit(false);
+    setShowExpenseDialog(false);
     setEditingExpense(null);
     refetch();
   };
@@ -454,7 +415,7 @@ export function PersonalDashboard() {
             <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.personalExpenses')}
           </h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowExpenseForm(v => !v)}>
+            <Button variant="outline" size="sm" onClick={() => { setEditingExpense(null); setShowExpenseDialog(true); }}>
               <Plus className="h-3.5 w-3.5 mr-1" />{t('expenses.add')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowRecurringExpForm(v => !v)}>
@@ -463,27 +424,6 @@ export function PersonalDashboard() {
           </div>
         </div>
 
-        {showExpenseForm && personalGroupId && currentMemberId && (
-          <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2 text-sm">
-            <input placeholder={t('expenseForm.description')} value={expDesc} onChange={e => setExpDesc(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
-            <input type="number" placeholder={t('expenseForm.amount')} value={expAmount} onChange={e => setExpAmount(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
-            <input type="date" value={expDate} onChange={e => setExpDate(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand [color-scheme:light] dark:[color-scheme:dark]" />
-            <select value={expCategory} onChange={e => setExpCategory(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand">
-              {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
-            </select>
-            <div className="flex gap-2 justify-end">
-              <Button variant="ghost" size="sm" onClick={() => setShowExpenseForm(false)}>{t('common.cancel')}</Button>
-              <Button size="sm" disabled={savingExp} onClick={handleSaveExpense}
-                className="bg-brand hover:bg-brand/90 text-white">
-                {savingExp ? t('common.loading') : t('expenseForm.addExpense')}
-              </Button>
-            </div>
-          </div>
-        )}
 
         {showRecurringExpForm && personalGroupId && (
           <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2 text-sm">
@@ -506,7 +446,7 @@ export function PersonalDashboard() {
           </div>
         )}
 
-        {ledger && ledger.personalExpenses.length === 0 && ledger.recurringPersonalExpenses.length === 0 && !showExpenseForm ? (
+        {ledger && ledger.personalExpenses.length === 0 && ledger.recurringPersonalExpenses.length === 0  ? (
           <p className="text-sm text-muted-foreground">{t('expenses.noExpenses')}</p>
         ) : (
           <div className="-mx-4">
@@ -593,7 +533,7 @@ export function PersonalDashboard() {
                 members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
                 isSettled={false}
                 hideSplitBadge
-                onEdit={e => { setEditingExpense(e); setShowExpenseEdit(true); }}
+                onEdit={e => { setEditingExpense(e); setShowExpenseDialog(true); }}
                 onDelete={async e => {
                   const id = e.parentExpenseId ?? e.id;
                   if (!window.confirm('Delete this expense?')) return;
@@ -672,14 +612,14 @@ export function PersonalDashboard() {
         )}
       </div>
 
-      {/* Edit expense dialog */}
-      {showExpenseEdit && editingExpense && personalGroupId && currentMemberId && (
+      {/* Add / Edit expense dialog */}
+      {showExpenseDialog && personalGroupId && currentMemberId && (
         <AddExpenseDialog
-          open={showExpenseEdit}
-          onOpenChange={open => { setShowExpenseEdit(open); if (!open) setEditingExpense(null); }}
-          onSubmit={handleUpdateExpense}
+          open={showExpenseDialog}
+          onOpenChange={open => { setShowExpenseDialog(open); if (!open) setEditingExpense(null); }}
+          onSubmit={handleSubmitExpense}
           members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
-          initialExpense={editingExpense}
+          initialExpense={editingExpense ?? undefined}
           isSettled={false}
         />
       )}
