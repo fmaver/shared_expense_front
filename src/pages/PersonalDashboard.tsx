@@ -591,54 +591,94 @@ export function PersonalDashboard() {
           <p className="text-sm text-muted-foreground px-4 pb-4">{t('personal.noShares')}</p>
         ) : (
           <div>
-            {ledger?.mirroredShares.map(share => (
-              <div key={share.sourceExpenseId} className="border-b border-border/50 last:border-0">
-                <div className="flex items-center justify-between px-4 pt-2">
-                  <div className="flex items-center gap-2">
-                    {share.status === 'pending' ? (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 font-medium">
-                        <Clock className="h-3 w-3" />{t('personal.pending')}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-green-600 font-medium">
-                        <CheckCircle2 className="h-3 w-3" />{t('personal.realized')}
-                      </span>
-                    )}
-                    {share.installments > 1 && (
-                      <span className="text-xs text-muted-foreground">
-                        {share.installmentNo}/{share.installments}
-                      </span>
-                    )}
+            {ledger?.mirroredShares.map(share => {
+              const catEmoji = categories.find(c => c.name === share.category)?.emoji;
+              const isPayer = share.payerAmount > 0;
+              const pendingReceipt = isPayer ? share.payerAmount - share.shareAmount : 0;
+
+              return (
+                <div key={share.sourceExpenseId} className="border-b border-border/50 last:border-0">
+                  {/* Header: status badge + group + link */}
+                  <div className="flex items-center justify-between px-4 pt-2">
+                    <div className="flex items-center gap-2">
+                      {share.status === 'pending' ? (
+                        <span className="inline-flex items-center gap-0.5 text-xs text-amber-600 font-medium">
+                          <Clock className="h-3 w-3" />{t('personal.pending')}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5 text-xs text-green-600 font-medium">
+                          <CheckCircle2 className="h-3 w-3" />{t('personal.realized')}
+                        </span>
+                      )}
+                      {share.installments > 1 && (
+                        <span className="text-xs text-muted-foreground">{share.installmentNo}/{share.installments}</span>
+                      )}
+                    </div>
+                    <Link
+                      to={`/groups/${share.sourceGroupId}?year=${year}&month=${month}&highlight=${share.sourceExpenseId}`}
+                      className="text-xs text-muted-foreground hover:text-brand transition-colors flex items-center gap-0.5"
+                      title={t('personal.viewInGroup')}
+                    >
+                      {t('personal.viewInGroup')} <ExternalLink className="h-3 w-3" />
+                    </Link>
                   </div>
-                  <Link
-                    to={`/groups/${share.sourceGroupId}?year=${year}&month=${month}&highlight=${share.sourceExpenseId}`}
-                    className="text-xs text-muted-foreground hover:text-brand transition-colors flex items-center gap-0.5"
-                    title={t('personal.viewInGroup')}
-                  >
-                    {t('personal.viewInGroup')} <ExternalLink className="h-3 w-3" />
-                  </Link>
+
+                  {isPayer ? (
+                    /* Payer layout: show paid / pending receipt / net */
+                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors">
+                      {/* Category icon */}
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                        {catEmoji
+                          ? <span className="text-lg leading-none">{catEmoji}</span>
+                          : <span className="text-xs font-bold text-muted-foreground uppercase">{share.category.slice(0, 2)}</span>}
+                      </div>
+                      {/* Description + meta */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground line-clamp-2">{share.description}</p>
+                        <p className="text-xs text-muted-foreground">{share.sourceGroupName} · {share.date}</p>
+                        <div className="flex sm:hidden items-center gap-1 mt-1">
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{share.category}</span>
+                        </div>
+                      </div>
+                      {/* Desktop category badge */}
+                      <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{share.category}</span>
+                      </div>
+                      {/* Amounts: paid + pending receipt */}
+                      <div className="text-right flex-shrink-0 w-28">
+                        <p className="text-sm font-semibold text-foreground tabular-nums">-{formatCurrency(share.payerAmount)}</p>
+                        <p className={`text-xs font-medium ${share.status === 'pending' ? 'text-amber-600' : 'text-green-600'}`}>
+                          {share.status === 'pending'
+                            ? `+${formatCurrency(pendingReceipt)} ${t('personal.pending').toLowerCase()}`
+                            : `+${formatCurrency(pendingReceipt)} ${t('personal.realized').toLowerCase()}`}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Non-payer layout: existing ExpenseRow */
+                    <ExpenseRow
+                      expense={{
+                        id: share.sourceExpenseId,
+                        description: share.description,
+                        amount: share.shareAmount,
+                        date: share.date,
+                        category: share.category,
+                        payerId: 0,
+                        paymentType: 'debit',
+                        installments: 1,
+                        installmentNo: 1,
+                        splitStrategy: { type: 'equal' },
+                      }}
+                      members={[{ id: 0, name: share.sourceGroupName, telephone: '' }]}
+                      isSettled={share.status === 'realized'}
+                      hideSplitBadge
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                    />
+                  )}
                 </div>
-                <ExpenseRow
-                  expense={{
-                    id: share.sourceExpenseId,
-                    description: share.description,
-                    amount: share.shareAmount,
-                    date: share.date,
-                    category: share.category,
-                    payerId: 0,
-                    paymentType: 'debit',
-                    installments: 1,
-                    installmentNo: 1,
-                    splitStrategy: { type: 'equal' },
-                  }}
-                  members={[{ id: 0, name: share.sourceGroupName, telephone: '' }]}
-                  isSettled={share.status === 'realized'}
-                  hideSplitBadge
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
