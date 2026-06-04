@@ -148,6 +148,7 @@ export interface MirroredShareItem {
   category: string;
   date: string;
   shareAmount: number;
+  payerAmount: number;  // full expense amount paid by owner (0 if someone else paid)
   status: 'pending' | 'realized';
   installmentNo: number;
   installments: number;
