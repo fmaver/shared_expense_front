@@ -242,20 +242,51 @@ export function PersonalDashboard() {
 
       {/* Balance summary cards */}
       {ledger && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="bg-card border border-border rounded-xl p-4">
-            <p className="text-xs text-muted-foreground">{t('personal.totalIncome')}</p>
-            <p className="text-lg font-bold text-green-600 mt-1">{formatCurrency(ledger.totalIncome)}</p>
+        <div className="space-y-3">
+          {/* Income + expenses row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-card border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground">{t('personal.totalIncome')}</p>
+              <p className="text-lg font-bold text-green-600 mt-1">{formatCurrency(ledger.totalIncome)}</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground">{t('personal.totalExpenses')}</p>
+              <p className="text-lg font-bold text-red-500 mt-1">{formatCurrency(ledger.totalPersonalExpenses)}</p>
+            </div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
-            <p className="text-xs text-muted-foreground">{t('personal.totalExpenses')}</p>
-            <p className="text-lg font-bold text-red-500 mt-1">{formatCurrency(ledger.totalPersonalExpenses)}</p>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-4 col-span-2 sm:col-span-1">
-            <p className="text-xs text-muted-foreground">{t('personal.projectedBalance')}</p>
-            <p className={`text-lg font-bold mt-1 ${ledger.projectedBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-              {formatCurrency(ledger.projectedBalance)}
-            </p>
+
+          {/* Main balance card */}
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            {/* Current balance: actual cash right now */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">{t('personal.currentBalance')}</p>
+                <p className="text-xs text-muted-foreground">{t('personal.currentBalanceDesc')}</p>
+              </div>
+              <p className={`text-xl font-bold ${ledger.currentBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {formatCurrency(ledger.currentBalance)}
+              </p>
+            </div>
+
+            {/* Projected — only shown when pending settlements exist */}
+            {Math.abs(ledger.pendingSettlementsTotal) > 0.01 && (
+              <>
+                <div className="border-t border-border/50" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{t('personal.projectedBalance')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {ledger.pendingSettlementsTotal > 0
+                        ? t('personal.afterReceiving', { amount: formatCurrency(ledger.pendingSettlementsTotal) })
+                        : t('personal.afterPaying', { amount: formatCurrency(Math.abs(ledger.pendingSettlementsTotal)) })}
+                    </p>
+                  </div>
+                  <p className={`text-lg font-bold ${ledger.projectedBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {formatCurrency(ledger.projectedBalance)}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -283,7 +314,7 @@ export function PersonalDashboard() {
           </div>
           {/* Divider + net total */}
           <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm">
-            <span className="text-muted-foreground font-medium">{t('personal.pendingSettlements')}</span>
+            <span className="text-muted-foreground font-medium">{t('personal.netAtSettlement')}</span>
             {Math.abs(ledger.pendingSettlementsTotal) > 0.01 ? (
               <span className="text-amber-600 font-bold">
                 {ledger.pendingSettlementsTotal > 0
