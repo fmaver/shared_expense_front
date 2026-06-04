@@ -163,11 +163,13 @@ export interface PersonalLedgerResponse {
   totalSharesPending: number;
   totalSharesRealized: number;
   mirroredShares: MirroredShareItem[];
+  recurringPersonalExpenses: RecurringPersonalExpenseInstanceResponse[];
+  groupBalances: GroupBalanceItem[];
+  totalPaidAsPayerUnsettled: number;
   projectedBalance: number;
   realizedBalance: number;
+  currentBalance: number;
   pendingSettlementsTotal: number;
-  groupBalances: GroupBalanceItem[];
-  recurringPersonalExpenses: RecurringPersonalExpenseInstanceResponse[];
 }
 
 export interface RecurringIncomeCreate {

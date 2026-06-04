@@ -276,6 +276,11 @@
     "willPay": "a pagar",
     "balanced": "Balanceado",
     "addRecurringExpense": "Recurrente",
-    "recurringExpenseTitle": "Gasto recurrente (se repite cada mes)"
+    "recurringExpenseTitle": "Gasto recurrente (se repite cada mes)",
+    "currentBalance": "Balance actual",
+    "currentBalanceDesc": "Lo que tenés ahora mismo",
+    "afterReceiving": "Tras recibir {{amount}}",
+    "afterPaying": "Tras pagar {{amount}}",
+    "netAtSettlement": "Neto al liquidar"
   }
 }

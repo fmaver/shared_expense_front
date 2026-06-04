@@ -276,6 +276,11 @@
     "willPay": "to pay",
     "balanced": "Balanced",
     "addRecurringExpense": "Recurring",
-    "recurringExpenseTitle": "Recurring expense (repeats each month)"
+    "recurringExpenseTitle": "Recurring expense (repeats each month)",
+    "currentBalance": "Current balance",
+    "currentBalanceDesc": "What you have right now",
+    "afterReceiving": "After receiving {{amount}}",
+    "afterPaying": "After paying {{amount}}",
+    "netAtSettlement": "Net at settlement"
   }
 }
