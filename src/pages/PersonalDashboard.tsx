@@ -326,9 +326,12 @@ export function PersonalDashboard() {
             )}
           </div>
           {/* Realized balance */}
-          <div className="mt-2 flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{t('personal.realizedBalance')}</span>
-            <span className={ledger.realizedBalance >= 0 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'}>
+          <div className="mt-2 flex items-start justify-between text-sm gap-2">
+            <div>
+              <span className="text-muted-foreground">{t('personal.realizedBalance')}</span>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">{t('personal.realizedBalanceDesc')}</p>
+            </div>
+            <span className={`flex-shrink-0 ${ledger.realizedBalance >= 0 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'}`}>
               {formatCurrency(ledger.realizedBalance)}
             </span>
           </div>

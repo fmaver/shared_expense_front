@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { JoinLinkCard } from '@/components/members/JoinLinkCard';
 import { updateGroupName, leaveGroup } from '@/api/groups';
 import { toast } from 'sonner';
 import { LogOut } from 'lucide-react';
@@ -102,9 +101,6 @@ export function GroupSettingsPage() {
           </Button>
         </form>
       </div>
-
-      {/* Join link section */}
-      <JoinLinkCard groupId={groupId} />
 
       {/* Danger zone */}
       <div className="pt-2">

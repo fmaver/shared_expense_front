@@ -16,17 +16,21 @@ import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const expiration = localStorage.getItem('tokenExpiration');
     if (token) {
       if (expiration && new Date(expiration) <= new Date()) {
-        handleLogout(); return;
+        handleLogout();
+        setAuthChecked(true);
+        return;
       }
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setIsAuthenticated(true);
     }
+    setAuthChecked(true);
     const id = axios.interceptors.response.use(
       r => r,
       err => { if (err.response?.status === 401) handleLogout(); return Promise.reject(err); },
@@ -50,6 +54,9 @@ function App() {
     window.location.href = '/';
   };
 
+  // Don't render routes until we've checked localStorage — prevents flash-redirect on deep links
+  if (!authChecked) return null;
+
   return (
     <Routes>
       {/* Public */}
@@ -60,7 +67,7 @@ function App() {
 
       {/* Protected */}
       {!isAuthenticated ? (
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       ) : (
         <Route element={<AppShell onLogout={handleLogout} />}>
           <Route path="/groups" element={<GroupSelectorPage />} />

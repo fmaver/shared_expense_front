@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGroups } from '@/hooks/useGroups';
 import { useTheme } from '@/hooks/useTheme';
+import { getCurrentUser } from '@/api/auth';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Moon, Sun, Plus, LogOut, User } from 'lucide-react';
@@ -13,16 +14,9 @@ interface SidebarProps {
   onNewGroup?: () => void;
 }
 
-function getInitials(token: string | null): { initials: string; name: string } {
-  try {
-    if (!token) return { initials: '?', name: '' };
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const n = (payload.name ?? payload.sub ?? '') as string;
-    const initials = n.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-    return { initials, name: n };
-  } catch {
-    return { initials: '?', name: '' };
-  }
+function getInitials(name: string): string {
+  if (!name) return '?';
+  return name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
 export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
@@ -36,7 +30,12 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
     i18n.changeLanguage(next);
     localStorage.setItem('language', next);
   };
-  const { initials, name } = getInitials(localStorage.getItem('token'));
+
+  const [displayName, setDisplayName] = useState('');
+  useEffect(() => {
+    getCurrentUser().then(u => setDisplayName(u.name)).catch(() => {});
+  }, []);
+  const initials = getInitials(displayName);
 
   const go = (to: string) => { navigate(to); onNavigate?.(); };
 
@@ -99,7 +98,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
           <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
             {initials}
           </div>
-          <span className="text-sm text-muted-foreground truncate">{name || 'Profile'}</span>
+          <span className="text-sm text-muted-foreground truncate">{displayName || t('nav.profile')}</span>
         </button>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button

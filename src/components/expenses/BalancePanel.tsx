@@ -73,6 +73,9 @@ export function BalancePanel({
           </div>
         ))}
       </div>
+      <p className="text-[10px] text-muted-foreground mt-2">
+        {t('balance.legend')}
+      </p>
 
       <Separator className="my-3" />
 

@@ -12,9 +12,13 @@ export function capitalize(str: string): string {
 
 export function formatDate(date: string | Date, forDisplay: boolean = false): string {
   const inputDate = typeof date === 'string' ? new Date(date + 'T12:00:00') : date;
-  
+
   if (forDisplay) {
-    return inputDate.toLocaleDateString();
+    // Consistent DD/MM/YYYY across all displays
+    const day = String(inputDate.getDate()).padStart(2, '0');
+    const month = String(inputDate.getMonth() + 1).padStart(2, '0');
+    const year = inputDate.getFullYear();
+    return `${day}/${month}/${year}`;
   } else {
     // For new dates, ensure we're using local timezone date
     if (date instanceof Date) {

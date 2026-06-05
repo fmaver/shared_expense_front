@@ -4,6 +4,7 @@ import { Pen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, capitalize, formatDate } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
+import { useTranslation } from 'react-i18next';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
 const SPLIT_BADGE: Record<string, string> = {
@@ -39,6 +40,7 @@ function memberName(members: Member[], id: number) {
 
 export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
+  const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
   const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
     ?? INTERNAL_EMOJI[expense.category];
@@ -114,7 +116,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
             {expense.paymentType === 'credit' && expense.installments > 1 && ` ${expense.installmentNo}/${expense.installments}`}
           </span>
           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-            {capitalize(expense.category)}
+            {capitalize(t(`categories.${expense.category}`, { defaultValue: expense.category }))}
           </span>
         </div>
       </div>
@@ -131,7 +133,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
           {expense.paymentType === 'credit' && expense.installments > 1 && ` ${expense.installmentNo}/${expense.installments}`}
         </span>
         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-          {capitalize(expense.category)}
+          {capitalize(t(`categories.${expense.category}`, { defaultValue: expense.category }))}
         </span>
       </div>
 
