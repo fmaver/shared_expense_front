@@ -666,6 +666,7 @@ export function PersonalDashboard() {
                       members={[{ id: 0, name: share.sourceGroupName, telephone: '' }]}
                       isSettled={share.status === 'realized'}
                       hideSplitBadge
+                      hideActions
                       onEdit={() => {}}
                       onDelete={() => {}}
                     />

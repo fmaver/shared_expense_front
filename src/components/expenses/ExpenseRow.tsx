@@ -32,13 +32,14 @@ interface ExpenseRowProps {
   onDelete: (expense: ExpenseResponse) => void;
   highlight?: boolean;
   hideSplitBadge?: boolean;
+  hideActions?: boolean;
 }
 
 function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false }: ExpenseRowProps) {
+export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false, hideActions = false }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
@@ -148,7 +149,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
       </div>
 
       {/* Actions */}
-      {!isSettled && (
+      {!isSettled && !hideActions && (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           <Button variant="ghost" size="icon" className="h-7 w-7"
             disabled={!canEdit}
