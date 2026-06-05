@@ -294,7 +294,8 @@ export function PersonalDashboard() {
       {/* Settlement positions (per-group net balances) */}
       {ledger && ledger.groupBalances.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-foreground mb-3">{t('personal.settlementPositions')}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t('personal.settlementPositions')}</h2>
+          <p className="text-xs text-muted-foreground mb-3">{t('personal.settlementPositionsDesc')}</p>
           <div className="space-y-1.5">
             {ledger.groupBalances.map(gb => (
               <div key={gb.sourceGroupId} className="flex items-center justify-between text-sm">
@@ -324,16 +325,6 @@ export function PersonalDashboard() {
             ) : (
               <span className="text-muted-foreground">{t('personal.balanced')}</span>
             )}
-          </div>
-          {/* Realized balance */}
-          <div className="mt-2 flex items-start justify-between text-sm gap-2">
-            <div>
-              <span className="text-muted-foreground">{t('personal.realizedBalance')}</span>
-              <p className="text-xs text-muted-foreground/70 mt-0.5">{t('personal.realizedBalanceDesc')}</p>
-            </div>
-            <span className={`flex-shrink-0 ${ledger.realizedBalance >= 0 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'}`}>
-              {formatCurrency(ledger.realizedBalance)}
-            </span>
           </div>
         </div>
       )}

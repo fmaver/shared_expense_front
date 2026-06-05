@@ -295,6 +295,7 @@
     "recurringBadge": "Recurring",
     "variableBadge": "One-off",
     "settlementPositions": "Settlement positions",
+    "settlementPositionsDesc": "What you're owed (or owe) across your shared groups this month",
     "willReceive": "to receive",
     "willPay": "to pay",
     "balanced": "Balanced",
