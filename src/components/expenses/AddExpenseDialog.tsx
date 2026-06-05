@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -11,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useCategories } from '@/hooks/useCategories';
 import { formatDate } from '@/utils/format';
+import { createRecurringGroupExpense } from '@/api/recurringExpenses';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '@/types/expense';
 
 interface AddExpenseDialogProps {
@@ -22,6 +24,9 @@ interface AddExpenseDialogProps {
   isSettled?: boolean;
   hidePayerAndSplit?: boolean;
   currentMemberId?: number | null;
+  groupId?: number;
+  onSuccess?: () => void;
+  isRecurringEdit?: boolean;
 }
 
 function buildInitial(
@@ -75,19 +80,22 @@ function buildInitial(
 }
 
 export function AddExpenseDialog({
-  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false, currentMemberId,
+  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false, currentMemberId, groupId, onSuccess, isRecurringEdit = false,
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
   const [expense, setExpense] = useState<ExpenseCreate>(() =>
     buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
   const [error, setError] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [submittingRecurring, setSubmittingRecurring] = useState(false);
 
   // Re-init when dialog opens with a different expense
   React.useEffect(() => {
     if (open) {
       setExpense(buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
       setError('');
+      setIsRecurring(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -102,7 +110,7 @@ export function AddExpenseDialog({
 
   const set = (patch: Partial<ExpenseCreate>) => setExpense(prev => ({ ...prev, ...patch }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (expense.splitStrategy.type === 'exact' && Math.abs(exactRemaining) > 0.01) {
       setError(t('expenseForm.exactError'));
@@ -119,7 +127,38 @@ export function AddExpenseDialog({
     } else if (participantIds != null) {
       splitStrategy.participantIds = participantIds;
     }
-    onSubmit({ ...expense, splitStrategy });
+    const finalExpense = { ...expense, splitStrategy };
+
+    if (isRecurring && !isEdit && groupId != null) {
+      setSubmittingRecurring(true);
+      try {
+        const [yearStr, monthStr] = expense.date.split('-');
+        const startYear = parseInt(yearStr, 10);
+        const startMonth = parseInt(monthStr, 10);
+        const { error: apiError } = await createRecurringGroupExpense(groupId, {
+          description: finalExpense.description,
+          amount: finalExpense.amount,
+          category: finalExpense.category.name,
+          payerId: finalExpense.payerId,
+          paymentType: finalExpense.paymentType,
+          splitStrategy: finalExpense.splitStrategy,
+          startYear,
+          startMonth,
+        });
+        if (apiError) {
+          setError(apiError);
+          return;
+        }
+        toast.success(t('toasts.recurringExpenseCreated'));
+        onSuccess?.();
+        onOpenChange(false);
+      } finally {
+        setSubmittingRecurring(false);
+      }
+      return;
+    }
+
+    onSubmit(finalExpense);
   };
 
   const disabled = isSettled;
@@ -130,6 +169,11 @@ export function AddExpenseDialog({
       <DialogContent className="sm:max-w-lg flex flex-col gap-0 overflow-hidden max-h-[90vh]" showCloseButton={false}>
         <DialogHeader className="px-0 pb-2">
           <DialogTitle>{isEdit ? t('expenseForm.editExpense') : t('expenseForm.addExpense')}</DialogTitle>
+          {isRecurringEdit && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('expenseForm.recurringEditNote')}
+            </p>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -364,13 +408,32 @@ export function AddExpenseDialog({
             </div>
           )}
           </>)}
+
+          {/* Recurring toggle — only show when creating (not editing) */}
+          {!isEdit && !hidePayerAndSplit && (
+            <div className="pt-1">
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => setIsRecurring(r => !r)}
+                className={cn(
+                  'cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                  isRecurring
+                    ? 'bg-brand/10 border-brand text-brand'
+                    : 'bg-muted border-border text-muted-foreground hover:border-brand/50',
+                )}
+              >
+                ↺ {t('expenseForm.repeatEveryMonth')}
+              </button>
+            </div>
+          )}
         </form>
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
           <Button form="expense-form" type="submit" className="bg-brand hover:bg-brand/90 text-white"
-            disabled={disabled}>
+            disabled={disabled || submittingRecurring}>
             {isEdit ? t('expenseForm.update') : t('expenseForm.addExpense')}
           </Button>
         </DialogFooter>

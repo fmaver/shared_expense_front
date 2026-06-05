@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Pen, Trash2 } from 'lucide-react';
+import { Pen, Trash2, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, capitalize, formatDate } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
@@ -33,13 +33,18 @@ interface ExpenseRowProps {
   highlight?: boolean;
   hideSplitBadge?: boolean;
   hideActions?: boolean;
+  groupId?: number;
+  viewedYear?: number;
+  viewedMonth?: number;
+  onRecurringDelete?: (templateId: number) => void;
+  onRecurringEdit?: (expense: ExpenseResponse) => void;
 }
 
 function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false, hideActions = false }: ExpenseRowProps) {
+export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false, hideActions = false, onRecurringDelete, onRecurringEdit }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
@@ -83,7 +88,12 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Description + meta */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground line-clamp-2">{capitalize(expense.description)}</p>
+        <p className="text-sm font-medium text-foreground line-clamp-2 flex items-center gap-1">
+          {capitalize(expense.description)}
+          {expense.recurringTemplateId != null && (
+            <Repeat className="h-3 w-3 text-brand flex-shrink-0" title={t('expenses.recurringBadgeTitle')} />
+          )}
+        </p>
         <p className="text-xs text-muted-foreground">
           {memberName(members, expense.payerId)} · {formatDate(expense.date, true)}
         </p>
@@ -154,13 +164,27 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
           <Button variant="ghost" size="icon" className="h-7 w-7"
             disabled={!canEdit}
             title={canEdit ? 'Edit' : 'Edit the first installment only'}
-            onClick={() => canEdit && onEdit(expense)}>
+            onClick={() => {
+              if (!canEdit) return;
+              if (expense.recurringTemplateId != null && onRecurringEdit) {
+                onRecurringEdit(expense);
+              } else {
+                onEdit(expense);
+              }
+            }}>
             <Pen className={cn('h-3.5 w-3.5', canEdit ? 'text-muted-foreground' : 'text-muted-foreground/30')} />
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7"
             disabled={!canEdit}
             title={canEdit ? 'Delete' : 'Delete the first installment only'}
-            onClick={() => canEdit && onDelete(expense)}>
+            onClick={() => {
+              if (!canEdit) return;
+              if (expense.recurringTemplateId != null && onRecurringDelete) {
+                onRecurringDelete(expense.recurringTemplateId);
+              } else {
+                onDelete(expense);
+              }
+            }}>
             <Trash2 className={cn('h-3.5 w-3.5', canEdit ? 'text-destructive' : 'text-muted-foreground/30')} />
           </Button>
         </div>

@@ -107,6 +107,8 @@
     "deleteTitle": "¿Eliminar gasto?",
     "deleteSingle": "Este gasto se eliminará de forma permanente.",
     "deleteInstallments": "Se eliminarán todas las cuotas de este gasto de forma permanente.",
+    "deleteRecurringTitle": "¿Eliminar gasto recurrente?",
+    "deleteRecurringDesc": "Se eliminará este gasto recurrente desde este mes en adelante. Los meses anteriores no se verán afectados.",
     "deleteConfirm": "Eliminar",
     "sort": "Ordenar",
     "payer": "Pagador",
@@ -120,7 +122,11 @@
       "payer": "Pagador",
       "paymentType": "Tipo de pago",
       "splitStrategy": "Tipo de división"
-    }
+    },
+    "type": "Tipo",
+    "filterRecurring": "Recurrente",
+    "filterOneTime": "Puntual",
+    "recurringBadgeTitle": "Gasto recurrente"
   },
   "months": ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
   "expenseForm": {
@@ -147,7 +153,9 @@
     "overBy": "Excedido por ${{amount}}",
     "update": "Actualizar gasto",
     "selectPlaceholder": "Seleccioná…",
-    "exactError": "Los montos exactos deben sumar el total."
+    "exactError": "Los montos exactos deben sumar el total.",
+    "repeatEveryMonth": "Repite cada mes",
+    "recurringEditNote": "Los cambios se aplicarán a este mes y a todas las ocurrencias futuras."
   },
   "transfer": {
     "title": "Transferencia de dinero",
@@ -235,7 +243,9 @@
     "failedSettle": "Error al saldar",
     "failedReopen": "Error al reabrir",
     "failedDelete": "Error al eliminar gasto",
-    "failedExport": "Error al exportar PDF"
+    "failedExport": "Error al exportar PDF",
+    "recurringExpenseCreated": "Gasto recurrente creado",
+    "recurringExpenseDeleted": "Gasto recurrente eliminado"
   },
   "common": {
     "cancel": "Cancelar",

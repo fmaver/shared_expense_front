@@ -7,6 +7,9 @@ import {
   checkSimilarExpenses, createExpense, updateExpense, deleteExpense,
 } from '@/api/expenses';
 import {
+  updateRecurringGroupExpense, deleteRecurringGroupExpense,
+} from '@/api/recurringExpenses';
+import {
   settleMonthlyShare, unsettleMonthlyShare, downloadMonthlyPdf,
 } from '@/api/shares';
 import { getCurrentUser } from '@/api/auth';
@@ -53,6 +56,8 @@ export function ExpensesDashboard() {
   const [isUnsettling, setIsUnsettling] = useState(false);
   const [showSettleConfirm, setShowSettleConfirm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
+  const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
+  const [recurringEditTarget, setRecurringEditTarget] = useState<ExpenseResponse | null>(null);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -102,6 +107,39 @@ export function ExpensesDashboard() {
     if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
     refetch();
     toast.success(t('toasts.expenseDeleted'));
+  };
+
+  const confirmRecurringDelete = async () => {
+    if (recurringDeleteTarget == null) return;
+    const templateId = recurringDeleteTarget;
+    setRecurringDeleteTarget(null);
+    const { success, error } = await deleteRecurringGroupExpense(groupId, templateId, year, month);
+    if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
+    refetch();
+    toast.success(t('toasts.recurringExpenseDeleted'));
+  };
+
+  const handleRecurringUpdate = async (data: ExpenseCreate) => {
+    if (!recurringEditTarget?.recurringTemplateId) return;
+    const { error } = await updateRecurringGroupExpense(
+      groupId,
+      recurringEditTarget.recurringTemplateId,
+      {
+        description: data.description,
+        amount: data.amount,
+        category: data.category.name,
+        payerId: data.payerId,
+        paymentType: data.paymentType,
+        splitStrategy: data.splitStrategy,
+      },
+      year,
+      month,
+    );
+    if (error) { toast.error(error); return; }
+    setRecurringEditTarget(null);
+    setShowAdd(false);
+    refetch();
+    toast.success(t('toasts.expenseUpdated'));
   };
 
   const handleSettle = async () => {
@@ -193,8 +231,14 @@ export function ExpensesDashboard() {
               {sortedExpenses.map(e => (
                 <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
                   highlight={e.id === highlightId}
+                  groupId={groupId}
+                  viewedYear={year}
+                  viewedMonth={month}
                   onEdit={exp => { setEditingExpense(exp); setShowAdd(true); }}
-                  onDelete={handleDelete} />
+                  onDelete={handleDelete}
+                  onRecurringDelete={templateId => setRecurringDeleteTarget(templateId)}
+                  onRecurringEdit={exp => { setRecurringEditTarget(exp); setShowAdd(true); }}
+                />
               ))}
             </div>
           </>
@@ -202,12 +246,19 @@ export function ExpensesDashboard() {
       </div>
 
       <AddExpenseDialog
-        open={showAdd} onOpenChange={v => { setShowAdd(v); if (!v) setEditingExpense(null); }}
-        onSubmit={editingExpense ? handleUpdate : handleCreate}
+        open={showAdd}
+        onOpenChange={v => {
+          setShowAdd(v);
+          if (!v) { setEditingExpense(null); setRecurringEditTarget(null); }
+        }}
+        onSubmit={recurringEditTarget ? handleRecurringUpdate : (editingExpense ? handleUpdate : handleCreate)}
         members={members}
-        initialExpense={editingExpense ?? undefined}
+        initialExpense={recurringEditTarget ?? editingExpense ?? undefined}
         isSettled={isSettled}
         currentMemberId={currentMemberId}
+        groupId={groupId}
+        onSuccess={refetch}
+        isRecurringEdit={!!recurringEditTarget}
       />
 
       <TransferDialog
@@ -255,6 +306,24 @@ export function ExpensesDashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={confirmDelete}>
+              {t('expenses.deleteConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recurring delete confirmation dialog */}
+      <Dialog open={recurringDeleteTarget !== null} onOpenChange={(isOpen) => { if (!isOpen) setRecurringDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{t('expenses.deleteRecurringTitle')}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t('expenses.deleteRecurringDesc')}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecurringDeleteTarget(null)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={confirmRecurringDelete}>
               {t('expenses.deleteConfirm')}
             </Button>
           </DialogFooter>
