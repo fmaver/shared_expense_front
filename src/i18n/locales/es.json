@@ -295,6 +295,7 @@
     "recurringBadge": "Recurrente",
     "variableBadge": "Puntual",
     "settlementPositions": "Posiciones de liquidación",
+    "settlementPositionsDesc": "Lo que te deben (o debés) en tus grupos compartidos este mes",
     "willReceive": "a recibir",
     "willPay": "a pagar",
     "balanced": "Balanceado",
