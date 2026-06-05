@@ -21,12 +21,14 @@ interface AddExpenseDialogProps {
   initialExpense?: ExpenseResponse;
   isSettled?: boolean;
   hidePayerAndSplit?: boolean;
+  currentMemberId?: number | null;
 }
 
 function buildInitial(
   initialExpense: ExpenseResponse | undefined,
   members: Member[],
   firstCategory: string,
+  currentMemberId?: number | null,
 ): ExpenseCreate {
   if (initialExpense) {
     const description = initialExpense.description.replace(/\s*\(\d+\/\d+\)\s*$/, '');
@@ -56,12 +58,16 @@ function buildInitial(
       },
     };
   }
+  // Default payer: current logged-in member (if they're in this group), otherwise first member
+  const defaultPayerId = (currentMemberId && members.some(m => m.id === currentMemberId))
+    ? currentMemberId
+    : (members[0]?.id ?? 0);
   return {
     description: '',
     amount: '' as unknown as number,
     date: formatDate(new Date()),
     category: { name: firstCategory },
-    payerId: members[0]?.id ?? 0,
+    payerId: defaultPayerId,
     paymentType: 'debit',
     installments: 1,
     splitStrategy: { type: 'equal', percentages: {} },
@@ -69,18 +75,18 @@ function buildInitial(
 }
 
 export function AddExpenseDialog({
-  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false,
+  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false, currentMemberId,
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
   const [expense, setExpense] = useState<ExpenseCreate>(() =>
-    buildInitial(initialExpense, members, categories[0]?.name ?? ''));
+    buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
   const [error, setError] = useState('');
 
   // Re-init when dialog opens with a different expense
   React.useEffect(() => {
     if (open) {
-      setExpense(buildInitial(initialExpense, members, categories[0]?.name ?? ''));
+      setExpense(buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
       setError('');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -169,13 +175,16 @@ export function AddExpenseDialog({
                   <span className="flex-1 text-left truncate">
                     {loadingCats ? t('common.loading') : (() => {
                       const c = categories.find(c => c.name === expense.category.name);
-                      return c ? `${c.emoji} ${c.name}` : t('expenseForm.selectPlaceholder');
+                      const label = c ? t(`categories.${c.name}`, { defaultValue: c.name }) : '';
+                      return c ? `${c.emoji} ${label}` : t('expenseForm.selectPlaceholder');
                     })()}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map(c => (
-                    <SelectItem key={c.name} value={c.name}>{c.emoji} {c.name}</SelectItem>
+                    <SelectItem key={c.name} value={c.name}>
+                      {c.emoji} {t(`categories.${c.name}`, { defaultValue: c.name })}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

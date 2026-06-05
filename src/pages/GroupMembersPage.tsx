@@ -200,8 +200,9 @@ export function GroupMembersPage() {
       {/* Join link card */}
       <JoinLinkCard groupId={groupId} />
 
-      {/* Leave group */}
-      <div className="pt-2">
+      {/* Leave group — danger zone */}
+      <div className="pt-4 border-t border-destructive/20">
+        <p className="text-xs text-muted-foreground mb-2">{t('members.leaveGroupHint')}</p>
         <Button
           variant="ghost"
           size="sm"

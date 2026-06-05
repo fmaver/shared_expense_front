@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,16 +13,31 @@ interface TransferDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (expense: ExpenseCreate) => Promise<void>;
   members: Member[];
+  currentMemberId?: number | null;
 }
 
-export function TransferDialog({ open, onOpenChange, onSubmit, members }: TransferDialogProps) {
+export function TransferDialog({ open, onOpenChange, onSubmit, members, currentMemberId }: TransferDialogProps) {
   const { t } = useTranslation();
-  const [payerId, setPayerId] = useState<number>(members[0]?.id ?? 0);
+  const defaultPayer = (currentMemberId && members.some(m => m.id === currentMemberId))
+    ? currentMemberId
+    : (members[0]?.id ?? 0);
+  const [payerId, setPayerId] = useState<number>(defaultPayer);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(() => formatDate(new Date()));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Reset payer to current user when dialog re-opens
+  useEffect(() => {
+    if (open) {
+      setPayerId(defaultPayer);
+      setAmount('');
+      setDescription('');
+      setError('');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

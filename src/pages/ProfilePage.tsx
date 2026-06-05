@@ -12,7 +12,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import {
   Dialog,
@@ -24,6 +23,27 @@ import {
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 
+/**
+ * The backend stores Argentine numbers as 54XXXXXXXXXX (no leading 9 after country code).
+ * We display them as +54 9 XX XXXX-XXXX so users can read and compare against their WhatsApp number.
+ * On save we strip all non-digits to send back the raw number.
+ */
+function formatPhoneForDisplay(raw: string): string {
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  // Argentine format: 54 + 11-digit local (with 9)
+  if (digits.startsWith('54') && digits.length >= 12) {
+    const local = digits.slice(2); // drop country code
+    return `+54 9 ${local.slice(0, 2)} ${local.slice(2, 6)}-${local.slice(6)}`;
+  }
+  return raw; // not Argentine — show as-is
+}
+
+function normalizePhoneForStorage(display: string): string {
+  // Strip everything except digits
+  return display.replace(/\D/g, '');
+}
+
 export function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -32,7 +52,7 @@ export function ProfilePage() {
   // Profile form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [telephone, setTelephone] = useState('');
+  const [telephone, setTelephone] = useState(''); // display value (formatted)
   const [notificationPreference, setNotificationPreference] = useState<NotificationType>('NONE');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -53,7 +73,7 @@ export function ProfilePage() {
         const userData = await getCurrentUser();
         setName(userData.name);
         setEmail(userData.email);
-        setTelephone(userData.telephone);
+        setTelephone(formatPhoneForDisplay(userData.telephone ?? ''));
         setNotificationPreference(userData.notificationPreference);
       } catch {
         toast.error('Failed to load user data');
@@ -80,7 +100,7 @@ export function ProfilePage() {
       await updateProfile({
         name,
         email,
-        telephone,
+        telephone: normalizePhoneForStorage(telephone),
         notification_preference: notificationPreference,
       });
       toast.success(t('toasts.profileUpdated'));
@@ -193,9 +213,12 @@ export function ProfilePage() {
               type="tel"
               value={telephone}
               onChange={(e) => setTelephone(e.target.value)}
-              placeholder="+54 9 11 1234 5678"
+              placeholder="+54 9 11 1234-5678"
               className="text-sm"
             />
+            <p className="text-xs text-muted-foreground">
+              {t('profile.phoneHelp')}
+            </p>
             {notificationPreference === 'WHATSAPP' && !telephone && (
               <p className="text-xs text-destructive">
                 Phone number is required for WhatsApp notifications
@@ -213,7 +236,9 @@ export function ProfilePage() {
               onValueChange={(value) => setNotificationPreference(value as NotificationType)}
             >
               <SelectTrigger id="notification-preference" className="text-sm">
-                <SelectValue placeholder="Select notification method" />
+                <span className="flex-1 text-left">
+                  {{ NONE: t('profile.notifNone'), EMAIL: t('profile.notifEmail'), WHATSAPP: t('profile.notifWhatsapp') }[notificationPreference] ?? notificationPreference}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="NONE">{t('profile.notifNone')}</SelectItem>

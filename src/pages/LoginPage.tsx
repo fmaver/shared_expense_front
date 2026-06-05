@@ -25,6 +25,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [telephone, setTelephone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [slowWarning, setSlowWarning] = useState(false);
   const [error, setError] = useState('');
 
   const reset = () => {
@@ -34,9 +35,11 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setIsLoading(true);
+    setError(''); setIsLoading(true); setSlowWarning(false);
+    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
     try {
       const res = await login({ username: email, password });
+      clearTimeout(slowTimer);
       const expiration = new Date(Date.now() + 30 * 60_000).toISOString();
       localStorage.setItem('token', res.access_token);
       localStorage.setItem('tokenExpiration', expiration);
@@ -44,9 +47,11 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       onLoginSuccess(res.access_token);
       navigate('/groups');
     } catch {
+      clearTimeout(slowTimer);
       setError(t('auth.invalidCredentials'));
     } finally {
       setIsLoading(false);
+      setSlowWarning(false);
     }
   };
 
@@ -129,8 +134,21 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 </div>
               </div>
               <Button type="submit" className="w-full bg-brand hover:bg-brand/90 text-white font-semibold" disabled={isLoading}>
-                {isLoading ? t('auth.signingIn') : t('auth.signIn')}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    {t('auth.signingIn')}
+                  </span>
+                ) : t('auth.signIn')}
               </Button>
+              {slowWarning && (
+                <p className="text-xs text-muted-foreground text-center animate-pulse">
+                  {t('auth.coldStartWarning')}
+                </p>
+              )}
               <p className="text-sm text-center text-muted-foreground">
                 {t('auth.noAccount')}{' '}
                 <button type="button" onClick={() => { reset(); setMode('register'); }}

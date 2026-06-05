@@ -56,7 +56,8 @@
     "invalidCredentials": "Email o contraseña inválidos.",
     "passwordMismatch": "Las contraseñas no coinciden.",
     "registrationFailed": "Error al registrarse. Intentá de nuevo.",
-    "googleSoon": "Google login próximamente 🚀"
+    "googleSoon": "Google login próximamente 🚀",
+    "coldStartWarning": "El servidor está despertando — esto puede tardar hasta 30 segundos. Por favor esperá."
   },
   "groups": {
     "yourGroups": "Tus grupos",
@@ -87,12 +88,14 @@
     "reopening": "Reabriendo…",
     "monthSettled": "Mes saldado",
     "totalExpenses": "Total de gastos",
+    "legend": "Positivo = te deben. Negativo = debés esa cantidad.",
     "settleConfirmTitle": "¿Saldar {{month}} {{year}}?",
-    "settleConfirmDesc": "Se crearán gastos de balance y se cerrará el mes. Podés reabrirlo más adelante si es necesario."
+    "settleConfirmDesc": "Se calculará quién le debe a quién y se registrarán las transferencias finales para llevar todos los balances a cero. Podés reabrir el mes si necesitás hacer cambios."
   },
   "expenses": {
     "title": "Gastos",
     "exportPdf": "Exportar PDF",
+    "exportPdfTitle": "Exportar los gastos de este mes como PDF",
     "transfer": "Transferencia",
     "add": "Agregar",
     "noExpenses": "Sin gastos este mes.",
@@ -101,6 +104,10 @@
     "addAnywayQuestion": "¿Agregar igual?",
     "addAnyway": "Sí, agregar igual",
     "cancel": "Cancelar",
+    "deleteTitle": "¿Eliminar gasto?",
+    "deleteSingle": "Este gasto se eliminará de forma permanente.",
+    "deleteInstallments": "Se eliminarán todas las cuotas de este gasto de forma permanente.",
+    "deleteConfirm": "Eliminar",
     "sort": "Ordenar",
     "payer": "Pagador",
     "category": "Categoría",
@@ -132,7 +139,7 @@
     "equal": "Igualitario",
     "percentage": "Porcentaje",
     "exact": "Montos exactos",
-    "participants": "Participantes (dejá todos marcados para dividir igualitario completo)",
+    "participants": "Dividir entre",
     "percentagesLabel": "Porcentajes (deben sumar 100)",
     "exactLabel": "Montos exactos",
     "amountsCorrect": "✓ Los montos están correctos",
@@ -158,6 +165,7 @@
     "pending": "Pendiente",
     "pendingInvitations": "Invitaciones pendientes",
     "leaveGroup": "Salir del grupo",
+    "leaveGroupHint": "Salir es irreversible. Perderás acceso a los gastos e historial de este grupo.",
     "leaveTitle": "¿Salir del grupo?",
     "leaveDesc": "Perderás acceso a los gastos e historial de este grupo. Está bloqueado si tenés un balance pendiente.",
     "leaving": "Saliendo…",
@@ -195,6 +203,7 @@
     "fullName": "Nombre completo",
     "email": "Email",
     "phone": "Teléfono de WhatsApp",
+    "phoneHelp": "Ingresá tu número como +54 9 11 1234-5678. Incluí el código de país y el 9 después.",
     "notifPref": "Preferencia de notificación",
     "notifWhatsapp": "WhatsApp",
     "notifEmail": "Email",
@@ -232,6 +241,20 @@
     "cancel": "Cancelar",
     "save": "Guardar",
     "loading": "Cargando…"
+  },
+  "categories": {
+    "comida": "Comida",
+    "supermercado": "Supermercado",
+    "entretenimiento": "Entretenimiento",
+    "servicios": "Servicios",
+    "transporte": "Transporte",
+    "viajes": "Viajes",
+    "salud": "Salud",
+    "otros": "Otros",
+    "auto": "Auto",
+    "mascota": "Mascota",
+    "balance": "Balance",
+    "prestamo": "Transferencia"
   },
   "language": "EN",
   "personal": {
@@ -278,9 +301,10 @@
     "addRecurringExpense": "Recurrente",
     "recurringExpenseTitle": "Gasto recurrente (se repite cada mes)",
     "currentBalance": "Balance actual",
-    "currentBalanceDesc": "Lo que tenés ahora mismo",
-    "afterReceiving": "Tras recibir {{amount}}",
-    "afterPaying": "Tras pagar {{amount}}",
-    "netAtSettlement": "Neto al liquidar"
+    "currentBalanceDesc": "Ingresos menos gastos personales y compartidos hasta ahora este mes",
+    "afterReceiving": "Tras recibir {{amount}} de liquidaciones de grupo",
+    "afterPaying": "Tras pagar {{amount}} en liquidaciones de grupo",
+    "netAtSettlement": "Neto al liquidar",
+    "realizedBalanceDesc": "Tu balance después de que todos los meses de grupo liquidados han sido pagados"
   }
 }

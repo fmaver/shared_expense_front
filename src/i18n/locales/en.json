@@ -56,7 +56,8 @@
     "invalidCredentials": "Invalid email or password.",
     "passwordMismatch": "Passwords do not match.",
     "registrationFailed": "Registration failed. Please try again.",
-    "googleSoon": "Google login coming soon 🚀"
+    "googleSoon": "Google login coming soon 🚀",
+    "coldStartWarning": "The server is waking up — this can take up to 30 seconds on first load. Please wait."
   },
   "groups": {
     "yourGroups": "Your groups",
@@ -87,12 +88,14 @@
     "reopening": "Reopening…",
     "monthSettled": "Month settled",
     "totalExpenses": "Total expenses",
+    "legend": "Positive = owed to you. Negative = you owe this amount.",
     "settleConfirmTitle": "Settle {{month}} {{year}}?",
-    "settleConfirmDesc": "This will create balancing expenses and close the month. You can reopen it later if needed."
+    "settleConfirmDesc": "This will calculate who owes whom and record the final transfers to bring everyone's balance to zero. You can reopen the month later if you need to make changes."
   },
   "expenses": {
     "title": "Expenses",
     "exportPdf": "Export PDF",
+    "exportPdfTitle": "Export this month's expenses as a PDF",
     "transfer": "Transfer",
     "add": "Add",
     "noExpenses": "No expenses this month.",
@@ -101,6 +104,10 @@
     "addAnywayQuestion": "Add anyway?",
     "addAnyway": "Yes, add it",
     "cancel": "Cancel",
+    "deleteTitle": "Delete expense?",
+    "deleteSingle": "This expense will be permanently removed.",
+    "deleteInstallments": "This will permanently delete all installments of this expense.",
+    "deleteConfirm": "Delete",
     "sort": "Sort",
     "payer": "Payer",
     "category": "Category",
@@ -132,7 +139,7 @@
     "equal": "Equal",
     "percentage": "Percentage",
     "exact": "Exact amounts",
-    "participants": "Participants (leave all checked for a full equal split)",
+    "participants": "Split between",
     "percentagesLabel": "Percentages (must sum to 100)",
     "exactLabel": "Exact amounts",
     "amountsCorrect": "✓ Amounts add up correctly",
@@ -158,6 +165,7 @@
     "pending": "Pending",
     "pendingInvitations": "Pending invitations",
     "leaveGroup": "Leave group",
+    "leaveGroupHint": "Leaving is irreversible. You will lose access to this group's expenses and history.",
     "leaveTitle": "Leave group?",
     "leaveDesc": "You'll lose access to this group's expenses and history. This is blocked if you have an outstanding balance.",
     "leaving": "Leaving…",
@@ -195,6 +203,7 @@
     "fullName": "Full name",
     "email": "Email",
     "phone": "WhatsApp phone",
+    "phoneHelp": "Enter your number as +54 9 11 1234-5678. Include country code and the 9 after it.",
     "notifPref": "Notification preference",
     "notifWhatsapp": "WhatsApp",
     "notifEmail": "Email",
@@ -232,6 +241,20 @@
     "cancel": "Cancel",
     "save": "Save",
     "loading": "Loading…"
+  },
+  "categories": {
+    "comida": "Food",
+    "supermercado": "Groceries",
+    "entretenimiento": "Entertainment",
+    "servicios": "Utilities",
+    "transporte": "Transport",
+    "viajes": "Travel",
+    "salud": "Health",
+    "otros": "Other",
+    "auto": "Car",
+    "mascota": "Pet",
+    "balance": "Balance",
+    "prestamo": "Transfer"
   },
   "language": "ES",
   "personal": {
@@ -278,9 +301,10 @@
     "addRecurringExpense": "Recurring",
     "recurringExpenseTitle": "Recurring expense (repeats each month)",
     "currentBalance": "Current balance",
-    "currentBalanceDesc": "What you have right now",
-    "afterReceiving": "After receiving {{amount}}",
-    "afterPaying": "After paying {{amount}}",
-    "netAtSettlement": "Net at settlement"
+    "currentBalanceDesc": "Income minus personal and shared expenses so far this month",
+    "afterReceiving": "After receiving {{amount}} from group settlements",
+    "afterPaying": "After paying {{amount}} to group settlements",
+    "netAtSettlement": "Net at settlement",
+    "realizedBalanceDesc": "Your balance after all settled group months have been paid out"
   }
 }

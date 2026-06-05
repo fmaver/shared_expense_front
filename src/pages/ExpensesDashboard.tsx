@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
@@ -9,6 +9,7 @@ import {
 import {
   settleMonthlyShare, unsettleMonthlyShare, downloadMonthlyPdf,
 } from '@/api/shares';
+import { getCurrentUser } from '@/api/auth';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { BalancePanel } from '@/components/expenses/BalancePanel';
 import { ExpenseListHeader } from '@/components/expenses/ExpenseListHeader';
@@ -19,13 +20,18 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, ArrowLeftRight } from 'lucide-react';
+import { Plus, ArrowLeftRight, FileDown } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 
 export function ExpensesDashboard() {
   const { t } = useTranslation();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
+  const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
+
+  useEffect(() => {
+    getCurrentUser().then(u => setCurrentMemberId(u.id)).catch(() => {});
+  }, []);
 
   const [searchParams] = useSearchParams();
   const [year, setYear] = useState(() => {
@@ -46,6 +52,7 @@ export function ExpensesDashboard() {
   const [isSettling, setIsSettling] = useState(false);
   const [isUnsettling, setIsUnsettling] = useState(false);
   const [showSettleConfirm, setShowSettleConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -83,12 +90,14 @@ export function ExpensesDashboard() {
     toast.success(t('toasts.expenseUpdated'));
   };
 
-  const handleDelete = async (expense: ExpenseResponse) => {
-    const id = expense.parentExpenseId ?? expense.id;
-    const msg = expense.installments > 1
-      ? 'This will delete all installments. Continue?'
-      : 'Delete this expense?';
-    if (!window.confirm(msg)) return;
+  const handleDelete = (expense: ExpenseResponse) => {
+    setDeleteTarget(expense);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.parentExpenseId ?? deleteTarget.id;
+    setDeleteTarget(null);
     const { success, error } = await deleteExpense(groupId, id);
     if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
     refetch();
@@ -158,8 +167,9 @@ export function ExpensesDashboard() {
           <h3 className="text-sm font-semibold text-foreground">{t('expenses.title')}</h3>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground"
-              onClick={handleExportPDF}>
-              {t('expenses.exportPdf')}
+              onClick={handleExportPDF}
+              title={t('expenses.exportPdfTitle')}>
+              <FileDown className="h-3.5 w-3.5 mr-1" />{t('expenses.exportPdf')}
             </Button>
             <Button size="sm" variant="outline" className="h-7 px-2.5 text-xs"
               onClick={() => { setShowTransfer(true); setShowAdd(false); }}>
@@ -197,11 +207,13 @@ export function ExpensesDashboard() {
         members={members}
         initialExpense={editingExpense ?? undefined}
         isSettled={isSettled}
+        currentMemberId={currentMemberId}
       />
 
       <TransferDialog
         open={showTransfer} onOpenChange={setShowTransfer}
         onSubmit={handleCreate} members={members}
+        currentMemberId={currentMemberId}
       />
 
       <Dialog open={duplicates.length > 0} onOpenChange={(isOpen) => { if (!isOpen) { setPendingExpense(null); setDuplicates([]); } }}>
@@ -229,12 +241,32 @@ export function ExpensesDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteTarget !== null} onOpenChange={(isOpen) => { if (!isOpen) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{t('expenses.deleteTitle')}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {deleteTarget && deleteTarget.installments > 1
+              ? t('expenses.deleteInstallments')
+              : t('expenses.deleteSingle')}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              {t('expenses.deleteConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Settle confirmation dialog */}
       <Dialog open={showSettleConfirm} onOpenChange={(isOpen) => { if (!isOpen) setShowSettleConfirm(false); }}>
         <DialogContent className="sm:max-w-sm" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>
-              {t('balance.settleConfirmTitle', { month: new Date(year, month - 1).toLocaleString('default', { month: 'long' }), year })}
+              {t('balance.settleConfirmTitle', { month: (t('months', { returnObjects: true }) as string[])[month - 1], year })}
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
