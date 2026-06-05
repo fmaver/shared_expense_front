@@ -6,8 +6,7 @@
     "profile": "Profile",
     "toggleTheme": "Toggle theme",
     "logout": "Logout",
-    "personal": "Personal",
-    "profile": "Profile"
+    "personal": "Personal"
   },
   "landing": {
     "nav": { "features": "Features", "signIn": "Sign in", "getStarted": "Get started" },
@@ -105,6 +104,10 @@
     "addAnywayQuestion": "Add anyway?",
     "addAnyway": "Yes, add it",
     "cancel": "Cancel",
+    "deleteTitle": "Delete expense?",
+    "deleteSingle": "This expense will be permanently removed.",
+    "deleteInstallments": "This will permanently delete all installments of this expense.",
+    "deleteConfirm": "Delete",
     "sort": "Sort",
     "payer": "Payer",
     "category": "Category",

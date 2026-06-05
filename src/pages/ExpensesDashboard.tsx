@@ -52,6 +52,7 @@ export function ExpensesDashboard() {
   const [isSettling, setIsSettling] = useState(false);
   const [isUnsettling, setIsUnsettling] = useState(false);
   const [showSettleConfirm, setShowSettleConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -89,12 +90,14 @@ export function ExpensesDashboard() {
     toast.success(t('toasts.expenseUpdated'));
   };
 
-  const handleDelete = async (expense: ExpenseResponse) => {
-    const id = expense.parentExpenseId ?? expense.id;
-    const msg = expense.installments > 1
-      ? 'This will delete all installments. Continue?'
-      : 'Delete this expense?';
-    if (!window.confirm(msg)) return;
+  const handleDelete = (expense: ExpenseResponse) => {
+    setDeleteTarget(expense);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.parentExpenseId ?? deleteTarget.id;
+    setDeleteTarget(null);
     const { success, error } = await deleteExpense(groupId, id);
     if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
     refetch();
@@ -238,12 +241,32 @@ export function ExpensesDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteTarget !== null} onOpenChange={(isOpen) => { if (!isOpen) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{t('expenses.deleteTitle')}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {deleteTarget && deleteTarget.installments > 1
+              ? t('expenses.deleteInstallments')
+              : t('expenses.deleteSingle')}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              {t('expenses.deleteConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Settle confirmation dialog */}
       <Dialog open={showSettleConfirm} onOpenChange={(isOpen) => { if (!isOpen) setShowSettleConfirm(false); }}>
         <DialogContent className="sm:max-w-sm" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>
-              {t('balance.settleConfirmTitle', { month: new Date(year, month - 1).toLocaleString('default', { month: 'long' }), year })}
+              {t('balance.settleConfirmTitle', { month: (t('months', { returnObjects: true }) as string[])[month - 1], year })}
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">

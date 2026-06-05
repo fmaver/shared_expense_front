@@ -51,7 +51,7 @@ function App() {
     localStorage.removeItem('tokenExpiration');
     delete axios.defaults.headers.common['Authorization'];
     // Full page reload guarantees a clean redirect regardless of router state
-    window.location.href = '/';
+    window.location.href = '/login';
   };
 
   // Don't render routes until we've checked localStorage — prevents flash-redirect on deep links
