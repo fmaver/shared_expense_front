@@ -6,7 +6,7 @@ export default {
     extend: {
       fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
       colors: {
-        brand:   '#CCBBDD',
+        brand:   'hsl(var(--brand))',
         crimson: '#EE3333',
         charcoal:'#777777',
         sidebar: '#1E1B2E',

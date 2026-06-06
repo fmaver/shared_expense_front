@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Pen, Trash2, Repeat } from 'lucide-react';
+import { Pen, Trash2, Repeat, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, capitalize, formatDate } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
@@ -52,6 +52,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
     ?? INTERNAL_EMOJI[expense.category];
   const rowRef = useRef<HTMLDivElement>(null);
   const [isFlashing, setIsFlashing] = useState(highlight);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!highlight) return;
@@ -73,8 +74,9 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
   return (
     <div
       ref={rowRef}
+      onClick={() => setExpanded(e => !e)}
       className={cn(
-        'flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group',
+        'flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group cursor-pointer',
         isFlashing && 'bg-brand/10'
       )}
     >
@@ -88,17 +90,21 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Description + meta */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground line-clamp-2 flex items-center gap-1">
+        <p className={cn('text-sm font-medium text-foreground flex items-center gap-1', !expanded && 'line-clamp-2')}>
           {capitalize(expense.description)}
           {expense.recurringTemplateId != null && (
             <Repeat className="h-3 w-3 text-brand flex-shrink-0" title={t('expenses.recurringBadgeTitle')} />
           )}
+          {expanded
+            ? <ChevronUp className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-auto" />
+            : <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-auto" />
+          }
         </p>
         <p className="text-xs text-muted-foreground">
           {memberName(members, expense.payerId)} · {formatDate(expense.date, true)}
         </p>
         {expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
+          <p className={cn('text-xs text-muted-foreground', !expanded && 'line-clamp-2')}>
             {Object.entries(expense.splitStrategy.percentages)
               .map(([id, pct]) => {
                 const pctNum = parseFloat(Number(pct).toFixed(1));
@@ -109,7 +115,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
           </p>
         )}
         {expense.splitStrategy.type === 'exact' && expense.splitStrategy.amounts && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
+          <p className={cn('text-xs text-muted-foreground', !expanded && 'line-clamp-2')}>
             {Object.entries(expense.splitStrategy.amounts)
               .map(([id, amt]) => `${memberName(members, parseInt(id))} ${formatCurrency(amt ?? 0)}`)
               .join(' · ')}
@@ -160,7 +166,8 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Actions */}
       {!isSettled && !hideActions && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+          onClick={e => e.stopPropagation()}>
           <Button variant="ghost" size="icon" className="h-7 w-7"
             disabled={!canEdit}
             title={canEdit ? 'Edit' : 'Edit the first installment only'}
