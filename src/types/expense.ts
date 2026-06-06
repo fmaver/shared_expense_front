@@ -184,6 +184,7 @@ export interface MirroredShareItem {
   installments: number;
   payerId: number;
   payerName: string;
+  isRecurring: boolean;
 }
 
 export interface PersonalLedgerResponse {
