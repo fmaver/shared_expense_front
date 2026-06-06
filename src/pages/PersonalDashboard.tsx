@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/utils/format';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
+import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import {
   createRecurringIncome,
@@ -73,6 +74,7 @@ export function PersonalDashboard() {
   const [editRecExpAmount, setEditRecExpAmount] = useState('');
   const [editRecExpCategory, setEditRecExpCategory] = useState('');
   const [savingEditRecExp, setSavingEditRecExp] = useState(false);
+  const [selectedRecurringInstance, setSelectedRecurringInstance] = useState<RecurringPersonalExpenseInstanceResponse | null>(null);
 
   // Keep recExpCategory in sync when categories load
   useEffect(() => {
@@ -482,16 +484,7 @@ export function PersonalDashboard() {
               <div key={`rec-exp-${instance.id}`} className="border-b border-border/50 last:border-0">
                 <div
                   className="flex items-center gap-3 px-4 py-3 group [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation"
-                  onClick={() => {
-                    if (editingRecExpId === instance.id) {
-                      setEditingRecExpId(null);
-                    } else {
-                      setEditingRecExpId(instance.id);
-                      setEditRecExpLabel(instance.label);
-                      setEditRecExpAmount(String(instance.amount));
-                      setEditRecExpCategory(instance.categoryName);
-                    }
-                  }}
+                  onClick={() => setSelectedRecurringInstance(instance)}
                 >
                   {/* Category icon — matches ExpenseRow */}
                   <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -692,6 +685,40 @@ export function PersonalDashboard() {
           </div>
         )}
       </div>
+
+      {/* Recurring personal expense detail popup */}
+      {selectedRecurringInstance && currentMemberId && (
+        <ExpenseDetailDialog
+          open={!!selectedRecurringInstance}
+          onOpenChange={open => { if (!open) setSelectedRecurringInstance(null); }}
+          expense={{
+            id: selectedRecurringInstance.id,
+            description: selectedRecurringInstance.label,
+            amount: selectedRecurringInstance.amount,
+            date: `${selectedRecurringInstance.year}-${String(selectedRecurringInstance.month).padStart(2, '0')}-01`,
+            category: selectedRecurringInstance.categoryName,
+            payerId: currentMemberId,
+            paymentType: 'debit',
+            installments: 1,
+            installmentNo: 1,
+            splitStrategy: { type: 'equal' },
+          }}
+          members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
+          isSettled={false}
+          hideSplitBadge
+          onEdit={() => {
+            setSelectedRecurringInstance(null);
+            setEditingRecExpId(selectedRecurringInstance.id);
+            setEditRecExpLabel(selectedRecurringInstance.label);
+            setEditRecExpAmount(String(selectedRecurringInstance.amount));
+            setEditRecExpCategory(selectedRecurringInstance.categoryName);
+          }}
+          onDelete={() => {
+            setSelectedRecurringInstance(null);
+            handleDeleteRecurringExpense(selectedRecurringInstance);
+          }}
+        />
+      )}
 
       {/* Add / Edit expense dialog */}
       {showExpenseDialog && personalGroupId && currentMemberId && (
