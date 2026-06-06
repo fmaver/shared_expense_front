@@ -30,6 +30,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [filterPayer, setFilterPayer] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterRecurring, setFilterRecurring] = useState<string>('all');
 
   const memberName = (id: number) => members.find(m => m.id === id)?.name ?? 'Unknown';
 
@@ -42,6 +43,8 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
     const filtered = expenses.filter(e => {
       if (filterPayer !== 'all' && e.payerId !== parseInt(filterPayer)) return false;
       if (filterCategory !== 'all' && e.category !== filterCategory) return false;
+      if (filterRecurring === 'recurring' && e.recurringTemplateId == null) return false;
+      if (filterRecurring === 'one-time' && e.recurringTemplateId != null) return false;
       return true;
     });
 
@@ -59,7 +62,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
       return sortOrder === 'asc' ? cmp : -cmp;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenses, sortField, sortOrder, filterPayer, filterCategory]);
+  }, [expenses, sortField, sortOrder, filterPayer, filterCategory, filterRecurring]);
 
   React.useEffect(() => { onSorted(sorted); }, [sorted, onSorted]);
 
@@ -117,6 +120,25 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
             {categories.map(c => (
               <SelectItem key={c} value={c} className="text-xs capitalize">{c}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Filter by recurring */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-muted-foreground">{t('expenses.type')}</span>
+        <Select value={filterRecurring} onValueChange={setFilterRecurring}>
+          <SelectTrigger className="h-7 text-xs w-28 bg-card">
+            <span className="truncate">
+              {filterRecurring === 'all' ? t('expenses.all')
+                : filterRecurring === 'recurring' ? t('expenses.filterRecurring')
+                : t('expenses.filterOneTime')}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
+            <SelectItem value="recurring" className="text-xs">{t('expenses.filterRecurring')}</SelectItem>
+            <SelectItem value="one-time" className="text-xs">{t('expenses.filterOneTime')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -27,6 +27,36 @@ export interface ExpenseResponse extends Omit<ExpenseCreate, 'category'> {
   category: string;
   installmentNo: number;
   parentExpenseId?: number | null;
+  recurringTemplateId?: number | null;
+}
+
+export interface RecurringGroupExpenseCreate {
+  description: string;
+  amount: number;
+  category: string;
+  payerId: number;
+  paymentType: 'debit' | 'credit';
+  splitStrategy: SplitStrategy;
+  startYear: number;
+  startMonth: number;
+}
+
+export interface RecurringGroupExpenseUpdate {
+  description?: string;
+  amount?: number;
+  category?: string;
+  payerId?: number;
+  paymentType?: 'debit' | 'credit';
+  splitStrategy?: SplitStrategy;
+  startYear?: number;
+  startMonth?: number;
+  active?: boolean;
+}
+
+export interface RecurringGroupExpenseResponse extends RecurringGroupExpenseCreate {
+  id: number;
+  groupId: number;
+  active: boolean;
 }
 
 export interface CategoryWithEmoji extends Category {

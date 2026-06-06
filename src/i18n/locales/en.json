@@ -107,6 +107,8 @@
     "deleteTitle": "Delete expense?",
     "deleteSingle": "This expense will be permanently removed.",
     "deleteInstallments": "This will permanently delete all installments of this expense.",
+    "deleteRecurringTitle": "Delete recurring expense?",
+    "deleteRecurringDesc": "This will delete this recurring expense from this month onwards. Past months will not be affected.",
     "deleteConfirm": "Delete",
     "sort": "Sort",
     "payer": "Payer",
@@ -120,7 +122,11 @@
       "payer": "Payer",
       "paymentType": "Payment type",
       "splitStrategy": "Split type"
-    }
+    },
+    "type": "Type",
+    "filterRecurring": "Recurring",
+    "filterOneTime": "One-time",
+    "recurringBadgeTitle": "Recurring expense"
   },
   "months": ["January","February","March","April","May","June","July","August","September","October","November","December"],
   "expenseForm": {
@@ -147,7 +153,9 @@
     "overBy": "Over by ${{amount}}",
     "update": "Update expense",
     "selectPlaceholder": "Select…",
-    "exactError": "Exact amounts must add up to the total."
+    "exactError": "Exact amounts must add up to the total.",
+    "repeatEveryMonth": "Repeat every month",
+    "recurringEditNote": "Changes will apply to this month and all future occurrences."
   },
   "transfer": {
     "title": "Money transfer",
@@ -235,7 +243,9 @@
     "failedSettle": "Failed to settle",
     "failedReopen": "Failed to reopen",
     "failedDelete": "Failed to delete expense",
-    "failedExport": "Failed to export PDF"
+    "failedExport": "Failed to export PDF",
+    "recurringExpenseCreated": "Recurring expense created",
+    "recurringExpenseDeleted": "Recurring expense deleted"
   },
   "common": {
     "cancel": "Cancel",
