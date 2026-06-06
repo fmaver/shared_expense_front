@@ -312,9 +312,9 @@
     "addRecurringExpense": "Recurring",
     "recurringExpenseTitle": "Recurring expense (repeats each month)",
     "currentBalance": "Current balance",
-    "currentBalanceDesc": "Income minus personal and shared expenses so far this month",
-    "afterReceiving": "After receiving {{amount}} from group settlements",
-    "afterPaying": "After paying {{amount}} to group settlements",
+    "currentBalanceDesc": "Income − expenses this month",
+    "afterReceiving": "After receiving {{amount}}",
+    "afterPaying": "After paying {{amount}}",
     "netAtSettlement": "Net at settlement",
     "realizedBalanceDesc": "Your balance after all settled group months have been paid out"
   }

@@ -263,7 +263,7 @@ export function PersonalDashboard() {
                 <p className="text-sm font-semibold text-foreground">{t('personal.currentBalance')}</p>
                 <p className="text-xs text-muted-foreground">{t('personal.currentBalanceDesc')}</p>
               </div>
-              <p className={`text-xl font-bold ${ledger.currentBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              <p className={`text-xl font-bold whitespace-nowrap flex-shrink-0 ml-3 ${ledger.currentBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                 {formatCurrency(ledger.currentBalance)}
               </p>
             </div>
@@ -281,7 +281,7 @@ export function PersonalDashboard() {
                         : t('personal.afterPaying', { amount: formatCurrency(Math.abs(ledger.pendingSettlementsTotal)) })}
                     </p>
                   </div>
-                  <p className={`text-lg font-bold ${ledger.projectedBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  <p className={`text-lg font-bold whitespace-nowrap flex-shrink-0 ml-3 ${ledger.projectedBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                     {formatCurrency(ledger.projectedBalance)}
                   </p>
                 </div>

@@ -312,9 +312,9 @@
     "addRecurringExpense": "Recurrente",
     "recurringExpenseTitle": "Gasto recurrente (se repite cada mes)",
     "currentBalance": "Balance actual",
-    "currentBalanceDesc": "Ingresos menos gastos personales y compartidos hasta ahora este mes",
-    "afterReceiving": "Tras recibir {{amount}} de liquidaciones de grupo",
-    "afterPaying": "Tras pagar {{amount}} en liquidaciones de grupo",
+    "currentBalanceDesc": "Ingresos − gastos este mes",
+    "afterReceiving": "Tras recibir {{amount}}",
+    "afterPaying": "Tras pagar {{amount}}",
     "netAtSettlement": "Neto al liquidar",
     "realizedBalanceDesc": "Tu balance después de que todos los meses de grupo liquidados han sido pagados"
   }
