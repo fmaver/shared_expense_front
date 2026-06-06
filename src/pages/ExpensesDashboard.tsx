@@ -204,18 +204,23 @@ export function ExpensesDashboard() {
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 className="text-sm font-semibold text-foreground">{t('expenses.title')}</h3>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground"
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground shrink-0"
               onClick={handleExportPDF}
               title={t('expenses.exportPdfTitle')}>
-              <FileDown className="h-3.5 w-3.5 mr-1" />{t('expenses.exportPdf')}
+              <FileDown className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">{t('expenses.exportPdf')}</span>
             </Button>
-            <Button size="sm" variant="outline" className="h-7 px-2.5 text-xs"
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs shrink-0"
+              title={t('expenses.transfer')}
               onClick={() => { setShowTransfer(true); setShowAdd(false); }}>
-              <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" /> {t('expenses.transfer')}
+              <ArrowLeftRight className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">{t('expenses.transfer')}</span>
             </Button>
-            <Button size="sm" className="h-7 px-2.5 text-xs bg-brand hover:bg-brand/90 text-white"
+            <Button size="sm" className="h-7 px-2 text-xs bg-brand hover:bg-brand/90 text-white shrink-0"
+              title={t('expenses.add')}
               onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); }}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" /> {t('expenses.add')}
+              <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">{t('expenses.add')}</span>
             </Button>
           </div>
         </div>

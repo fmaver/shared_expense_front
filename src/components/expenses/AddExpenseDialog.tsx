@@ -316,7 +316,7 @@ export function AddExpenseDialog({
           </div>
 
           {/* Equal — optional participant subset */}
-          {expense.splitStrategy.type === 'equal' && (
+          {expense.splitStrategy.type === 'equal' && members.length > 2 && (
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">
                 {t('expenseForm.participants')}
@@ -342,8 +342,8 @@ export function AddExpenseDialog({
                       className={cn(
                         'px-2.5 py-1 rounded-full text-xs font-medium border transition-colors',
                         checked
-                          ? 'bg-primary/10 border-brand text-foreground'
-                          : 'bg-muted border-border text-muted-foreground'
+                          ? 'bg-brand/20 border-brand text-foreground font-semibold ring-1 ring-brand'
+                          : 'bg-transparent border-border text-muted-foreground opacity-50'
                       )}>
                       {m.name}
                     </button>
