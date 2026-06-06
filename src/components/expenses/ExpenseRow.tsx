@@ -164,7 +164,8 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Actions */}
       {!isSettled && !hideActions && (
-        <div className="flex items-center gap-1 opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity flex-shrink-0"
+        <div
+          className="flex items-center gap-1 opacity-0 pointer-events-none [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto transition-opacity flex-shrink-0"
           onClick={e => e.stopPropagation()}>
           <Button variant="ghost" size="icon" className="h-7 w-7"
             disabled={!canEdit}
