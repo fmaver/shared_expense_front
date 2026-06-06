@@ -480,7 +480,19 @@ export function PersonalDashboard() {
               const catEmoji = categories.find(c => c.name === instance.categoryName)?.emoji;
               return (
               <div key={`rec-exp-${instance.id}`} className="border-b border-border/50 last:border-0">
-                <div className="flex items-center gap-3 px-4 py-3 group hover:bg-accent/40 transition-colors">
+                <div
+                  className="flex items-center gap-3 px-4 py-3 group [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation"
+                  onClick={() => {
+                    if (editingRecExpId === instance.id) {
+                      setEditingRecExpId(null);
+                    } else {
+                      setEditingRecExpId(instance.id);
+                      setEditRecExpLabel(instance.label);
+                      setEditRecExpAmount(String(instance.amount));
+                      setEditRecExpCategory(instance.categoryName);
+                    }
+                  }}
+                >
                   {/* Category icon — matches ExpenseRow */}
                   <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                     {catEmoji
@@ -516,7 +528,10 @@ export function PersonalDashboard() {
                     {formatCurrency(instance.amount)}
                   </div>
                   {/* Actions */}
-                  <div className="flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
+                  <div
+                    className="flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"
+                    onClick={e => e.stopPropagation()}
+                  >
                     <Button variant="ghost" size="icon" className="h-7 w-7"
                       onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}>
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -649,27 +664,27 @@ export function PersonalDashboard() {
                       </div>
                     </div>
                   ) : (
-                    /* Non-payer layout: existing ExpenseRow */
-                    <ExpenseRow
-                      expense={{
-                        id: share.sourceExpenseId,
-                        description: share.description,
-                        amount: share.shareAmount,
-                        date: share.date,
-                        category: share.category,
-                        payerId: 0,
-                        paymentType: 'debit',
-                        installments: 1,
-                        installmentNo: 1,
-                        splitStrategy: { type: 'equal' },
-                      }}
-                      members={[{ id: 0, name: share.sourceGroupName, telephone: '' }]}
-                      isSettled={share.status === 'realized'}
-                      hideSplitBadge
-                      hideActions
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                    />
+                    /* Non-payer layout */
+                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                        {catEmoji
+                          ? <span className="text-lg leading-none">{catEmoji}</span>
+                          : <span className="text-xs font-bold text-muted-foreground uppercase">{share.category.slice(0, 2)}</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground line-clamp-2">{share.description}</p>
+                        <p className="text-xs text-muted-foreground">{share.payerName} · {share.sourceGroupName}</p>
+                        <div className="flex sm:hidden items-center gap-1 mt-1">
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{share.category}</span>
+                        </div>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{share.category}</span>
+                      </div>
+                      <div className="text-sm font-semibold text-foreground tabular-nums flex-shrink-0 w-24 text-right">
+                        -{formatCurrency(share.shareAmount)}
+                      </div>
+                    </div>
                   )}
                 </div>
               );

@@ -182,6 +182,8 @@ export interface MirroredShareItem {
   status: 'pending' | 'realized';
   installmentNo: number;
   installments: number;
+  payerId: number;
+  payerName: string;
 }
 
 export interface PersonalLedgerResponse {
