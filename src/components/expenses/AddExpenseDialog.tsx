@@ -127,7 +127,11 @@ export function AddExpenseDialog({
     } else if (participantIds != null) {
       splitStrategy.participantIds = participantIds;
     }
-    const finalExpense = { ...expense, splitStrategy };
+    const finalExpense = {
+      ...expense,
+      splitStrategy,
+      ...(isRecurring ? { paymentType: 'debit' as const, installments: 1 } : {}),
+    };
 
     if (isRecurring && !isEdit && groupId != null) {
       setSubmittingRecurring(true);
@@ -253,6 +257,7 @@ export function AddExpenseDialog({
             )}
           </div>
 
+          {!isRecurring && (
           <div className="grid grid-cols-2 gap-4">
             {/* Payment type */}
             <div className="space-y-1.5">
@@ -279,6 +284,7 @@ export function AddExpenseDialog({
               </div>
             )}
           </div>
+          )}
 
           {!hidePayerAndSplit && <Separator />}
 
@@ -415,7 +421,11 @@ export function AddExpenseDialog({
               <button
                 type="button"
                 disabled={disabled}
-                onClick={() => setIsRecurring(r => !r)}
+                onClick={() => {
+                  const next = !isRecurring;
+                  setIsRecurring(next);
+                  if (next) set({ paymentType: 'debit', installments: 1 });
+                }}
                 className={cn(
                   'cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
                   isRecurring
