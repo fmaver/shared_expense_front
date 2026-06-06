@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Pen, Trash2, Repeat, ChevronDown, ChevronUp } from 'lucide-react';
+import { Pen, Trash2, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, capitalize, formatDate } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
 import { useTranslation } from 'react-i18next';
 import type { ExpenseResponse, Member } from '@/types/expense';
+import { ExpenseDetailDialog } from './ExpenseDetailDialog';
 
 const SPLIT_BADGE: Record<string, string> = {
   equal:      'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
@@ -52,7 +53,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
     ?? INTERNAL_EMOJI[expense.category];
   const rowRef = useRef<HTMLDivElement>(null);
   const [isFlashing, setIsFlashing] = useState(highlight);
-  const [expanded, setExpanded] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   useEffect(() => {
     if (!highlight) return;
@@ -72,9 +73,10 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
   })();
 
   return (
+    <>
     <div
       ref={rowRef}
-      onClick={() => setExpanded(e => !e)}
+      onClick={() => setDetailOpen(true)}
       className={cn(
         'flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group cursor-pointer',
         isFlashing && 'bg-brand/10'
@@ -90,21 +92,17 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Description + meta */}
       <div className="flex-1 min-w-0">
-        <p className={cn('text-sm font-medium text-foreground flex items-center gap-1', !expanded && 'line-clamp-2')}>
+        <p className="text-sm font-medium text-foreground flex items-center gap-1 line-clamp-2">
           {capitalize(expense.description)}
           {expense.recurringTemplateId != null && (
             <Repeat className="h-3 w-3 text-brand flex-shrink-0" title={t('expenses.recurringBadgeTitle')} />
           )}
-          {expanded
-            ? <ChevronUp className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-auto" />
-            : <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-auto" />
-          }
         </p>
         <p className="text-xs text-muted-foreground">
           {memberName(members, expense.payerId)} · {formatDate(expense.date, true)}
         </p>
         {expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages && (
-          <p className={cn('text-xs text-muted-foreground', !expanded && 'line-clamp-2')}>
+          <p className="text-xs text-muted-foreground line-clamp-1">
             {Object.entries(expense.splitStrategy.percentages)
               .map(([id, pct]) => {
                 const pctNum = parseFloat(Number(pct).toFixed(1));
@@ -115,7 +113,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
           </p>
         )}
         {expense.splitStrategy.type === 'exact' && expense.splitStrategy.amounts && (
-          <p className={cn('text-xs text-muted-foreground', !expanded && 'line-clamp-2')}>
+          <p className="text-xs text-muted-foreground line-clamp-1">
             {Object.entries(expense.splitStrategy.amounts)
               .map(([id, amt]) => `${memberName(members, parseInt(id))} ${formatCurrency(amt ?? 0)}`)
               .join(' · ')}
@@ -197,5 +195,20 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
         </div>
       )}
     </div>
+
+    <ExpenseDetailDialog
+      expense={expense}
+      members={members}
+      isSettled={isSettled}
+      open={detailOpen}
+      onOpenChange={setDetailOpen}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      hideSplitBadge={hideSplitBadge}
+      hideActions={hideActions}
+      onRecurringDelete={onRecurringDelete}
+      onRecurringEdit={onRecurringEdit}
+    />
+    </>
   );
 }

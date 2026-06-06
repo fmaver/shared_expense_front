@@ -419,8 +419,8 @@ export function AddExpenseDialog({
                 className={cn(
                   'cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
                   isRecurring
-                    ? 'bg-brand/10 border-brand text-brand'
-                    : 'bg-muted border-border text-muted-foreground hover:border-brand/50',
+                    ? 'bg-brand/10 border-brand text-brand dark:bg-brand/25 dark:border-brand dark:text-brand'
+                    : 'bg-muted border-border text-muted-foreground hover:border-brand/50 dark:bg-transparent dark:border-muted/40 dark:text-muted-foreground/40 dark:hover:border-brand/30',
                 )}
               >
                 ↺ {t('expenseForm.repeatEveryMonth')}

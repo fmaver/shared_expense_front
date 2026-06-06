@@ -73,7 +73,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
     <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-border bg-muted/30">
       {/* Sort field */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">{t('expenses.sort')}</span>
+        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.sort')}</span>
         <Select value={sortField} onValueChange={v => setSortField(v as SortField)}>
           <SelectTrigger className="h-7 text-xs w-36 bg-card">
             <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label ?? sortField}</span>
@@ -92,7 +92,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
 
       {/* Filter by payer */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">{t('expenses.payer')}</span>
+        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.payer')}</span>
         <Select value={filterPayer} onValueChange={setFilterPayer}>
           <SelectTrigger className="h-7 text-xs w-28 bg-card">
             <span className="truncate">
@@ -110,7 +110,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
 
       {/* Filter by category */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">{t('expenses.category')}</span>
+        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.category')}</span>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="h-7 text-xs w-36 bg-card">
             <span className="truncate capitalize">{filterCategory === 'all' ? t('expenses.all') : filterCategory}</span>
@@ -126,7 +126,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
 
       {/* Filter by recurring */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground">{t('expenses.type')}</span>
+        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.type')}</span>
         <Select value={filterRecurring} onValueChange={setFilterRecurring}>
           <SelectTrigger className="h-7 text-xs w-28 bg-card">
             <span className="truncate">
