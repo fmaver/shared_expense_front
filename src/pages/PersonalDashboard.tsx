@@ -705,7 +705,10 @@ export function PersonalDashboard() {
                       : <span className="text-sm font-bold text-muted-foreground uppercase">{s.category.slice(0, 2)}</span>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <DialogTitle className="text-base leading-tight">{s.description}</DialogTitle>
+                    <DialogTitle className="text-base leading-tight flex items-center gap-1.5">
+                      {s.description}
+                      {s.isRecurring && <Repeat className="h-3.5 w-3.5 text-brand shrink-0" />}
+                    </DialogTitle>
                     <p className="text-xs text-muted-foreground mt-0.5">{s.category} · {formatDate(s.date, true)}</p>
                   </div>
                 </div>
@@ -788,6 +791,7 @@ export function PersonalDashboard() {
             installments: 1,
             installmentNo: 1,
             splitStrategy: { type: 'equal' },
+            recurringTemplateId: selectedRecurringInstance.recurringExpenseId,
           }}
           members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
           isSettled={false}
