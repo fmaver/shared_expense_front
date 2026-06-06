@@ -78,7 +78,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
       ref={rowRef}
       onClick={() => setDetailOpen(true)}
       className={cn(
-        'flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors group cursor-pointer',
+        'flex items-center gap-3 px-4 py-3 [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors group cursor-pointer touch-manipulation',
         isFlashing && 'bg-brand/10'
       )}
     >
@@ -164,7 +164,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Actions */}
       {!isSettled && !hideActions && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+        <div className="flex items-center gap-1 opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity flex-shrink-0"
           onClick={e => e.stopPropagation()}>
           <Button variant="ghost" size="icon" className="h-7 w-7"
             disabled={!canEdit}
