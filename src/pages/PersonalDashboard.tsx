@@ -8,8 +8,10 @@ import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency } from '@/utils/format';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatCurrency, formatDate } from '@/utils/format';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
+import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import {
   createRecurringIncome,
@@ -25,7 +27,7 @@ import {
 } from '@/api/personal';
 import { updateExpense, deleteExpense } from '@/api/expenses';
 import { getCurrentUser } from '@/api/auth';
-import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringPersonalExpenseInstanceResponse } from '@/types/expense';
+import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringPersonalExpenseInstanceResponse, MirroredShareItem } from '@/types/expense';
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -73,6 +75,8 @@ export function PersonalDashboard() {
   const [editRecExpAmount, setEditRecExpAmount] = useState('');
   const [editRecExpCategory, setEditRecExpCategory] = useState('');
   const [savingEditRecExp, setSavingEditRecExp] = useState(false);
+  const [selectedRecurringInstance, setSelectedRecurringInstance] = useState<RecurringPersonalExpenseInstanceResponse | null>(null);
+  const [selectedMirroredShare, setSelectedMirroredShare] = useState<MirroredShareItem | null>(null);
 
   // Keep recExpCategory in sync when categories load
   useEffect(() => {
@@ -482,16 +486,7 @@ export function PersonalDashboard() {
               <div key={`rec-exp-${instance.id}`} className="border-b border-border/50 last:border-0">
                 <div
                   className="flex items-center gap-3 px-4 py-3 group [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation"
-                  onClick={() => {
-                    if (editingRecExpId === instance.id) {
-                      setEditingRecExpId(null);
-                    } else {
-                      setEditingRecExpId(instance.id);
-                      setEditRecExpLabel(instance.label);
-                      setEditRecExpAmount(String(instance.amount));
-                      setEditRecExpCategory(instance.categoryName);
-                    }
-                  }}
+                  onClick={() => setSelectedRecurringInstance(instance)}
                 >
                   {/* Category icon — matches ExpenseRow */}
                   <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -634,7 +629,7 @@ export function PersonalDashboard() {
 
                   {isPayer ? (
                     /* Payer layout: show paid / pending receipt / net */
-                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors">
+                    <div className="flex items-center gap-3 px-4 py-3 [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation" onClick={() => setSelectedMirroredShare(share)}>
                       {/* Category icon */}
                       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                         {catEmoji
@@ -665,7 +660,7 @@ export function PersonalDashboard() {
                     </div>
                   ) : (
                     /* Non-payer layout */
-                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/40 transition-colors">
+                    <div className="flex items-center gap-3 px-4 py-3 [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation" onClick={() => setSelectedMirroredShare(share)}>
                       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                         {catEmoji
                           ? <span className="text-lg leading-none">{catEmoji}</span>
@@ -692,6 +687,124 @@ export function PersonalDashboard() {
           </div>
         )}
       </div>
+
+      {/* Mirrored share detail popup */}
+      {selectedMirroredShare && (() => {
+        const s = selectedMirroredShare;
+        const catEmoji = categories.find(c => c.name === s.category)?.emoji;
+        const isPayer = s.payerAmount > 0;
+        const pendingReceipt = isPayer ? s.payerAmount - s.shareAmount : 0;
+        return (
+          <Dialog open onOpenChange={open => { if (!open) setSelectedMirroredShare(null); }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                    {catEmoji
+                      ? <span className="text-2xl leading-none">{catEmoji}</span>
+                      : <span className="text-sm font-bold text-muted-foreground uppercase">{s.category.slice(0, 2)}</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <DialogTitle className="text-base leading-tight">{s.description}</DialogTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">{s.category} · {formatDate(s.date, true)}</p>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-lg px-4 py-3 mt-1 space-y-1">
+                  {isPayer ? (
+                    <>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs text-muted-foreground">{t('personal.paid', { defaultValue: 'Paid' })}</span>
+                        <span className="text-xl font-bold text-foreground tabular-nums">-{formatCurrency(s.payerAmount)}</span>
+                      </div>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs text-muted-foreground">{t('personal.myShare', { defaultValue: 'My share' })}</span>
+                        <span className="text-sm font-medium text-foreground tabular-nums">{formatCurrency(s.shareAmount)}</span>
+                      </div>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs text-muted-foreground">{t('personal.toReceive', { defaultValue: 'To receive' })}</span>
+                        <span className={`text-sm font-semibold tabular-nums ${s.status === 'pending' ? 'text-amber-600' : 'text-green-600'}`}>
+                          +{formatCurrency(pendingReceipt)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs text-muted-foreground">{t('personal.myShare', { defaultValue: 'My share' })}</span>
+                      <span className="text-xl font-bold text-foreground tabular-nums">-{formatCurrency(s.shareAmount)}</span>
+                    </div>
+                  )}
+                </div>
+              </DialogHeader>
+              <div className="px-1 divide-y divide-border/50">
+                <div className="flex items-start gap-3 py-2">
+                  <span className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">{t('expenses.payer', { defaultValue: 'Payer' })}</span>
+                  <span className="text-xs text-foreground">{s.payerName}</span>
+                </div>
+                <div className="flex items-start gap-3 py-2">
+                  <span className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">{t('personal.group', { defaultValue: 'Group' })}</span>
+                  <span className="text-xs text-foreground">{s.sourceGroupName}</span>
+                </div>
+                <div className="flex items-start gap-3 py-2">
+                  <span className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">{t('personal.status', { defaultValue: 'Status' })}</span>
+                  <span className={`text-xs font-medium ${s.status === 'pending' ? 'text-amber-600' : 'text-green-600'}`}>
+                    {s.status === 'pending' ? t('personal.pending') : t('personal.realized')}
+                  </span>
+                </div>
+                {s.installments > 1 && (
+                  <div className="flex items-start gap-3 py-2">
+                    <span className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">{t('expenses.installment', { defaultValue: 'Instalment' })}</span>
+
+                    <span className="text-xs text-foreground">{s.installmentNo} / {s.installments}</span>
+                  </div>
+                )}
+              </div>
+              <div className="pt-1">
+                <Link
+                  to={`/groups/${s.sourceGroupId}?year=${year}&month=${month}&highlight=${s.sourceExpenseId}`}
+                  onClick={() => setSelectedMirroredShare(null)}
+                  className="flex items-center justify-center gap-1.5 w-full text-xs text-brand hover:text-brand/80 transition-colors py-2 rounded-md hover:bg-muted/50"
+                >
+                  {t('personal.viewInGroup')} <ExternalLink className="h-3 w-3" />
+                </Link>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
+
+      {/* Recurring personal expense detail popup */}
+      {selectedRecurringInstance && currentMemberId && (
+        <ExpenseDetailDialog
+          open={!!selectedRecurringInstance}
+          onOpenChange={open => { if (!open) setSelectedRecurringInstance(null); }}
+          expense={{
+            id: selectedRecurringInstance.id,
+            description: selectedRecurringInstance.label,
+            amount: selectedRecurringInstance.amount,
+            date: `${selectedRecurringInstance.year}-${String(selectedRecurringInstance.month).padStart(2, '0')}-01`,
+            category: selectedRecurringInstance.categoryName,
+            payerId: currentMemberId,
+            paymentType: 'debit',
+            installments: 1,
+            installmentNo: 1,
+            splitStrategy: { type: 'equal' },
+          }}
+          members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
+          isSettled={false}
+          hideSplitBadge
+          onEdit={() => {
+            setSelectedRecurringInstance(null);
+            setEditingRecExpId(selectedRecurringInstance.id);
+            setEditRecExpLabel(selectedRecurringInstance.label);
+            setEditRecExpAmount(String(selectedRecurringInstance.amount));
+            setEditRecExpCategory(selectedRecurringInstance.categoryName);
+          }}
+          onDelete={() => {
+            setSelectedRecurringInstance(null);
+            handleDeleteRecurringExpense(selectedRecurringInstance);
+          }}
+        />
+      )}
 
       {/* Add / Edit expense dialog */}
       {showExpenseDialog && personalGroupId && currentMemberId && (
