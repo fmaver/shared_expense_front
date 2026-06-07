@@ -80,11 +80,11 @@ export function BalancePanel({
             {t('balance.transfers')}
           </p>
           {transfers.map((tr, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-xs">
+            <div key={i} className="flex items-center gap-1.5 text-xs w-fit">
               <span className="text-muted-foreground">{name(String(tr.fromMemberId))}</span>
               <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
               <span className="text-muted-foreground">{name(String(tr.toMemberId))}</span>
-              <span className="font-semibold tabular-nums text-foreground ml-auto">
+              <span className="font-semibold tabular-nums text-foreground ps-3">
                 {formatCurrency(tr.amount)}
               </span>
             </div>
