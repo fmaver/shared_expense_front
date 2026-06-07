@@ -130,12 +130,19 @@ interface ExpenseCreate {
   splitStrategy: SplitStrategy;
 }
 
+interface DebtTransfer {
+  fromMemberId: number;
+  toMemberId: number;
+  amount: number;
+}
+
 interface MonthlyBalanceResponse {
   year: number;
   month: number;
   expenses: ExpenseResponse[];
   balances: Record<string, number>;   // memberId → float
   isSettled: boolean;
+  transfers: DebtTransfer[];          // minimum transfers to settle; empty when settled or balanced
 }
 ```
 
@@ -210,3 +217,4 @@ The following backend changes are already reflected in this frontend as of 2026-
 - **Exact amounts UI** in `ExpenseForm.tsx` — shown when split type is "Exact amounts"; per-member amount inputs.
 - **Exact / participantIds display** in `ExpenseList.tsx` — renders correctly for all three split types.
 - **Categories are dynamic** — loaded from `GET /categories/with-emojis`. No hardcoded list. The rename of `compras` → `supermercado` and the addition of `viajes` / `salud` are handled by the backend.
+- **`transfers` in `MonthlyBalanceResponse`** — backend now returns a `transfers` array alongside `balances`. `BalancePanel.tsx` renders a "Quién le paga a quién" / "Who pays whom" section below the per-member balance rows when the month is unsettled and transfers are non-empty.

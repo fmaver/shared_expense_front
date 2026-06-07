@@ -1,13 +1,14 @@
 import React from 'react';
 import { formatCurrency } from '@/utils/format';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import type { Member, ExpenseResponse } from '@/types/expense';
+import type { DebtTransfer, Member, ExpenseResponse } from '@/types/expense';
 
 interface BalancePanelProps {
   balances: Record<string, number>;
+  transfers: DebtTransfer[];
   members: Member[];
   isSettled: boolean;
   onSettleRequest: () => void;
@@ -18,7 +19,7 @@ interface BalancePanelProps {
 }
 
 export function BalancePanel({
-  balances, members, isSettled,
+  balances, transfers, members, isSettled,
   onSettleRequest, isSettling,
   onUnsettle, isUnsettling,
   expenses,
@@ -73,6 +74,24 @@ export function BalancePanel({
           </div>
         ))}
       </div>
+      {!isSettled && transfers.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            {t('balance.transfers')}
+          </p>
+          {transfers.map((tr, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-xs">
+              <span className="text-muted-foreground">{name(String(tr.fromMemberId))}</span>
+              <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="text-muted-foreground">{name(String(tr.toMemberId))}</span>
+              <span className="font-semibold tabular-nums text-foreground ml-auto">
+                {formatCurrency(tr.amount)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <p className="text-[10px] text-muted-foreground mt-2">
         {t('balance.legend')}
       </p>

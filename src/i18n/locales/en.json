@@ -89,6 +89,7 @@
     "monthSettled": "Month settled",
     "totalExpenses": "Total expenses",
     "legend": "Positive = owed to you. Negative = you owe this amount.",
+    "transfers": "Who pays whom",
     "settleConfirmTitle": "Settle {{month}} {{year}}?",
     "settleConfirmDesc": "This will calculate who owes whom and record the final transfers to bring everyone's balance to zero. You can reopen the month later if you need to make changes."
   },

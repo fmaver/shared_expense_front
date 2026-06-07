@@ -69,12 +69,19 @@ export interface Member {
   telephone: string;
 }
 
+export interface DebtTransfer {
+  fromMemberId: number;
+  toMemberId: number;
+  amount: number;
+}
+
 export interface MonthlyBalanceResponse {
   year: number;
   month: number;
   expenses: ExpenseResponse[];
   balances: Record<string, number>;
   isSettled: boolean;
+  transfers: DebtTransfer[];
 }
 
 export interface GroupMember {
