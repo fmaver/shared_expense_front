@@ -208,7 +208,7 @@ Current non-internal categories (as of 2026-05): `comida`, `supermercado`, `entr
 
 ## Backend changes that have already been synced
 
-The following backend changes are already reflected in this frontend as of 2026-05-07:
+The following backend changes are already reflected in this frontend as of 2026-06-07:
 
 - **Bearer token** added to all `fetch` calls (`updateExpense`, `deleteExpense`, `settleMonthlyBalance`, `getMonthlyExpenses`, `getMonthlyBalance`, `settleMonthlyShare`, `recalculateMonthlyShare`).
 - **`unsettleMonthlyShare`** added to `src/api/shares.ts` — calls `POST /shares/unsettle/{year}/{month}`.
@@ -218,3 +218,4 @@ The following backend changes are already reflected in this frontend as of 2026-
 - **Exact / participantIds display** in `ExpenseList.tsx` — renders correctly for all three split types.
 - **Categories are dynamic** — loaded from `GET /categories/with-emojis`. No hardcoded list. The rename of `compras` → `supermercado` and the addition of `viajes` / `salud` are handled by the backend.
 - **`transfers` in `MonthlyBalanceResponse`** — backend now returns a `transfers` array alongside `balances`. `BalancePanel.tsx` renders a "Quién le paga a quién" / "Who pays whom" section below the per-member balance rows when the month is unsettled and transfers are non-empty.
+- **Transfer row layout** — each row uses `w-fit` (not full-width flex) so the amount stays close to the names on desktop. Avoid `ml-auto` in this section — it pushes the amount to the panel edge on wide screens.
