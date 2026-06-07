@@ -89,6 +89,7 @@
     "monthSettled": "Mes saldado",
     "totalExpenses": "Total de gastos",
     "legend": "Positivo = te deben. Negativo = debés esa cantidad.",
+    "transfers": "Quién le paga a quién",
     "settleConfirmTitle": "¿Saldar {{month}} {{year}}?",
     "settleConfirmDesc": "Se calculará quién le debe a quién y se registrarán las transferencias finales para llevar todos los balances a cero. Podés reabrir el mes si necesitás hacer cambios."
   },

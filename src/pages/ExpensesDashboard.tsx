@@ -191,6 +191,7 @@ export function ExpensesDashboard() {
       {monthlyData && (
         <BalancePanel
           balances={monthlyData.balances}
+          transfers={monthlyData.transfers ?? []}
           members={members}
           isSettled={isSettled}
           onSettleRequest={() => setShowSettleConfirm(true)}
