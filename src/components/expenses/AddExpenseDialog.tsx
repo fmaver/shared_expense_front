@@ -49,6 +49,7 @@ function buildInitial(
       payerId: initialExpense.payerId,
       paymentType: initialExpense.paymentType,
       installments: initialExpense.installments,
+      currency: initialExpense.currency ?? 'ARS',
       splitStrategy: {
         type: initialExpense.splitStrategy.type,
         ...(initialExpense.splitStrategy.type === 'percentage'
@@ -75,6 +76,7 @@ function buildInitial(
     payerId: defaultPayerId,
     paymentType: 'debit',
     installments: 1,
+    currency: 'ARS',
     splitStrategy: { type: 'equal', percentages: {} },
   };
 }
@@ -137,6 +139,7 @@ export function AddExpenseDialog({
         splitStrategy: initialExpense!.splitStrategy,
         paymentType: 'debit' as const,
         installments: 1,
+        currency: 'ARS',
       } : {}),
     };
 
@@ -155,6 +158,7 @@ export function AddExpenseDialog({
           splitStrategy: finalExpense.splitStrategy,
           startYear,
           startMonth,
+          currency: finalExpense.currency,
         });
         if (apiError) {
           setError(apiError);
@@ -199,10 +203,42 @@ export function AddExpenseDialog({
           {/* Amount */}
           <div className="space-y-1.5">
             <Label htmlFor="amount">{t('expenseForm.amount')}</Label>
-            <Input id="amount" type="number" step="0.01" min="0" required
-              placeholder="e.g. 4500" disabled={disabled}
-              value={expense.amount === '' ? '' : expense.amount}
-              onChange={e => set({ amount: e.target.value ? parseFloat(e.target.value) : '' as unknown as number })} />
+            <div className="flex gap-2 items-center">
+              <Input id="amount" type="number" step="0.01" min="0" required
+                placeholder="e.g. 4500" disabled={disabled}
+                value={expense.amount === '' ? '' : expense.amount}
+                onChange={e => set({ amount: e.target.value ? parseFloat(e.target.value) : '' as unknown as number })} />
+              {!isLoanEdit && (
+                <div className="flex rounded-md border border-border overflow-hidden flex-shrink-0">
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => set({ currency: 'ARS' })}
+                    className={cn(
+                      'px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                      (expense.currency ?? 'ARS') === 'ARS'
+                        ? 'bg-brand/20 text-brand border-r border-brand/30'
+                        : 'bg-transparent text-muted-foreground border-r border-border hover:bg-accent',
+                    )}
+                  >
+                    ARS $
+                  </button>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => set({ currency: 'USD' })}
+                    className={cn(
+                      'px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                      (expense.currency ?? 'ARS') === 'USD'
+                        ? 'bg-brand/20 text-brand'
+                        : 'bg-transparent text-muted-foreground hover:bg-accent',
+                    )}
+                  >
+                    USD
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Description */}

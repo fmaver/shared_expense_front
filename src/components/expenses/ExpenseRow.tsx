@@ -2,11 +2,12 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Pen, Trash2, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatCurrency, capitalize, formatDate } from '@/utils/format';
+import { capitalize, formatDate } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
 import { useTranslation } from 'react-i18next';
 import type { ExpenseResponse, Member } from '@/types/expense';
 import { ExpenseDetailDialog } from './ExpenseDetailDialog';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 const SPLIT_BADGE: Record<string, string> = {
   equal:      'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
@@ -49,6 +50,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
   const canEdit = expense.installmentNo === 1;
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
+  const { formatAmount } = useCurrency();
   const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
     ?? INTERNAL_EMOJI[expense.category];
   const rowRef = useRef<HTMLDivElement>(null);
@@ -106,7 +108,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
             {Object.entries(expense.splitStrategy.percentages)
               .map(([id, pct]) => {
                 const pctNum = parseFloat(Number(pct).toFixed(1));
-                const amt = formatCurrency((expense.amount * (pct ?? 0)) / 100);
+                const amt = formatAmount((expense.amount * (pct ?? 0)) / 100, expense.currency);
                 return `${memberName(members, parseInt(id))} ${pctNum}% (${amt})`;
               })
               .join(' · ')}
@@ -115,7 +117,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
         {expense.splitStrategy.type === 'exact' && expense.splitStrategy.amounts && (
           <p className="text-xs text-muted-foreground line-clamp-1">
             {Object.entries(expense.splitStrategy.amounts)
-              .map(([id, amt]) => `${memberName(members, parseInt(id))} ${formatCurrency(amt ?? 0)}`)
+              .map(([id, amt]) => `${memberName(members, parseInt(id))} ${formatAmount(amt ?? 0, expense.currency)}`)
               .join(' · ')}
           </p>
         )}
@@ -154,10 +156,10 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
 
       {/* Amount */}
       <div className="text-sm font-semibold text-foreground tabular-nums flex-shrink-0 w-24 text-right">
-        {formatCurrency(expense.amount)}
+        {formatAmount(expense.amount, expense.currency)}
         {expense.paymentType === 'credit' && expense.installments > 1 && (
           <div className="text-[10px] text-muted-foreground font-normal">
-            of {formatCurrency(expense.amount * expense.installments)}
+            of {formatAmount(expense.amount * expense.installments, expense.currency)}
           </div>
         )}
       </div>

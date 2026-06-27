@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/api/auth';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Moon, Sun, Plus, LogOut, User } from 'lucide-react';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -24,6 +25,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
   const { data: groups = [] } = useGroups();
   const { theme, toggle } = useTheme();
   const { t, i18n } = useTranslation();
+  const { displayMode, setDisplayMode, blueRate } = useCurrency();
   const currentLang = i18n.language.startsWith('es') ? 'es' : 'en';
   const toggleLang = () => {
     const next = currentLang === 'en' ? 'es' : 'en';
@@ -92,7 +94,26 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
       <Separator />
 
       {/* Footer */}
-      <div className="px-3 py-3 flex items-center justify-between gap-2">
+      <div className="px-3 py-3 space-y-2">
+        {/* Currency display toggle */}
+        {blueRate !== null && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
+              className={cn(
+                'h-6 px-2 rounded-md text-[10px] font-semibold transition-colors cursor-pointer',
+                displayMode === 'ars'
+                  ? 'bg-brand/20 text-brand hover:bg-brand/30'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+              title={displayMode === 'ars' ? 'Mostrar moneda original' : 'Ver todo en ARS'}
+            >
+              {displayMode === 'ars' ? 'Ver original' : 'Ver en ARS'}
+            </button>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
         <button onClick={() => go('/profile')}
           className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
           <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -125,6 +146,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
           >
             <LogOut className="h-4 w-4" />
           </button>
+        </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { TrendingUp, TrendingDown, Clock, CheckCircle2, ExternalLink, Plus, Pencil, Trash2, Repeat } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -50,6 +51,7 @@ export function PersonalDashboard() {
   const [incomeForm, setIncomeForm] = useState<'pick' | 'recurring' | 'variable' | null>(null);
   const [incomeLabel, setIncomeLabel] = useState('');
   const [incomeAmount, setIncomeAmount] = useState('');
+  const [incomeCurrency, setIncomeCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [savingIncome, setSavingIncome] = useState(false);
 
   // Income edit state
@@ -67,6 +69,7 @@ export function PersonalDashboard() {
   const [recExpLabel, setRecExpLabel] = useState('');
   const [recExpAmount, setRecExpAmount] = useState('');
   const [recExpCategory, setRecExpCategory] = useState('');
+  const [recExpCurrency, setRecExpCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [savingRecExp, setSavingRecExp] = useState(false);
 
   // Recurring expense edit state
@@ -95,14 +98,15 @@ export function PersonalDashboard() {
     setSavingIncome(true);
     try {
       if (incomeForm === 'recurring') {
-        await createRecurringIncome({ label: incomeLabel, amount: parseFloat(incomeAmount), startYear: year, startMonth: month });
+        await createRecurringIncome({ label: incomeLabel, amount: parseFloat(incomeAmount), startYear: year, startMonth: month, currency: incomeCurrency });
       } else {
-        await createVariableIncome({ year, month, label: incomeLabel, amount: parseFloat(incomeAmount) });
+        await createVariableIncome({ year, month, label: incomeLabel, amount: parseFloat(incomeAmount), currency: incomeCurrency });
       }
       toast.success(t('toasts.expenseAdded'));
       setIncomeForm(null);
       setIncomeLabel('');
       setIncomeAmount('');
+      setIncomeCurrency('ARS');
       refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save');
@@ -161,10 +165,11 @@ export function PersonalDashboard() {
         categoryName: recExpCategory,
         startYear: year,
         startMonth: month,
+        currency: recExpCurrency,
       });
       toast.success(t('toasts.expenseAdded'));
       setShowRecurringExpForm(false);
-      setRecExpLabel(''); setRecExpAmount(''); setRecExpCategory(categories[0]?.name ?? '');
+      setRecExpLabel(''); setRecExpAmount(''); setRecExpCategory(categories[0]?.name ?? ''); setRecExpCurrency('ARS');
       refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save');
@@ -371,10 +376,38 @@ export function PersonalDashboard() {
             </p>
             <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
               placeholder={t('personal.salaryLabel')} value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} />
-            <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
-              type="number" placeholder={t('personal.salaryAmount')} value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} />
+            <div className="flex gap-2 items-center">
+              <input className="flex-1 border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
+                type="number" placeholder={t('personal.salaryAmount')} value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} />
+              <div className="flex rounded-md border border-border overflow-hidden flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIncomeCurrency('ARS')}
+                  className={cn(
+                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                    incomeCurrency === 'ARS'
+                      ? 'bg-brand/20 text-brand border-r border-brand/30'
+                      : 'bg-transparent text-muted-foreground border-r border-border hover:bg-accent',
+                  )}
+                >
+                  ARS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncomeCurrency('USD')}
+                  className={cn(
+                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                    incomeCurrency === 'USD'
+                      ? 'bg-brand/20 text-brand'
+                      : 'bg-transparent text-muted-foreground hover:bg-accent',
+                  )}
+                >
+                  USD
+                </button>
+              </div>
+            </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="ghost" size="sm" onClick={() => { setIncomeForm('pick'); setIncomeLabel(''); setIncomeAmount(''); }}>
+              <Button variant="ghost" size="sm" onClick={() => { setIncomeForm('pick'); setIncomeLabel(''); setIncomeAmount(''); setIncomeCurrency('ARS'); }}>
                 ← Back
               </Button>
               <Button size="sm" disabled={savingIncome} onClick={handleSaveIncome}
@@ -459,8 +492,36 @@ export function PersonalDashboard() {
             <p className="text-xs text-muted-foreground font-medium">{t('personal.recurringExpenseTitle')}</p>
             <input placeholder={t('expenseForm.description')} value={recExpLabel} onChange={e => setRecExpLabel(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
-            <input type="number" placeholder={t('expenseForm.amount')} value={recExpAmount} onChange={e => setRecExpAmount(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+            <div className="flex gap-2 items-center">
+              <input type="number" placeholder={t('expenseForm.amount')} value={recExpAmount} onChange={e => setRecExpAmount(e.target.value)}
+                className="flex-1 border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+              <div className="flex rounded-md border border-border overflow-hidden flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setRecExpCurrency('ARS')}
+                  className={cn(
+                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                    recExpCurrency === 'ARS'
+                      ? 'bg-brand/20 text-brand border-r border-brand/30'
+                      : 'bg-transparent text-muted-foreground border-r border-border hover:bg-accent',
+                  )}
+                >
+                  ARS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecExpCurrency('USD')}
+                  className={cn(
+                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                    recExpCurrency === 'USD'
+                      ? 'bg-brand/20 text-brand'
+                      : 'bg-transparent text-muted-foreground hover:bg-accent',
+                  )}
+                >
+                  USD
+                </button>
+              </div>
+            </div>
             <select value={recExpCategory} onChange={e => setRecExpCategory(e.target.value)}
               className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand">
               {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/format';
 import type { ExpenseCreate, Member } from '@/types/expense';
 
@@ -25,6 +26,7 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(() => formatDate(new Date()));
+  const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,6 +36,7 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
       setPayerId(defaultPayer);
       setAmount('');
       setDescription('');
+      setCurrency('ARS');
       setError('');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,6 +57,7 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
         payerId,
         paymentType: 'debit',
         installments: 1,
+        currency,
         splitStrategy: {
           type: 'percentage',
           percentages: Object.fromEntries(
@@ -96,8 +100,36 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
 
           <div className="space-y-1.5">
             <Label htmlFor="transfer-amount">{t('transfer.amount')}</Label>
-            <Input id="transfer-amount" type="number" step="0.01" min="0" required
-              placeholder="e.g. 5000" value={amount} onChange={e => setAmount(e.target.value)} />
+            <div className="flex gap-2 items-center">
+              <Input id="transfer-amount" type="number" step="0.01" min="0" required
+                placeholder="e.g. 5000" value={amount} onChange={e => setAmount(e.target.value)} />
+              <div className="flex rounded-md border border-border overflow-hidden flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCurrency('ARS')}
+                  className={cn(
+                    'px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                    currency === 'ARS'
+                      ? 'bg-brand/20 text-brand border-r border-brand/30'
+                      : 'bg-transparent text-muted-foreground border-r border-border hover:bg-accent',
+                  )}
+                >
+                  ARS $
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrency('USD')}
+                  className={cn(
+                    'px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                    currency === 'USD'
+                      ? 'bg-brand/20 text-brand'
+                      : 'bg-transparent text-muted-foreground hover:bg-accent',
+                  )}
+                >
+                  USD
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-1.5">

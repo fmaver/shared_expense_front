@@ -1,8 +1,10 @@
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, currency: string = 'ARS'): string {
+  const curr = currency === 'USD' ? 'USD' : 'ARS';
+  return new Intl.NumberFormat('es-AR', {
     style: 'currency',
-    currency: 'USD'
-  }).format(value);
+    currency: curr,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 export function capitalize(str: string): string {
