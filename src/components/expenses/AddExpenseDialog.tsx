@@ -131,6 +131,13 @@ export function AddExpenseDialog({
       ...expense,
       splitStrategy,
       ...(isRecurring ? { paymentType: 'debit' as const, installments: 1 } : {}),
+      // For loan edits, always preserve the original category and split strategy
+      ...(isLoanEdit ? {
+        category: { name: 'prestamo' },
+        splitStrategy: initialExpense!.splitStrategy,
+        paymentType: 'debit' as const,
+        installments: 1,
+      } : {}),
     };
 
     if (isRecurring && !isEdit && groupId != null) {
@@ -167,6 +174,7 @@ export function AddExpenseDialog({
 
   const disabled = isSettled;
   const isEdit = !!initialExpense;
+  const isLoanEdit = isEdit && initialExpense?.category === 'prestamo';
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen)}>
@@ -217,25 +225,32 @@ export function AddExpenseDialog({
             {/* Category */}
             <div className="space-y-1.5">
               <Label>{t('expenseForm.category')}</Label>
-              <Select value={expense.category.name} disabled={loadingCats || disabled}
-                onValueChange={v => set({ category: { name: v } })}>
-                <SelectTrigger>
-                  <span className="flex-1 text-left truncate">
-                    {loadingCats ? t('common.loading') : (() => {
-                      const c = categories.find(c => c.name === expense.category.name);
-                      const label = c ? t(`categories.${c.name}`, { defaultValue: c.name }) : '';
-                      return c ? `${c.emoji} ${label}` : t('expenseForm.selectPlaceholder');
-                    })()}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(c => (
-                    <SelectItem key={c.name} value={c.name}>
-                      {c.emoji} {t(`categories.${c.name}`, { defaultValue: c.name })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isLoanEdit ? (
+                <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2">
+                  <span>🤝</span>
+                  <span className="text-sm text-foreground">Préstamo</span>
+                </div>
+              ) : (
+                <Select value={expense.category.name} disabled={loadingCats || disabled}
+                  onValueChange={v => set({ category: { name: v } })}>
+                  <SelectTrigger>
+                    <span className="flex-1 text-left truncate">
+                      {loadingCats ? t('common.loading') : (() => {
+                        const c = categories.find(c => c.name === expense.category.name);
+                        const label = c ? t(`categories.${c.name}`, { defaultValue: c.name }) : '';
+                        return c ? `${c.emoji} ${label}` : t('expenseForm.selectPlaceholder');
+                      })()}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => (
+                      <SelectItem key={c.name} value={c.name}>
+                        {c.emoji} {t(`categories.${c.name}`, { defaultValue: c.name })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Payer — hidden for single-member personal context */}
@@ -257,7 +272,7 @@ export function AddExpenseDialog({
             )}
           </div>
 
-          {!isRecurring && (
+          {!isRecurring && !isLoanEdit && (
           <div className="grid grid-cols-2 gap-4">
             {/* Payment type */}
             <div className="space-y-1.5">
@@ -288,8 +303,8 @@ export function AddExpenseDialog({
 
           {!hidePayerAndSplit && <Separator />}
 
-          {/* Split strategy — hidden for single-member personal context */}
-          {!hidePayerAndSplit && (<>
+          {/* Split strategy — hidden for single-member personal context and loan edits */}
+          {!hidePayerAndSplit && !isLoanEdit && (<>
           <div className="space-y-1.5">
             <Label>{t('expenseForm.splitType')}</Label>
             <Select value={expense.splitStrategy.type} disabled={disabled}
