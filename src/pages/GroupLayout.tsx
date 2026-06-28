@@ -15,6 +15,7 @@ export function GroupLayout() {
     { label: t('tabs.expenses'), path: '' },
     { label: t('tabs.members'),  path: 'members' },
     { label: t('tabs.settings'), path: 'settings' },
+    { label: t('tabs.charts'),   path: 'charts' },
   ];
 
   return (
