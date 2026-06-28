@@ -13,6 +13,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { PersonalDashboard } from './pages/PersonalDashboard';
 import { InvitationLanding } from './public-pages/InvitationLanding';
 import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -58,30 +59,32 @@ function App() {
   if (!authChecked) return null;
 
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LandingPage />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LoginPage onLoginSuccess={handleLogin} />} />
-      <Route path="/invite/:token" element={<InvitationLanding onLoginSuccess={handleLogin} />} />
-      <Route path="/join/:token" element={<GroupJoinLanding onLoginSuccess={handleLogin} />} />
+    <CurrencyProvider>
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LandingPage />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LoginPage onLoginSuccess={handleLogin} />} />
+        <Route path="/invite/:token" element={<InvitationLanding onLoginSuccess={handleLogin} />} />
+        <Route path="/join/:token" element={<GroupJoinLanding onLoginSuccess={handleLogin} />} />
 
-      {/* Protected */}
-      {!isAuthenticated ? (
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      ) : (
-        <Route element={<AppShell onLogout={handleLogout} />}>
-          <Route path="/groups" element={<GroupSelectorPage />} />
-          <Route path="/groups/:groupId" element={<GroupLayout />}>
-            <Route index element={<ExpensesDashboard />} />
-            <Route path="members" element={<GroupMembersPage />} />
-            <Route path="settings" element={<GroupSettingsPage />} />
+        {/* Protected */}
+        {!isAuthenticated ? (
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        ) : (
+          <Route element={<AppShell onLogout={handleLogout} />}>
+            <Route path="/groups" element={<GroupSelectorPage />} />
+            <Route path="/groups/:groupId" element={<GroupLayout />}>
+              <Route index element={<ExpensesDashboard />} />
+              <Route path="members" element={<GroupMembersPage />} />
+              <Route path="settings" element={<GroupSettingsPage />} />
+            </Route>
+            <Route path="/personal" element={<PersonalDashboard />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="*" element={<Navigate to="/groups" replace />} />
           </Route>
-          <Route path="/personal" element={<PersonalDashboard />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="*" element={<Navigate to="/groups" replace />} />
-        </Route>
-      )}
-    </Routes>
+        )}
+      </Routes>
+    </CurrencyProvider>
   );
 }
 

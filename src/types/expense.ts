@@ -20,6 +20,7 @@ export interface ExpenseCreate {
   paymentType: PaymentType;
   installments: number;
   splitStrategy: SplitStrategy;
+  currency?: string;
 }
 
 export interface ExpenseResponse extends Omit<ExpenseCreate, 'category'> {
@@ -28,6 +29,7 @@ export interface ExpenseResponse extends Omit<ExpenseCreate, 'category'> {
   installmentNo: number;
   parentExpenseId?: number | null;
   recurringTemplateId?: number | null;
+  currency?: string;
 }
 
 export interface RecurringGroupExpenseCreate {
@@ -39,6 +41,7 @@ export interface RecurringGroupExpenseCreate {
   splitStrategy: SplitStrategy;
   startYear: number;
   startMonth: number;
+  currency?: string;
 }
 
 export interface RecurringGroupExpenseUpdate {
@@ -168,6 +171,7 @@ export interface IncomeInstanceResponse {
   recurringIncomeId?: number | null;
   label: string;
   amount: number;
+  currency?: string;
 }
 
 export interface GroupBalanceItem {
@@ -218,6 +222,7 @@ export interface RecurringIncomeCreate {
   amount: number;
   startYear: number;
   startMonth: number;
+  currency?: string;
 }
 
 export interface RecurringIncomeUpdate {
@@ -231,6 +236,7 @@ export interface VariableIncomeCreate {
   month: number;
   label: string;
   amount: number;
+  currency?: string;
 }
 
 export interface VariableIncomeUpdate {
@@ -244,6 +250,7 @@ export interface RecurringPersonalExpenseCreate {
   categoryName: string;
   startYear?: number;
   startMonth?: number;
+  currency?: string;
 }
 
 export interface RecurringPersonalExpenseUpdate {
