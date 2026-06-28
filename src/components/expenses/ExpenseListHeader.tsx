@@ -77,12 +77,12 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
   const SortIcon = sortOrder === 'asc' ? ArrowUp : ArrowDown;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-border bg-muted/30">
+    <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30 overflow-x-auto">
       {/* Sort field */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.sort')}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.sort')}</span>
         <Select value={sortField} onValueChange={v => setSortField(v as SortField)}>
-          <SelectTrigger className="h-7 text-xs w-36 bg-card">
+          <SelectTrigger className="h-7 text-xs w-32 bg-card">
             <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label ?? sortField}</span>
           </SelectTrigger>
           <SelectContent>
@@ -91,17 +91,19 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
             ))}
           </SelectContent>
         </Select>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleOrder}
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={toggleOrder}
           aria-label={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}>
           <SortIcon className="h-3.5 w-3.5" />
         </Button>
       </div>
 
+      <div className="w-px h-4 bg-border shrink-0" />
+
       {/* Filter by payer */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.payer')}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.payer')}</span>
         <Select value={filterPayer} onValueChange={setFilterPayer}>
-          <SelectTrigger className="h-7 text-xs w-28 bg-card">
+          <SelectTrigger className="h-7 text-xs w-24 bg-card">
             <span className="truncate">
               {filterPayer === 'all' ? t('expenses.all') : members.find(m => m.id.toString() === filterPayer)?.name ?? filterPayer}
             </span>
@@ -116,10 +118,10 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
       </div>
 
       {/* Filter by category */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.category')}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.category')}</span>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="h-7 text-xs w-36 bg-card">
+          <SelectTrigger className="h-7 text-xs w-28 bg-card">
             <span className="truncate capitalize">{filterCategory === 'all' ? t('expenses.all') : filterCategory}</span>
           </SelectTrigger>
           <SelectContent>
@@ -132,10 +134,10 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
       </div>
 
       {/* Filter by recurring */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.type')}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.type')}</span>
         <Select value={filterRecurring} onValueChange={setFilterRecurring}>
-          <SelectTrigger className="h-7 text-xs w-28 bg-card">
+          <SelectTrigger className="h-7 text-xs w-24 bg-card">
             <span className="truncate">
               {filterRecurring === 'all' ? t('expenses.all')
                 : filterRecurring === 'recurring' ? t('expenses.filterRecurring')
@@ -153,10 +155,11 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
       {/* Currency filter + display toggle — only when USD expenses exist */}
       {hasUsdExpenses && (
         <>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.currency')}</span>
+          <div className="w-px h-4 bg-border shrink-0" />
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-xs text-muted-foreground shrink-0">{t('expenses.currency')}</span>
             <Select value={filterCurrency} onValueChange={setFilterCurrency}>
-              <SelectTrigger className="h-7 text-xs w-24 bg-card">
+              <SelectTrigger className="h-7 text-xs w-20 bg-card">
                 <span className="truncate">
                   {filterCurrency === 'all' ? t('expenses.all') : filterCurrency}
                 </span>
@@ -174,7 +177,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
               type="button"
               onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
               className={cn(
-                'h-7 px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ml-auto',
+                'h-7 px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer shrink-0',
                 displayMode === 'ars'
                   ? 'bg-brand/20 text-brand hover:bg-brand/30'
                   : 'text-muted-foreground border border-border hover:bg-accent hover:text-foreground',
