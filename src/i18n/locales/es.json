@@ -127,6 +127,9 @@
     "type": "Tipo",
     "filterRecurring": "Recurrente",
     "filterOneTime": "Puntual",
+    "currency": "Moneda",
+    "viewInARS": "Ver en ARS",
+    "viewOriginal": "Ver original",
     "recurringBadgeTitle": "Gasto recurrente"
   },
   "months": ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],

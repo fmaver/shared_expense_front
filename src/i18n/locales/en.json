@@ -127,6 +127,9 @@
     "type": "Type",
     "filterRecurring": "Recurring",
     "filterOneTime": "One-time",
+    "currency": "Currency",
+    "viewInARS": "View in ARS",
+    "viewOriginal": "View original",
     "recurringBadgeTitle": "Recurring expense"
   },
   "months": ["January","February","March","April","May","June","July","August","September","October","November","December"],
