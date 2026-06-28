@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { cn } from '@/lib/utils';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
 type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'paymentType' | 'splitStrategy';
@@ -16,6 +18,7 @@ interface ExpenseListHeaderProps {
 
 export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHeaderProps) {
   const { t } = useTranslation();
+  const { displayMode, setDisplayMode, blueRate } = useCurrency();
   const [sortField, setSortField] = useState<SortField>('date');
 
   const SORT_FIELDS: { value: SortField; label: string }[] = [
@@ -31,6 +34,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
   const [filterPayer, setFilterPayer] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterRecurring, setFilterRecurring] = useState<string>('all');
+  const [filterCurrency, setFilterCurrency] = useState<string>('all');
 
   const memberName = (id: number) => members.find(m => m.id === id)?.name ?? 'Unknown';
 
@@ -39,12 +43,15 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
     return Array.from(cats).sort();
   }, [expenses]);
 
+  const hasUsdExpenses = useMemo(() => expenses.some(e => e.currency === 'USD'), [expenses]);
+
   const sorted = useMemo(() => {
     const filtered = expenses.filter(e => {
       if (filterPayer !== 'all' && e.payerId !== parseInt(filterPayer)) return false;
       if (filterCategory !== 'all' && e.category !== filterCategory) return false;
       if (filterRecurring === 'recurring' && e.recurringTemplateId == null) return false;
       if (filterRecurring === 'one-time' && e.recurringTemplateId != null) return false;
+      if (filterCurrency !== 'all' && (e.currency ?? 'ARS') !== filterCurrency) return false;
       return true;
     });
 
@@ -62,7 +69,7 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
       return sortOrder === 'asc' ? cmp : -cmp;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenses, sortField, sortOrder, filterPayer, filterCategory, filterRecurring]);
+  }, [expenses, sortField, sortOrder, filterPayer, filterCategory, filterRecurring, filterCurrency]);
 
   React.useEffect(() => { onSorted(sorted); }, [sorted, onSorted]);
 
@@ -142,6 +149,42 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
           </SelectContent>
         </Select>
       </div>
+
+      {/* Currency filter + display toggle — only when USD expenses exist */}
+      {hasUsdExpenses && (
+        <>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground w-16 shrink-0">{t('expenses.currency')}</span>
+            <Select value={filterCurrency} onValueChange={setFilterCurrency}>
+              <SelectTrigger className="h-7 text-xs w-24 bg-card">
+                <span className="truncate">
+                  {filterCurrency === 'all' ? t('expenses.all') : filterCurrency}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
+                <SelectItem value="ARS" className="text-xs">ARS</SelectItem>
+                <SelectItem value="USD" className="text-xs">USD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {blueRate !== null && (
+            <button
+              type="button"
+              onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
+              className={cn(
+                'h-7 px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ml-auto',
+                displayMode === 'ars'
+                  ? 'bg-brand/20 text-brand hover:bg-brand/30'
+                  : 'text-muted-foreground border border-border hover:bg-accent hover:text-foreground',
+              )}
+            >
+              {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 }
