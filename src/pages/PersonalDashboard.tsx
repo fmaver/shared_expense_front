@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { cn } from '@/lib/utils';
