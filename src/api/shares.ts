@@ -1,6 +1,14 @@
 import { config } from '../config/env';
 import type { MonthlyBalanceResponse } from '../types/expense';
 
+export interface MonthTrendPoint {
+  year: number;
+  month: number;
+  total: number;
+  byCategory: Record<string, number>;
+  byPayer: Record<string, number>;
+}
+
 export async function downloadMonthlyPdf(groupId: number, year: number, month: number): Promise<void> {
   const token = localStorage.getItem('token');
   const paddedMonth = month.toString().padStart(2, '0');
@@ -76,6 +84,21 @@ export async function unsettleMonthlyShare(groupId: number, year: number, month:
   } catch (error) {
     console.error('Error unsettling monthly share:', error);
     return null;
+  }
+}
+
+export async function getGroupTrend(groupId: number, months = 6): Promise<MonthTrendPoint[]> {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/trend?months=${months}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!response.ok) return [];
+    const json = await response.json();
+    return json.data ?? [];
+  } catch {
+    return [];
   }
 }
 

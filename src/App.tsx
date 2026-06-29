@@ -9,6 +9,7 @@ import { GroupLayout } from './pages/GroupLayout';
 import { ExpensesDashboard } from './pages/ExpensesDashboard';
 import { GroupMembersPage } from './pages/GroupMembersPage';
 import { GroupSettingsPage } from './pages/GroupSettingsPage';
+import { GroupChartsPage } from './pages/GroupChartsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PersonalDashboard } from './pages/PersonalDashboard';
 import { InvitationLanding } from './public-pages/InvitationLanding';
@@ -77,6 +78,7 @@ function App() {
               <Route index element={<ExpensesDashboard />} />
               <Route path="members" element={<GroupMembersPage />} />
               <Route path="settings" element={<GroupSettingsPage />} />
+              <Route path="charts" element={<GroupChartsPage />} />
             </Route>
             <Route path="/personal" element={<PersonalDashboard />} />
             <Route path="/profile" element={<ProfilePage />} />

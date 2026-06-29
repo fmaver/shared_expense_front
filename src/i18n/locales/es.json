@@ -78,7 +78,20 @@
   "tabs": {
     "expenses": "Gastos",
     "members": "Miembros",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "charts": "Gráficos"
+  },
+  "charts": {
+    "title": "Gráficos",
+    "categoryBreakdown": "Gastos por categoría",
+    "payerBreakdown": "Gastos por pagador",
+    "paymentType": "Débito vs crédito",
+    "trend": "Tendencia mensual (últimos 6 meses)",
+    "noData": "Sin gastos este mes",
+    "debit": "Débito",
+    "credit": "Crédito",
+    "income": "Ingresos",
+    "expenses": "Gastos"
   },
   "balance": {
     "title": "Balance",
