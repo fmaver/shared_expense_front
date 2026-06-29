@@ -385,22 +385,26 @@ export function PersonalDashboard() {
             {/* Category breakdown donut */}
             <div>
               <p className="text-xs text-muted-foreground mb-2">{t('charts.categoryBreakdown')}</p>
-              {ledger.personalExpenses.length === 0 ? (
+              {ledger.personalExpenses.length === 0 && ledger.recurringPersonalExpenses.length === 0 ? (
                 <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
               ) : (() => {
                 const catMap: Record<string, number> = {};
                 for (const e of ledger.personalExpenses) {
                   catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
                 }
+                for (const e of ledger.recurringPersonalExpenses) {
+                  catMap[e.categoryName] = (catMap[e.categoryName] ?? 0) + e.amount;
+                }
                 const catData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
                 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#06b6d4', '#84cc16'];
                 return (
-                  <ResponsiveContainer width="100%" height={160}>
+                  <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
-                      <Pie data={catData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value">
+                      <Pie data={catData} cx="50%" cy="45%" innerRadius={45} outerRadius={75} dataKey="value">
                         {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 );
