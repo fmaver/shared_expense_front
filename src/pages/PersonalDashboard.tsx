@@ -385,14 +385,14 @@ export function PersonalDashboard() {
             {/* Category breakdown donut */}
             <div>
               <p className="text-xs text-muted-foreground mb-2">{t('charts.categoryBreakdown')}</p>
-              {ledger.personalExpenses.length === 0 && ledger.recurringPersonalExpenses.length === 0 ? (
+              {(ledger.personalExpenses ?? []).length === 0 && (ledger.recurringPersonalExpenses ?? []).length === 0 ? (
                 <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
               ) : (() => {
                 const catMap: Record<string, number> = {};
-                for (const e of ledger.personalExpenses) {
+                for (const e of (ledger.personalExpenses ?? [])) {
                   catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
                 }
-                for (const e of ledger.recurringPersonalExpenses) {
+                for (const e of (ledger.recurringPersonalExpenses ?? [])) {
                   catMap[e.categoryName] = (catMap[e.categoryName] ?? 0) + e.amount;
                 }
                 const catData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
