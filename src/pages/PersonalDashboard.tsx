@@ -349,6 +349,67 @@ export function PersonalDashboard() {
         </div>
       )}
 
+      {/* Charts */}
+      {ledger && (
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <BarChart2 className="h-4 w-4 text-brand" /> {t('charts.title')}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Income vs expenses bar */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">{t('charts.paymentType')}</p>
+              {(ledger.totalIncome === 0 && ledger.totalPersonalExpenses === 0) ? (
+                <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart
+                    data={[
+                      { name: t('charts.income'), value: ledger.totalIncome },
+                      { name: t('charts.expenses'), value: ledger.totalPersonalExpenses },
+                    ]}
+                    margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                  >
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 11 }} width={60} />
+                    <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      <Cell fill="#22c55e" />
+                      <Cell fill="#f97316" />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* Category breakdown donut */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">{t('charts.categoryBreakdown')}</p>
+              {ledger.personalExpenses.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
+              ) : (() => {
+                const catMap: Record<string, number> = {};
+                for (const e of ledger.personalExpenses) {
+                  catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
+                }
+                const catData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
+                const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#06b6d4', '#84cc16'];
+                return (
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie data={catData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value">
+                        {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Income section */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
@@ -759,67 +820,6 @@ export function PersonalDashboard() {
           </div>
         )}
       </div>
-
-      {/* Charts */}
-      {ledger && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <BarChart2 className="h-4 w-4 text-brand" /> {t('charts.title')}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Income vs expenses bar */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">{t('charts.paymentType')}</p>
-              {(ledger.totalIncome === 0 && ledger.totalPersonalExpenses === 0) ? (
-                <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart
-                    data={[
-                      { name: t('charts.income'), value: ledger.totalIncome },
-                      { name: t('charts.expenses'), value: ledger.totalPersonalExpenses },
-                    ]}
-                    margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-                  >
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 11 }} width={60} />
-                    <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                      <Cell fill="#22c55e" />
-                      <Cell fill="#f97316" />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-
-            {/* Category breakdown donut */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">{t('charts.categoryBreakdown')}</p>
-              {ledger.personalExpenses.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
-              ) : (() => {
-                const catMap: Record<string, number> = {};
-                for (const e of ledger.personalExpenses) {
-                  catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
-                }
-                const catData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
-                const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#06b6d4', '#84cc16'];
-                return (
-                  <ResponsiveContainer width="100%" height={160}>
-                    <PieChart>
-                      <Pie data={catData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value">
-                        {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Mirrored share detail popup */}
       {selectedMirroredShare && (() => {
