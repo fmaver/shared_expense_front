@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -16,6 +16,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useIsland } from '@/contexts/IslandContext';
+import { useFabActions } from '@/contexts/FabActionsContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -44,6 +46,8 @@ import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringP
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
+  const island = useIsland();
+  const { registerPersonalAdd } = useFabActions();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1); // 1-indexed
@@ -75,6 +79,16 @@ export function PersonalDashboard() {
   // Personal expense dialog — shared for create and edit
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
+
+  // Register the personal-add action with the global FAB so it can open this dialog
+  const openPersonalAdd = useCallback(() => {
+    setEditingExpense(null);
+    setShowExpenseDialog(true);
+  }, []);
+  useEffect(() => {
+    registerPersonalAdd(openPersonalAdd);
+    return () => registerPersonalAdd(null);
+  }, [registerPersonalAdd, openPersonalAdd]);
 
   // Recurring expense add form
   const [showRecurringExpForm, setShowRecurringExpForm] = useState(false);
@@ -238,6 +252,7 @@ export function PersonalDashboard() {
     setShowExpenseDialog(false);
     setEditingExpense(null);
     refetch();
+    island.success();
   };
 
   if (isLoading) {

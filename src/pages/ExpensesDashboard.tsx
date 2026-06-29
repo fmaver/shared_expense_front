@@ -25,9 +25,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { toast } from 'sonner';
 import { Plus, ArrowLeftRight, FileDown } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
+import { useIsland } from '@/contexts/IslandContext';
 
 export function ExpensesDashboard() {
   const { t } = useTranslation();
+  const island = useIsland();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
@@ -76,6 +78,7 @@ export function ExpensesDashboard() {
     setDuplicates([]);
     refetch();
     toast.success(t('toasts.expenseAdded'));
+    island.success();
   };
 
   const handleCreate = async (data: ExpenseCreate) => {
@@ -93,6 +96,7 @@ export function ExpensesDashboard() {
     setShowAdd(false);
     refetch();
     toast.success(t('toasts.expenseUpdated'));
+    island.success();
   };
 
   const handleDelete = (expense: ExpenseResponse) => {
@@ -140,17 +144,21 @@ export function ExpensesDashboard() {
     setShowAdd(false);
     refetch();
     toast.success(t('toasts.expenseUpdated'));
+    island.success();
   };
 
   const handleSettle = async () => {
     setIsSettling(true);
+    island.loading();
     try {
       const result = await settleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to settle');
       refetch();
       toast.success(t('toasts.monthSettled'));
+      island.success();
     } catch {
       toast.error(t('toasts.failedSettle'));
+      island.reset();
     } finally {
       setIsSettling(false);
     }
@@ -158,13 +166,16 @@ export function ExpensesDashboard() {
 
   const handleUnsettle = async () => {
     setIsUnsettling(true);
+    island.loading();
     try {
       const result = await unsettleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to reopen');
       refetch();
       toast.success(t('toasts.monthReopened'));
+      island.success();
     } catch {
       toast.error(t('toasts.failedReopen'));
+      island.reset();
     } finally {
       setIsUnsettling(false);
     }

@@ -15,6 +15,8 @@ import { PersonalDashboard } from './pages/PersonalDashboard';
 import { InvitationLanding } from './public-pages/InvitationLanding';
 import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 import { CurrencyProvider } from './contexts/CurrencyContext';
+import { IslandProvider } from './contexts/IslandContext';
+import { FabActionsProvider } from './contexts/FabActionsContext';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,6 +63,8 @@ function App() {
 
   return (
     <CurrencyProvider>
+      <IslandProvider>
+        <FabActionsProvider>
       <Routes>
         {/* Public */}
         <Route path="/" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LandingPage />} />
@@ -86,6 +90,8 @@ function App() {
           </Route>
         )}
       </Routes>
+        </FabActionsProvider>
+      </IslandProvider>
     </CurrencyProvider>
   );
 }
