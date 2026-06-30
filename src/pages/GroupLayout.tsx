@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Outlet, NavLink, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGroup } from '@/hooks/useGroups';
+import { useScroll } from '@/contexts/ScrollContext';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -10,6 +11,10 @@ export function GroupLayout() {
   const groupId = parseInt(gp!, 10);
   const { data: group, isLoading } = useGroup(groupId);
   const { t } = useTranslation();
+  const { isAtTop, notifyScroll } = useScroll();
+  const handleInnerScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    notifyScroll((e.target as HTMLElement).scrollTop);
+  }, [notifyScroll]);
 
   const TABS = [
     { label: t('tabs.expenses'), path: '' },
@@ -23,11 +28,17 @@ export function GroupLayout() {
       {/* Group header + tabs */}
       <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 sm:px-6 pt-4 pb-0">
-          {isLoading ? (
-            <Skeleton className="h-6 w-40 mb-3" />
-          ) : (
-            <h2 className="text-lg font-bold text-foreground mb-3">{group?.name}</h2>
-          )}
+          {/* Large collapsing title — visible at top, collapses on scroll (mobile only) */}
+          <div className={cn(
+            'overflow-hidden transition-all duration-300 ease-out lg:!max-h-10 lg:!opacity-100',
+            isAtTop ? 'max-h-10 opacity-100 mb-3' : 'max-h-0 opacity-0 mb-0',
+          )}>
+            {isLoading ? (
+              <Skeleton className="h-6 w-40" />
+            ) : (
+              <h2 className="text-lg font-bold text-foreground">{group?.name}</h2>
+            )}
+          </div>
           <nav className="-mb-px flex gap-0">
             {TABS.map(tab => (
               <NavLink
@@ -49,7 +60,7 @@ export function GroupLayout() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto pb-24 lg:pb-0">
+      <div className="flex-1 overflow-y-auto pb-24 lg:pb-0" onScroll={handleInnerScroll}>
         <Outlet />
       </div>
     </div>
