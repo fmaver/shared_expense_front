@@ -7,38 +7,55 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-// Swipe-down-to-dismiss: tracks the finger in real time, applies a live drag transform,
-// then either springs back or springs off-screen (suppressing CSS exit animation).
+// Swipe-down-to-dismiss: native listeners (not React synthetic) so touchmove can call
+// preventDefault() and prevent the parent overflow-y-auto from stealing the gesture.
 function useDragToDismiss(threshold = 100) {
   const [dragY, setDragY] = React.useState(0);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isDragDismiss, setIsDragDismiss] = React.useState(false);
-  const startYRef = React.useRef(0);
   const closeBtnRef = React.useRef<HTMLButtonElement>(null);
+  const dragHandleRef = React.useRef<HTMLDivElement>(null);
 
-  const onTouchStart = React.useCallback((e: React.TouchEvent) => {
-    startYRef.current = e.touches[0].clientY;
-    setIsDragging(true);
-    setIsDragDismiss(false);
-  }, []);
+  React.useEffect(() => {
+    const handle = dragHandleRef.current;
+    if (!handle) return;
 
-  const onTouchMove = React.useCallback((e: React.TouchEvent) => {
-    const delta = Math.max(0, e.touches[0].clientY - startYRef.current);
-    setDragY(delta);
-  }, []);
+    let startY = 0;
 
-  const onTouchEnd = React.useCallback((e: React.TouchEvent) => {
-    const delta = Math.max(0, e.changedTouches[0].clientY - startYRef.current);
-    setIsDragging(false);
-    if (delta > threshold) {
-      // Suppress CSS sheet-exit; spring off-screen via the inline transition.
-      // @base-ui waits for transitionend (350ms) then unmounts.
-      setIsDragDismiss(true);
-      setDragY(window.innerHeight);
-      closeBtnRef.current?.click();
-    } else {
-      setDragY(0); // spring back to resting position
-    }
+    const onTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      setIsDragging(true);
+      setIsDragDismiss(false);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault(); // block parent scroll — requires passive:false
+      const delta = Math.max(0, e.touches[0].clientY - startY);
+      setDragY(delta);
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const delta = Math.max(0, e.changedTouches[0].clientY - startY);
+      setIsDragging(false);
+      if (delta > threshold) {
+        // Suppress CSS sheet-exit; spring off-screen via the inline transition.
+        // @base-ui detects transitionend (350ms) then unmounts.
+        setIsDragDismiss(true);
+        setDragY(window.innerHeight);
+        closeBtnRef.current?.click();
+      } else {
+        setDragY(0); // spring back to resting position
+      }
+    };
+
+    handle.addEventListener('touchstart', onTouchStart, { passive: true });
+    handle.addEventListener('touchmove', onTouchMove, { passive: false });
+    handle.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      handle.removeEventListener('touchstart', onTouchStart);
+      handle.removeEventListener('touchmove', onTouchMove);
+      handle.removeEventListener('touchend', onTouchEnd);
+    };
   }, [threshold]);
 
   const dragStyle: React.CSSProperties = {
@@ -46,7 +63,7 @@ function useDragToDismiss(threshold = 100) {
     transition: isDragging ? 'none' : 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)',
   };
 
-  return { closeBtnRef, isDragDismiss, dragStyle, onTouchStart, onTouchMove, onTouchEnd };
+  return { closeBtnRef, dragHandleRef, isDragDismiss, dragStyle };
 }
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -89,7 +106,7 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
-  const { closeBtnRef, isDragDismiss, dragStyle, onTouchStart, onTouchMove, onTouchEnd } = useDragToDismiss();
+  const { closeBtnRef, dragHandleRef, isDragDismiss, dragStyle } = useDragToDismiss();
 
   return (
     <DialogPortal>
@@ -113,12 +130,10 @@ function DialogContent({
         )}
         {...props}
       >
-        {/* Drag handle — mobile only, touch target for swipe-to-dismiss */}
+        {/* Drag handle — mobile only; native listeners (passive:false) block parent scroll */}
         <div
+          ref={dragHandleRef}
           className="lg:hidden -mx-4 flex justify-center items-center py-3 touch-none cursor-grab active:cursor-grabbing"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>

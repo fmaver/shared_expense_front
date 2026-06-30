@@ -155,13 +155,14 @@ export function FloatingTabBar() {
         />
       </button>
 
-      {/* Floating Tab Bar — stays centered, inactive tabs shrink in place on scroll */}
+      {/* Floating Tab Bar — collapses to active tab + slides to bottom-left on scroll */}
       <nav
         className="fixed z-40 lg:hidden"
         style={{
           bottom: `calc(1rem + env(safe-area-inset-bottom))`,
-          left: '50%',
-          transform: 'translateX(-50%)',
+          left: tabBarCollapsed ? '1rem' : '50%',
+          transform: tabBarCollapsed ? 'none' : 'translateX(-50%)',
+          transition: 'left 280ms ease-out, transform 280ms ease-out',
         }}
       >
         <div className="flex items-center gap-1 rounded-full bg-card/80 backdrop-blur-xl border border-border/40 shadow-2xl px-2 py-2">

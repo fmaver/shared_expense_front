@@ -89,7 +89,7 @@ export function GroupChartsPage() {
   const noData = expenses.length === 0;
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto overflow-x-hidden">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-foreground">{t('charts.title')}</h1>
         <MonthPicker
