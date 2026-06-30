@@ -20,7 +20,7 @@ export function MobileHeader({ onLogout, state, groupName }: MobileHeaderProps) 
         // Mobile: fixed overlay; Desktop: hidden
         'lg:hidden fixed top-0 inset-x-0 z-30',
         'h-12 flex items-center justify-between px-3',
-        'transition-colors duration-300',
+        'transition-colors duration-500 ease-out',
         isAtTop
           ? 'bg-background/95 backdrop-blur-sm border-b border-border/50'
           : 'bg-transparent border-b border-transparent',
