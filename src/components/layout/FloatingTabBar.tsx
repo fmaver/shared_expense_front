@@ -99,7 +99,8 @@ export function FloatingTabBar() {
       )}
 
       {/* Speed-dial mini-FABs */}
-      <div className="fixed right-5 z-40 lg:hidden flex flex-col items-end gap-2"
+      <div
+        className={cn('fixed right-5 z-40 lg:hidden flex flex-col items-end gap-2', !speedDialOpen && 'pointer-events-none')}
         style={{ bottom: `calc(5.5rem + env(safe-area-inset-bottom))` }}>
         {speedDialItems.map((item, i) => {
           const Icon = item.icon;
