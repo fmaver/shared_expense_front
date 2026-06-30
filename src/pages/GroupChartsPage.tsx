@@ -101,7 +101,7 @@ export function GroupChartsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Category breakdown */}
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4 overflow-hidden">
           <h2 className="text-sm font-semibold text-foreground mb-3">{t('charts.categoryBreakdown')}</h2>
           {noData ? (
             <p className="text-sm text-muted-foreground">{t('charts.noData')}</p>
@@ -128,7 +128,7 @@ export function GroupChartsPage() {
         </div>
 
         {/* Payer breakdown */}
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4 overflow-hidden">
           <h2 className="text-sm font-semibold text-foreground mb-3">{t('charts.payerBreakdown')}</h2>
           {noData ? (
             <p className="text-sm text-muted-foreground">{t('charts.noData')}</p>
@@ -149,7 +149,7 @@ export function GroupChartsPage() {
         </div>
 
         {/* Payment type */}
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4 overflow-hidden">
           <h2 className="text-sm font-semibold text-foreground mb-3">{t('charts.paymentType')}</h2>
           {noData ? (
             <p className="text-sm text-muted-foreground">{t('charts.noData')}</p>

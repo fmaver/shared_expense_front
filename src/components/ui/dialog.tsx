@@ -24,12 +24,15 @@ function useDragToDismiss(threshold = 100) {
     let startY = 0;
 
     const onTouchStart = (e: TouchEvent) => {
+      // passive:false + preventDefault stops iOS from claiming the gesture at
+      // touchstart, so our touchmove handler always runs without being ignored.
+      e.preventDefault();
       startY = e.touches[0].clientY;
       popup.style.transition = 'none';
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault(); // block ancestor scroll — requires passive:false
+      e.preventDefault();
       const delta = Math.max(0, e.touches[0].clientY - startY);
       popup.style.transform = `translateY(${delta}px)`;
     };
@@ -48,7 +51,7 @@ function useDragToDismiss(threshold = 100) {
       }
     };
 
-    handle.addEventListener('touchstart', onTouchStart, { passive: true });
+    handle.addEventListener('touchstart', onTouchStart, { passive: false });
     handle.addEventListener('touchmove', onTouchMove, { passive: false });
     handle.addEventListener('touchend', onTouchEnd, { passive: true });
     return () => {
