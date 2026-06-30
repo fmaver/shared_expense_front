@@ -17,6 +17,7 @@ import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { IslandProvider } from './contexts/IslandContext';
 import { FabActionsProvider } from './contexts/FabActionsContext';
+import { ScrollProvider } from './contexts/ScrollContext';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -64,6 +65,7 @@ function App() {
   return (
     <CurrencyProvider>
       <IslandProvider>
+        <ScrollProvider>
         <FabActionsProvider>
       <Routes>
         {/* Public */}
@@ -91,6 +93,7 @@ function App() {
         )}
       </Routes>
         </FabActionsProvider>
+        </ScrollProvider>
       </IslandProvider>
     </CurrencyProvider>
   );

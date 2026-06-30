@@ -7,6 +7,25 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
+// Swipe-down-to-dismiss: tracks touch on drag handle, clicks a hidden close button when threshold met
+function useDragToDismiss(threshold = 100) {
+  const startYRef = React.useRef(0);
+  const closeBtnRef = React.useRef<HTMLButtonElement>(null);
+
+  const onTouchStart = React.useCallback((e: React.TouchEvent) => {
+    startYRef.current = e.touches[0].clientY;
+  }, []);
+
+  const onTouchEnd = React.useCallback((e: React.TouchEvent) => {
+    const delta = e.changedTouches[0].clientY - startYRef.current;
+    if (delta > threshold) {
+      closeBtnRef.current?.click();
+    }
+  }, [threshold]);
+
+  return { closeBtnRef, onTouchStart, onTouchEnd };
+}
+
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
@@ -47,18 +66,46 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const { closeBtnRef, onTouchStart, onTouchEnd } = useDragToDismiss();
+
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Base
+          "fixed z-50 w-full bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",
+          // Mobile: bottom sheet
+          "bottom-0 inset-x-0 rounded-t-2xl rounded-b-none max-h-[88vh] overflow-y-auto grid gap-4 px-4 pb-4 pt-0",
+          // Mobile animation: slide up
+          "duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+          "max-lg:data-open:slide-in-from-bottom max-lg:data-closed:slide-out-to-bottom",
+          // Desktop: centered dialog
+          "lg:bottom-auto lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
+          "lg:max-w-[calc(100%-2rem)] lg:sm:max-w-sm lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
+          // Desktop animation: zoom
+          "lg:duration-100 lg:data-open:zoom-in-95 lg:data-closed:zoom-out-95",
           className
         )}
         {...props}
       >
+        {/* Drag handle — mobile only, touch target for swipe-to-dismiss */}
+        <div
+          className="lg:hidden -mx-4 flex justify-center items-center py-3 touch-pan-y cursor-grab active:cursor-grabbing"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        </div>
+
+        {/* Hidden close button used by swipe-to-dismiss */}
+        <DialogPrimitive.Close
+          render={<button ref={closeBtnRef} className="sr-only absolute" tabIndex={-1} aria-hidden />}
+        />
+
         {children}
+
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
@@ -70,8 +117,7 @@ function DialogContent({
               />
             }
           >
-            <XIcon
-            />
+            <XIcon />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
@@ -103,6 +149,8 @@ function DialogFooter({
       data-slot="dialog-footer"
       className={cn(
         "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        // On mobile: stick to the bottom of the sheet as the form scrolls
+        "max-lg:sticky max-lg:bottom-0 max-lg:z-10 max-lg:bg-popover",
         className
       )}
       {...props}

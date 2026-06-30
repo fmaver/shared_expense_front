@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Outlet, useMatch, useNavigate } from 'react-router-dom';
+import { useScroll } from '@/contexts/ScrollContext';
 import { Sidebar } from './Sidebar';
 import { MobileHeader } from './MobileHeader';
 import { FloatingTabBar } from './FloatingTabBar';
@@ -16,6 +17,10 @@ export function AppShell({ onLogout }: AppShellProps) {
   const navigate = useNavigate();
   const [openNewGroup, setOpenNewGroup] = useState(false);
   const { state: islandState } = useIsland();
+  const { notifyScroll } = useScroll();
+  const handleMainScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    notifyScroll((e.target as HTMLElement).scrollTop);
+  }, [notifyScroll]);
 
   // Detect if we're inside a group route to show group name in the island
   const groupMatchExact = useMatch('/groups/:groupId');
@@ -51,8 +56,11 @@ export function AppShell({ onLogout }: AppShellProps) {
           groupName={groupName}
         />
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
+        {/* Main content — pt-12 on mobile clears the fixed header */}
+        <main
+          className="flex-1 overflow-y-auto pb-24 lg:pb-0 pt-12 lg:pt-0"
+          onScroll={handleMainScroll}
+        >
           <Outlet />
         </main>
       </div>

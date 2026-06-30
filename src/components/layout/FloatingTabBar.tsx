@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
+import { useScroll } from '@/contexts/ScrollContext';
 import { Home, Users, User, Plus, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
@@ -16,6 +17,7 @@ const CLOSED: LauncherState = { open: false, mode: 'expense' };
 export function FloatingTabBar() {
   const location = useLocation();
   const { personalAdd } = useFabActions();
+  const { tabBarCollapsed } = useScroll();
 
   // Detect group context from route
   const groupMatchExact = useMatch('/groups/:groupId');
@@ -153,29 +155,35 @@ export function FloatingTabBar() {
         />
       </button>
 
-      {/* Floating Tab Bar */}
+      {/* Floating Tab Bar — collapses to active tab + moves left on scroll down */}
       <nav
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 lg:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed z-40 lg:hidden transition-all duration-300 ease-out"
+        style={{
+          bottom: `calc(1rem + env(safe-area-inset-bottom))`,
+          left: tabBarCollapsed ? '1rem' : '50%',
+          transform: tabBarCollapsed ? 'none' : 'translateX(-50%)',
+        }}
       >
         <div className="flex items-center gap-1 rounded-full bg-card/80 backdrop-blur-xl border border-border/40 shadow-2xl px-2 py-2">
-          {TABS.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  'relative flex flex-col items-center justify-center w-16 h-10 rounded-full transition-colors',
-                  isActive
-                    ? 'text-brand bg-brand/10'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
-                )
-              }
-              aria-label={label}
-            >
-              <Icon className="h-5 w-5" />
-            </NavLink>
-          ))}
+          {TABS.map(({ to, icon: Icon, label }) => {
+            const isActive = location.pathname === to || (to !== '/personal' && location.pathname.startsWith(to));
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                className={cn(
+                  'relative flex flex-col items-center justify-center h-10 rounded-full transition-all duration-300 ease-out overflow-hidden',
+                  isActive ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                  tabBarCollapsed
+                    ? isActive ? 'w-10 opacity-100' : 'w-0 opacity-0 pointer-events-none'
+                    : 'w-16 opacity-100',
+                )}
+                aria-label={label}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+              </NavLink>
+            );
+          })}
         </div>
       </nav>
 
