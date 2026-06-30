@@ -59,3 +59,27 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Mobile bottom sheet animations — bypasses tailwindcss-animate compound variants */
+@keyframes sheet-enter {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes sheet-exit {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(110%); opacity: 0; }
+}
+
+@media (max-width: 1023px) {
+  [data-slot="dialog-content"][data-open] {
+    animation: sheet-enter 450ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  /* Normal close (X button): slide off */
+  [data-slot="dialog-content"][data-closed]:not([data-drag-dismiss]) {
+    animation: sheet-exit 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  /* Drag-dismiss: suppress CSS animation — the spring transition handles the visual exit */
+  [data-slot="dialog-content"][data-drag-dismiss] {
+    animation: none;
+  }
+}

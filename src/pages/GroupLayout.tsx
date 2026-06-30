@@ -24,7 +24,7 @@ export function GroupLayout() {
   ];
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1">
       {/* Group header + tabs */}
       <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 sm:px-6 pt-4 pb-0">
