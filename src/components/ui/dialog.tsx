@@ -50,7 +50,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/40 backdrop-blur-sm duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/40 backdrop-blur-sm duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
@@ -78,14 +78,15 @@ function DialogContent({
           "fixed z-50 w-full bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",
           // Mobile: bottom sheet
           "bottom-0 inset-x-0 rounded-t-2xl rounded-b-none max-h-[88vh] overflow-y-auto grid gap-4 px-4 pb-4 pt-0",
-          // Mobile animation: slide up
-          "duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+          // Mobile animation: gentle slide up with iOS spring easing
+          "max-lg:duration-[450ms] max-lg:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]",
+          "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           "max-lg:data-open:slide-in-from-bottom max-lg:data-closed:slide-out-to-bottom",
           // Desktop: centered dialog
           "lg:bottom-auto lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
           "lg:max-w-[calc(100%-2rem)] lg:sm:max-w-sm lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
-          // Desktop animation: zoom
-          "lg:duration-100 lg:data-open:zoom-in-95 lg:data-closed:zoom-out-95",
+          // Desktop animation: snappy zoom (desktop doesn't need the slow spring)
+          "lg:duration-150 lg:[animation-timing-function:ease-out] lg:data-open:zoom-in-95 lg:data-closed:zoom-out-95",
           className
         )}
         {...props}

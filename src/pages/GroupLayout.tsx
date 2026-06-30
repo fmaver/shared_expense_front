@@ -29,10 +29,13 @@ export function GroupLayout() {
       <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 sm:px-6 pt-4 pb-0">
           {/* Large collapsing title — visible at top, collapses on scroll (mobile only) */}
-          <div className={cn(
-            'overflow-hidden transition-all duration-300 ease-out lg:!max-h-10 lg:!opacity-100',
-            isAtTop ? 'max-h-10 opacity-100 mb-3' : 'max-h-0 opacity-0 mb-0',
-          )}>
+          <div
+            style={{ transition: 'max-height 420ms cubic-bezier(0.32,0.72,0,1), opacity 350ms ease-out, margin-bottom 420ms cubic-bezier(0.32,0.72,0,1)' }}
+            className={cn(
+              'overflow-hidden lg:!max-h-10 lg:!opacity-100',
+              isAtTop ? 'max-h-10 opacity-100 mb-3' : 'max-h-0 opacity-0 mb-0',
+            )}
+          >
             {isLoading ? (
               <Skeleton className="h-6 w-40" />
             ) : (

@@ -157,11 +157,12 @@ export function FloatingTabBar() {
 
       {/* Floating Tab Bar — collapses to active tab + moves left on scroll down */}
       <nav
-        className="fixed z-40 lg:hidden transition-all duration-300 ease-out"
+        className="fixed z-40 lg:hidden"
         style={{
           bottom: `calc(1rem + env(safe-area-inset-bottom))`,
           left: tabBarCollapsed ? '1rem' : '50%',
           transform: tabBarCollapsed ? 'none' : 'translateX(-50%)',
+          transition: 'left 420ms cubic-bezier(0.32,0.72,0,1), transform 420ms cubic-bezier(0.32,0.72,0,1)',
         }}
       >
         <div className="flex items-center gap-1 rounded-full bg-card/80 backdrop-blur-xl border border-border/40 shadow-2xl px-2 py-2">
@@ -171,8 +172,9 @@ export function FloatingTabBar() {
               <NavLink
                 key={to}
                 to={to}
+                style={{ transition: 'width 420ms cubic-bezier(0.32,0.72,0,1), opacity 380ms cubic-bezier(0.32,0.72,0,1)' }}
                 className={cn(
-                  'relative flex flex-col items-center justify-center h-10 rounded-full transition-all duration-300 ease-out overflow-hidden',
+                  'relative flex flex-col items-center justify-center h-10 rounded-full overflow-hidden',
                   isActive ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
                   tabBarCollapsed
                     ? isActive ? 'w-10 opacity-100' : 'w-0 opacity-0 pointer-events-none'
