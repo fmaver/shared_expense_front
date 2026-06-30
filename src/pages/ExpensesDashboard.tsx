@@ -26,10 +26,13 @@ import { toast } from 'sonner';
 import { Plus, ArrowLeftRight, FileDown } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 import { useIsland } from '@/contexts/IslandContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { cn } from '@/lib/utils';
 
 export function ExpensesDashboard() {
   const { t } = useTranslation();
   const island = useIsland();
+  const { displayMode, setDisplayMode, blueRate } = useCurrency();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
@@ -214,7 +217,23 @@ export function ExpensesDashboard() {
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold text-foreground">{t('expenses.title')}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">{t('expenses.title')}</h3>
+            {expenses.some(e => e.currency === 'USD') && blueRate !== null && (
+              <button
+                type="button"
+                onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
+                className={cn(
+                  'h-6 px-2 rounded-full text-xs font-semibold transition-colors cursor-pointer shrink-0',
+                  displayMode === 'ars'
+                    ? 'bg-brand/20 text-brand hover:bg-brand/30'
+                    : 'text-muted-foreground border border-border hover:bg-accent hover:text-foreground',
+                )}
+              >
+                {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground shrink-0"
               onClick={handleExportPDF}

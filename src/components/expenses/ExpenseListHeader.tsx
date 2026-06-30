@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { cn } from '@/lib/utils';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
 type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'paymentType' | 'splitStrategy';
@@ -18,7 +16,6 @@ interface ExpenseListHeaderProps {
 
 export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHeaderProps) {
   const { t } = useTranslation();
-  const { displayMode, setDisplayMode, blueRate } = useCurrency();
   const [sortField, setSortField] = useState<SortField>('date');
 
   const SORT_FIELDS: { value: SortField; label: string }[] = [
@@ -172,20 +169,6 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
             </Select>
           </div>
 
-          {blueRate !== null && (
-            <button
-              type="button"
-              onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
-              className={cn(
-                'h-7 px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer shrink-0',
-                displayMode === 'ars'
-                  ? 'bg-brand/20 text-brand hover:bg-brand/30'
-                  : 'text-muted-foreground border border-border hover:bg-accent hover:text-foreground',
-              )}
-            >
-              {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
-            </button>
-          )}
         </>
       )}
     </div>
