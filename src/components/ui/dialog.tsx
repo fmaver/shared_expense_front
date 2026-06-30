@@ -115,7 +115,7 @@ function DialogContent({
       >
         {/* Drag handle — mobile only, touch target for swipe-to-dismiss */}
         <div
-          className="lg:hidden -mx-4 flex justify-center items-center py-3 touch-pan-y cursor-grab active:cursor-grabbing"
+          className="lg:hidden -mx-4 flex justify-center items-center py-3 touch-none cursor-grab active:cursor-grabbing"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
