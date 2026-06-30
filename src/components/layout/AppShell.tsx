@@ -56,9 +56,9 @@ export function AppShell({ onLogout }: AppShellProps) {
           groupName={groupName}
         />
 
-        {/* Main content — pt-12 on mobile clears the fixed header */}
+        {/* Main content — flex col so GroupLayout can flex-1 without overflowing */}
         <main
-          className="flex-1 overflow-y-auto pb-24 lg:pb-0 pt-12 lg:pt-0"
+          className="flex flex-col flex-1 overflow-y-auto pb-24 lg:pb-0 pt-12 lg:pt-0"
           onScroll={handleMainScroll}
         >
           <Outlet />

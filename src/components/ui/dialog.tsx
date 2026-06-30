@@ -7,23 +7,46 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-// Swipe-down-to-dismiss: tracks touch on drag handle, clicks a hidden close button when threshold met
+// Swipe-down-to-dismiss: tracks the finger in real time, applies a live drag transform,
+// then either springs back or springs off-screen (suppressing CSS exit animation).
 function useDragToDismiss(threshold = 100) {
+  const [dragY, setDragY] = React.useState(0);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isDragDismiss, setIsDragDismiss] = React.useState(false);
   const startYRef = React.useRef(0);
   const closeBtnRef = React.useRef<HTMLButtonElement>(null);
 
   const onTouchStart = React.useCallback((e: React.TouchEvent) => {
     startYRef.current = e.touches[0].clientY;
+    setIsDragging(true);
+    setIsDragDismiss(false);
+  }, []);
+
+  const onTouchMove = React.useCallback((e: React.TouchEvent) => {
+    const delta = Math.max(0, e.touches[0].clientY - startYRef.current);
+    setDragY(delta);
   }, []);
 
   const onTouchEnd = React.useCallback((e: React.TouchEvent) => {
-    const delta = e.changedTouches[0].clientY - startYRef.current;
+    const delta = Math.max(0, e.changedTouches[0].clientY - startYRef.current);
+    setIsDragging(false);
     if (delta > threshold) {
+      // Suppress CSS sheet-exit; spring off-screen via the inline transition.
+      // @base-ui waits for transitionend (350ms) then unmounts.
+      setIsDragDismiss(true);
+      setDragY(window.innerHeight);
       closeBtnRef.current?.click();
+    } else {
+      setDragY(0); // spring back to resting position
     }
   }, [threshold]);
 
-  return { closeBtnRef, onTouchStart, onTouchEnd };
+  const dragStyle: React.CSSProperties = {
+    ...(dragY > 0 || isDragDismiss ? { transform: `translateY(${dragY}px)` } : {}),
+    transition: isDragging ? 'none' : 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)',
+  };
+
+  return { closeBtnRef, isDragDismiss, dragStyle, onTouchStart, onTouchMove, onTouchEnd };
 }
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -66,27 +89,26 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
-  const { closeBtnRef, onTouchStart, onTouchEnd } = useDragToDismiss();
+  const { closeBtnRef, isDragDismiss, dragStyle, onTouchStart, onTouchMove, onTouchEnd } = useDragToDismiss();
 
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
+        data-drag-dismiss={isDragDismiss ? '' : undefined}
+        style={dragStyle}
         className={cn(
           // Base
           "fixed z-50 w-full bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",
-          // Mobile: bottom sheet
+          // Mobile: bottom sheet (animation comes from index.css keyframes)
           "bottom-0 inset-x-0 rounded-t-2xl rounded-b-none max-h-[88vh] overflow-y-auto grid gap-4 px-4 pb-4 pt-0",
-          // Mobile animation: gentle slide up with iOS spring easing
-          "max-lg:duration-[450ms] max-lg:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]",
-          "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-          "max-lg:data-open:slide-in-from-bottom max-lg:data-closed:slide-out-to-bottom",
-          // Desktop: centered dialog
+          // Desktop: centered dialog with tailwindcss-animate zoom
           "lg:bottom-auto lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
           "lg:max-w-[calc(100%-2rem)] lg:sm:max-w-sm lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
-          // Desktop animation: snappy zoom (desktop doesn't need the slow spring)
-          "lg:duration-150 lg:[animation-timing-function:ease-out] lg:data-open:zoom-in-95 lg:data-closed:zoom-out-95",
+          "lg:duration-150 lg:[animation-timing-function:ease-out]",
+          "lg:data-open:animate-in lg:data-open:fade-in-0 lg:data-open:zoom-in-95",
+          "lg:data-closed:animate-out lg:data-closed:fade-out-0 lg:data-closed:zoom-out-95",
           className
         )}
         {...props}
@@ -95,6 +117,7 @@ function DialogContent({
         <div
           className="lg:hidden -mx-4 flex justify-center items-center py-3 touch-pan-y cursor-grab active:cursor-grabbing"
           onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
