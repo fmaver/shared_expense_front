@@ -49,7 +49,7 @@ export function GroupLayout() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-24 lg:pb-0">
         <Outlet />
       </div>
     </div>

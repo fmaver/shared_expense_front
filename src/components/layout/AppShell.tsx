@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useMatch, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { TopBar } from './TopBar';
+import { MobileHeader } from './MobileHeader';
+import { FloatingTabBar } from './FloatingTabBar';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
+import { useGroup } from '@/hooks/useGroups';
+import { useIsland } from '@/contexts/IslandContext';
 import type { Group } from '@/types/expense';
 
 interface AppShellProps {
@@ -12,6 +15,26 @@ interface AppShellProps {
 export function AppShell({ onLogout }: AppShellProps) {
   const navigate = useNavigate();
   const [openNewGroup, setOpenNewGroup] = useState(false);
+  const { state: islandState } = useIsland();
+
+  // Detect if we're inside a group route to show group name in the island
+  const groupMatchExact = useMatch('/groups/:groupId');
+  const groupMatchSub = useMatch('/groups/:groupId/*');
+  const groupMatch = groupMatchExact ?? groupMatchSub;
+  const groupIdParam = groupMatch?.params?.groupId
+    ? parseInt(groupMatch.params.groupId, 10)
+    : null;
+
+  const { data: group } = useGroup(groupIdParam ?? 0);
+  const groupName = groupIdParam !== null ? (group?.name ?? undefined) : undefined;
+
+  // Derive the effective island display state
+  const effectiveIslandState: 'idle' | 'loading' | 'success' | 'group' =
+    islandState !== 'idle'
+      ? islandState
+      : groupIdParam !== null
+        ? 'group'
+        : 'idle';
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -21,17 +44,26 @@ export function AppShell({ onLogout }: AppShellProps) {
       </aside>
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Mobile top bar */}
-        <TopBar onLogout={onLogout} onNewGroup={() => setOpenNewGroup(true)} />
-        <main className="flex-1 overflow-y-auto">
+        {/* Mobile header (replaces TopBar on mobile) */}
+        <MobileHeader
+          onLogout={onLogout}
+          state={effectiveIslandState}
+          groupName={groupName}
+        />
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
           <Outlet />
         </main>
       </div>
 
+      {/* Mobile floating tab bar + FAB */}
+      <FloatingTabBar />
+
       <CreateGroupDialog
         open={openNewGroup}
         onOpenChange={setOpenNewGroup}
-        onCreated={(g: Group) => { navigate(`/groups/${g.id}`); }}
+        onCreated={(g: Group) => navigate(`/groups/${g.id}`)}
       />
     </div>
   );
