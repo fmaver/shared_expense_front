@@ -49,7 +49,7 @@ export function GroupLayout() {
                 to={tab.path === '' ? `/groups/${groupId}` : `/groups/${groupId}/${tab.path}`}
                 end={tab.path === ''}
                 className={({ isActive }) => cn(
-                  'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                  'px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors',
                   isActive
                     ? 'border-brand text-brand'
                     : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
