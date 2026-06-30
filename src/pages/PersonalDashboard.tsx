@@ -281,13 +281,13 @@ export function PersonalDashboard() {
         <div className="space-y-3">
           {/* Income + expenses row */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-card border border-border rounded-xl p-4 overflow-hidden">
               <p className="text-xs text-muted-foreground">{t('personal.totalIncome')}</p>
-              <p className="text-lg font-bold text-green-600 mt-1">{formatCurrency(ledger.totalIncome)}</p>
+              <p className="text-sm font-bold text-green-600 mt-1 truncate">{formatCurrency(ledger.totalIncome)}</p>
             </div>
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-card border border-border rounded-xl p-4 overflow-hidden">
               <p className="text-xs text-muted-foreground">{t('personal.totalExpenses')}</p>
-              <p className="text-lg font-bold text-red-500 mt-1">{formatCurrency(ledger.totalPersonalExpenses)}</p>
+              <p className="text-sm font-bold text-red-500 mt-1 truncate">{formatCurrency(ledger.totalPersonalExpenses)}</p>
             </div>
           </div>
 
