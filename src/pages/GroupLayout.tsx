@@ -63,7 +63,7 @@ export function GroupLayout() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleInnerScroll}>
+      <div className="flex-1 overflow-y-auto pb-24 lg:pb-0" onScroll={handleInnerScroll}>
         <Outlet />
       </div>
     </div>

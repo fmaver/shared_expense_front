@@ -295,7 +295,7 @@ export function PersonalDashboard() {
           <div className="bg-card border border-border rounded-xl p-4 space-y-3">
             {/* Current balance: actual cash right now */}
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground">{t('personal.currentBalance')}</p>
                 <p className="text-xs text-muted-foreground">{t('personal.currentBalanceDesc')}</p>
               </div>
@@ -309,7 +309,7 @@ export function PersonalDashboard() {
               <>
                 <div className="border-t border-border/50" />
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">{t('personal.projectedBalance')}</p>
                     <p className="text-xs text-muted-foreground">
                       {ledger.pendingSettlementsTotal > 0
@@ -367,7 +367,7 @@ export function PersonalDashboard() {
 
       {/* Charts */}
       {ledger && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4 overflow-x-hidden">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <BarChart2 className="h-4 w-4 text-brand" /> {t('charts.title')}
           </h2>
