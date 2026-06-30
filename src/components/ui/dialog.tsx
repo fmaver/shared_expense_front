@@ -7,12 +7,9 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-// Swipe-down-to-dismiss: native listeners (not React synthetic) so touchmove can call
-// preventDefault() and prevent the parent overflow-y-auto from stealing the gesture.
+// Swipe-down-to-dismiss: directly mutate popup.style.transform so the DOM updates
+// every frame without waiting for React's batched re-render cycle.
 function useDragToDismiss(threshold = 100) {
-  const [dragY, setDragY] = React.useState(0);
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [isDragDismiss, setIsDragDismiss] = React.useState(false);
   const closeBtnRef = React.useRef<HTMLButtonElement>(null);
   const dragHandleRef = React.useRef<HTMLDivElement>(null);
 
@@ -20,31 +17,34 @@ function useDragToDismiss(threshold = 100) {
     const handle = dragHandleRef.current;
     if (!handle) return;
 
+    // Walk up to the nearest [data-slot="dialog-content"] popup element.
+    const popup = handle.closest('[data-slot="dialog-content"]') as HTMLElement | null;
+    if (!popup) return;
+
     let startY = 0;
 
     const onTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
-      setIsDragging(true);
-      setIsDragDismiss(false);
+      popup.style.transition = 'none';
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault(); // block parent scroll — requires passive:false
+      e.preventDefault(); // block ancestor scroll — requires passive:false
       const delta = Math.max(0, e.touches[0].clientY - startY);
-      setDragY(delta);
+      popup.style.transform = `translateY(${delta}px)`;
     };
 
     const onTouchEnd = (e: TouchEvent) => {
       const delta = Math.max(0, e.changedTouches[0].clientY - startY);
-      setIsDragging(false);
+      popup.style.transition = 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)';
       if (delta > threshold) {
-        // Suppress CSS sheet-exit; spring off-screen via the inline transition.
-        // @base-ui detects transitionend (350ms) then unmounts.
-        setIsDragDismiss(true);
-        setDragY(window.innerHeight);
+        // Mark popup so CSS sheet-exit is suppressed; our spring handles the exit.
+        // @base-ui listens for transitionend (350ms) then unmounts.
+        popup.dataset.dragDismiss = '';
+        popup.style.transform = `translateY(${window.innerHeight}px)`;
         closeBtnRef.current?.click();
       } else {
-        setDragY(0); // spring back to resting position
+        popup.style.transform = ''; // spring back
       }
     };
 
@@ -58,12 +58,7 @@ function useDragToDismiss(threshold = 100) {
     };
   }, [threshold]);
 
-  const dragStyle: React.CSSProperties = {
-    ...(dragY > 0 || isDragDismiss ? { transform: `translateY(${dragY}px)` } : {}),
-    transition: isDragging ? 'none' : 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)',
-  };
-
-  return { closeBtnRef, dragHandleRef, isDragDismiss, dragStyle };
+  return { closeBtnRef, dragHandleRef };
 }
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -106,15 +101,13 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
-  const { closeBtnRef, dragHandleRef, isDragDismiss, dragStyle } = useDragToDismiss();
+  const { closeBtnRef, dragHandleRef } = useDragToDismiss();
 
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
-        data-drag-dismiss={isDragDismiss ? '' : undefined}
-        style={dragStyle}
         className={cn(
           // Base
           "fixed z-50 w-full bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",

@@ -192,7 +192,7 @@ export function AddExpenseDialog({
           )}
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-3">
         <form id="expense-form" onSubmit={handleSubmit} className="space-y-4 py-1">
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
