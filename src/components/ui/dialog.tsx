@@ -29,7 +29,6 @@ function useDragToDismiss(threshold = 80) {
 
     const pill = handle.querySelector('div') as HTMLElement | null;
     let startY = 0;
-    let dismissTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const onTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
@@ -48,39 +47,52 @@ function useDragToDismiss(threshold = 80) {
       popup.style.transform = `translateY(${delta}px)`;
     };
 
+    let rafId: number | null = null;
+
     const onTouchEnd = (e: TouchEvent) => {
-      // Prevent iOS from synthesising a click event at the finger's release position.
-      // Without this, if the finger lands over the overlay backdrop on release, the
-      // overlay's click handler fires and closes the dialog via the normal (non-animated)
-      // path — making the popup vanish instantly instead of sliding off-screen.
+      // Prevent iOS from synthesising a click event at the finger's final position,
+      // which would otherwise hit the backdrop and close the dialog via the normal path.
       e.preventDefault();
 
       const delta = Math.max(0, e.changedTouches[0].clientY - startY);
       if (pill) { pill.style.width = ''; pill.style.opacity = ''; }
 
-      // Set transition while transform is still at the drag position (transition:none).
-      popup.style.transition = 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)';
-
       if (delta > threshold) {
+        // Suppress CSS animations so they don't fight the JS-driven slide
         popup.dataset.dragDismiss = '';
-        // rAF lets the browser commit the current drag position as the animation
-        // "from" value before we set the target in the next frame. Without this,
-        // transition + transform land in the same style batch and the browser
-        // skips the animation entirely (no perceived "from → to" change).
-        requestAnimationFrame(() => {
-          popup.style.transform = `translateY(${window.innerHeight}px)`;
-          // Close after the slide finishes; closing synchronously would unmount
-          // the popup before the animation has time to play.
-          dismissTimeout = setTimeout(() => closeBtnRef.current?.click(), 360);
-        });
+
+        // Drive the exit animation entirely in JS via rAF.
+        // CSS transition + transform set in the same synchronous block can be
+        // batched by the browser (especially iOS Safari) with no "from" state,
+        // causing the transition to be skipped. A rAF loop has full control
+        // every frame with no dependency on the CSS cascade.
+        const from = delta;
+        const to = window.innerHeight;
+        const dur = 280;
+        const t0 = performance.now();
+
+        const step = (now: number) => {
+          const p = Math.min((now - t0) / dur, 1);
+          // Cubic ease-out: fast start (continues from drag velocity), gentle finish
+          const eased = 1 - Math.pow(1 - p, 3);
+          popup.style.transform = `translateY(${from + (to - from) * eased}px)`;
+          if (p < 1) {
+            rafId = requestAnimationFrame(step);
+          } else {
+            rafId = null;
+            closeBtnRef.current?.click();
+          }
+        };
+        rafId = requestAnimationFrame(step);
       } else {
+        // Spring back to resting position
+        popup.style.transition = 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)';
         popup.style.transform = '';
       }
     };
 
-    // passive:true on touchstart so the browser doesn't complain; touch-action:none
-    // on the handle element (CSS) is what actually prevents iOS scroll-claim.
-    // passive:false on touchmove AND touchend so we can call preventDefault().
+    // passive:false on touchmove so we can call preventDefault() (blocks parent scroll).
+    // passive:false on touchend so we can prevent the synthesised click on release.
     handle.addEventListener('touchstart', onTouchStart, { passive: true });
     handle.addEventListener('touchmove',  onTouchMove,  { passive: false });
     handle.addEventListener('touchend',   onTouchEnd,   { passive: false });
@@ -89,7 +101,7 @@ function useDragToDismiss(threshold = 80) {
       handle.removeEventListener('touchstart', onTouchStart);
       handle.removeEventListener('touchmove',  onTouchMove);
       handle.removeEventListener('touchend',   onTouchEnd);
-      if (dismissTimeout !== null) clearTimeout(dismissTimeout);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [threshold]);
 
