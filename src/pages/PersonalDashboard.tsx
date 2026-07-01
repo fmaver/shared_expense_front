@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
+import { useScroll } from '@/contexts/ScrollContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -48,6 +49,10 @@ export function PersonalDashboard() {
   const { t } = useTranslation();
   const island = useIsland();
   const { registerPersonalAdd } = useFabActions();
+  const { notifyScroll } = useScroll();
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    notifyScroll((e.target as HTMLDivElement).scrollTop);
+  }, [notifyScroll]);
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1); // 1-indexed
@@ -257,16 +262,19 @@ export function PersonalDashboard() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <Skeleton className="h-48 w-full rounded-xl" />
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden" onScroll={handleScroll}>
+        <div className="max-w-2xl mx-auto px-4 pt-6 pb-24 lg:pb-6 space-y-4 w-full">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-5 overflow-x-hidden">
+    <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden" onScroll={handleScroll}>
+      <div className="max-w-2xl mx-auto px-4 pt-6 pb-24 lg:pb-6 space-y-5 w-full overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-foreground">{t('personal.title')}</h1>
@@ -975,6 +983,7 @@ export function PersonalDashboard() {
           hidePayerAndSplit
         />
       )}
+      </div>
     </div>
   );
 }
