@@ -525,7 +525,7 @@ export function PersonalDashboard() {
                     <span className="text-foreground truncate">{income.label}</span>
                   </div>
                   <span className="font-semibold text-green-600 tabular-nums w-24 text-right flex-shrink-0">{formatCurrency(income.amount)}</span>
-                  <div className="flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
+                  <div className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
                     <Button variant="ghost" size="icon" className="h-7 w-7"
                       onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -677,7 +677,7 @@ export function PersonalDashboard() {
                   </div>
                   {/* Actions */}
                   <div
-                    className="flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"
+                    className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"
                     onClick={e => e.stopPropagation()}
                   >
                     <Button variant="ghost" size="icon" className="h-7 w-7"
