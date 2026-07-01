@@ -26,19 +26,21 @@ export function MobileHeader({ onLogout, state, groupName }: MobileHeaderProps) 
           : 'bg-transparent border-b border-transparent',
       )}
     >
-      {/* Left: brand mark */}
-      <div className="flex items-center gap-2">
+      {/* Left: brand mark — flex-1 so it mirrors the right side width */}
+      <div className="flex-1 flex items-center gap-2">
         <div className="w-6 h-6 bg-brand rounded-md flex items-center justify-center text-white font-black text-xs">
           ✦
         </div>
         <span className="font-extrabold text-sm tracking-tight text-foreground">Jirens</span>
       </div>
 
-      {/* Center: Dynamic Island */}
+      {/* Center: Dynamic Island — truly centered because both sides are flex-1 */}
       <DynamicIsland state={state} groupName={groupName} />
 
-      {/* Right: Avatar / Account menu */}
-      <AccountMenu onLogout={onLogout} />
+      {/* Right: Avatar / Account menu — flex-1 + justify-end mirrors the left */}
+      <div className="flex-1 flex justify-end">
+        <AccountMenu onLogout={onLogout} />
+      </div>
     </header>
   );
 }
