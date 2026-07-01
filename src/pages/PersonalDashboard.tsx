@@ -266,7 +266,7 @@ export function PersonalDashboard() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-5 overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-foreground">{t('personal.title')}</h1>
@@ -437,7 +437,7 @@ export function PersonalDashboard() {
             <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
           </h2>
           <Button variant="outline" size="sm" onClick={() => setIncomeForm(f => f ? null : 'pick')}>
-            <Plus className="h-3.5 w-3.5 mr-1" />{t('personal.add')}
+            <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('personal.add')}</span>
           </Button>
         </div>
 
@@ -525,7 +525,7 @@ export function PersonalDashboard() {
                     <span className="text-foreground truncate">{income.label}</span>
                   </div>
                   <span className="font-semibold text-green-600 tabular-nums w-24 text-right flex-shrink-0">{formatCurrency(income.amount)}</span>
-                  <div className="flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
+                  <div className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
                     <Button variant="ghost" size="icon" className="h-7 w-7"
                       onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -570,10 +570,10 @@ export function PersonalDashboard() {
           </h2>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => { setEditingExpense(null); setShowExpenseDialog(true); }}>
-              <Plus className="h-3.5 w-3.5 mr-1" />{t('expenses.add')}
+              <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('expenses.add')}</span>
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowRecurringExpForm(v => !v)}>
-              <Repeat className="h-3.5 w-3.5 mr-1" />{t('personal.addRecurringExpense')}
+              <Repeat className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('personal.addRecurringExpense')}</span>
             </Button>
           </div>
         </div>
@@ -677,7 +677,7 @@ export function PersonalDashboard() {
                   </div>
                   {/* Actions */}
                   <div
-                    className="flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"
+                    className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"
                     onClick={e => e.stopPropagation()}
                   >
                     <Button variant="ghost" size="icon" className="h-7 w-7"
