@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, updateProfile, updatePassword, NotificationType } from '@/api/auth';
+import { getCurrentUser, updateProfile, NotificationType } from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -13,15 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
 
 /**
  * The backend stores Argentine numbers as 54XXXXXXXXXX (no leading 9 after country code).
@@ -31,17 +22,25 @@ import { Eye, EyeOff } from 'lucide-react';
 function formatPhoneForDisplay(raw: string): string {
   if (!raw) return '';
   const digits = raw.replace(/\D/g, '');
-  // Argentine format: 54 + 11-digit local (with 9)
   if (digits.startsWith('54') && digits.length >= 12) {
-    const local = digits.slice(2); // drop country code
+    const local = digits.slice(2);
     return `+54 9 ${local.slice(0, 2)} ${local.slice(2, 6)}-${local.slice(6)}`;
   }
-  return raw; // not Argentine — show as-is
+  return raw;
 }
 
 function normalizePhoneForStorage(display: string): string {
-  // Strip everything except digits
   return display.replace(/\D/g, '');
+}
+
+function getInitials(name: string): string {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 export function ProfilePage() {
@@ -49,24 +48,12 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Profile form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [telephone, setTelephone] = useState(''); // display value (formatted)
+  const [telephone, setTelephone] = useState('');
   const [notificationPreference, setNotificationPreference] = useState<NotificationType>('NONE');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Password change state
-  const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-
-  // Load user data on mount
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -82,19 +69,15 @@ export function ProfilePage() {
         setIsLoading(false);
       }
     };
-
     loadUserData();
   }, [navigate]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate WhatsApp notification preference
     if (notificationPreference === 'WHATSAPP' && !telephone) {
       toast.error('Phone number is required for WhatsApp notifications');
       return;
     }
-
     setIsSaving(true);
     try {
       await updateProfile({
@@ -111,43 +94,14 @@ export function ProfilePage() {
     }
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      toast.error('New passwords do not match');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters');
-      return;
-    }
-
-    setIsChangingPassword(true);
-    try {
-      await updatePassword({
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
-      toast.success(t('toasts.passwordChanged'));
-      setOpenPasswordDialog(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update password');
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <div>
-          <Skeleton className="h-8 w-32 mb-2" />
-          <Skeleton className="h-4 w-48" />
+        {/* Avatar skeleton */}
+        <div className="flex flex-col items-center gap-3 py-4">
+          <Skeleton className="w-20 h-20 rounded-full" />
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-44" />
         </div>
         <div className="space-y-3">
           <Skeleton className="h-10 w-full" />
@@ -160,18 +114,20 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">{t('profile.title')}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t('profile.subtitle')}
-        </p>
+
+      {/* ── Avatar hero ─────────────────────────────────────────────── */}
+      <div className="flex flex-col items-center gap-2 py-4">
+        <div className="w-20 h-20 rounded-full bg-brand flex items-center justify-center text-white text-2xl font-bold shadow-md select-none">
+          {getInitials(name)}
+        </div>
+        <h1 className="text-lg font-bold text-foreground mt-1">{name}</h1>
+        <p className="text-sm text-muted-foreground">{email}</p>
       </div>
 
-      {/* Profile Form */}
+      {/* ── Profile form ─────────────────────────────────────────────── */}
       <form onSubmit={handleProfileSubmit} className="space-y-5">
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          {/* Name */}
+
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">
               {t('profile.fullName')}
@@ -187,7 +143,6 @@ export function ProfilePage() {
             />
           </div>
 
-          {/* Email */}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">
               {t('profile.email')}
@@ -203,10 +158,12 @@ export function ProfilePage() {
             />
           </div>
 
-          {/* Telephone */}
           <div className="space-y-2">
             <Label htmlFor="telephone" className="text-sm font-medium">
-              {t('profile.phone')} {notificationPreference === 'WHATSAPP' && <span className="text-destructive">*</span>}
+              {t('profile.phone')}
+              {notificationPreference === 'WHATSAPP' && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </Label>
             <Input
               id="telephone"
@@ -216,9 +173,7 @@ export function ProfilePage() {
               placeholder="+54 9 11 1234-5678"
               className="text-sm"
             />
-            <p className="text-xs text-muted-foreground">
-              {t('profile.phoneHelp')}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('profile.phoneHelp')}</p>
             {notificationPreference === 'WHATSAPP' && !telephone && (
               <p className="text-xs text-destructive">
                 Phone number is required for WhatsApp notifications
@@ -226,7 +181,6 @@ export function ProfilePage() {
             )}
           </div>
 
-          {/* Notification Preference */}
           <div className="space-y-2">
             <Label htmlFor="notification-preference" className="text-sm font-medium">
               {t('profile.notifPref')}
@@ -237,7 +191,10 @@ export function ProfilePage() {
             >
               <SelectTrigger id="notification-preference" className="text-sm">
                 <span className="flex-1 text-left">
-                  {{ NONE: t('profile.notifNone'), EMAIL: t('profile.notifEmail'), WHATSAPP: t('profile.notifWhatsapp') }[notificationPreference] ?? notificationPreference}
+                  {
+                    { NONE: t('profile.notifNone'), EMAIL: t('profile.notifEmail'), WHATSAPP: t('profile.notifWhatsapp') }[notificationPreference]
+                    ?? notificationPreference
+                  }
                 </span>
               </SelectTrigger>
               <SelectContent>
@@ -249,7 +206,6 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {/* Update Profile Button */}
         <Button
           type="submit"
           disabled={isSaving}
@@ -258,136 +214,6 @@ export function ProfilePage() {
           {isSaving ? t('profile.saving') : t('profile.saveProfile')}
         </Button>
       </form>
-
-      {/* Separator */}
-      <Separator />
-
-      {/* Change Password Section */}
-      <div>
-        <h2 className="text-sm font-semibold text-foreground mb-3">{t('profile.changePassword')}</h2>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={() => setOpenPasswordDialog(true)}
-        >
-          {t('profile.changePasswordBtn')}
-        </Button>
-      </div>
-
-      {/* Change Password Dialog */}
-      <Dialog open={openPasswordDialog} onOpenChange={setOpenPasswordDialog}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t('profile.changePassword')}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            {/* Current Password */}
-            <div className="space-y-2">
-              <Label htmlFor="current-password" className="text-sm font-medium">
-                {t('profile.currentPassword')}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="current-password"
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  className="text-sm pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showCurrentPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* New Password */}
-            <div className="space-y-2">
-              <Label htmlFor="new-password" className="text-sm font-medium">
-                {t('profile.newPassword')}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="text-sm pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm New Password */}
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password" className="text-sm font-medium">
-                {t('profile.confirmNewPassword')}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  className="text-sm pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpenPasswordDialog(false)}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                type="submit"
-                disabled={isChangingPassword}
-                className="bg-brand hover:bg-brand/90 text-white"
-              >
-                {isChangingPassword ? t('profile.changingPassword') : t('profile.changePasswordBtn')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/api/auth';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Moon, Sun, LogOut, Languages, Settings, ChevronRight } from 'lucide-react';
+import { ConfigSheet } from './ConfigSheet';
 
 function getInitials(name: string): string {
   if (!name) return '?';
@@ -22,6 +23,7 @@ interface AccountMenuProps {
 
 export function AccountMenu({ onLogout }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { i18n } = useTranslation();
   const currentLang = i18n.language.startsWith('es') ? 'es' : 'en';
@@ -127,11 +129,16 @@ export function AccountMenu({ onLogout }: AccountMenuProps) {
 
         <Separator />
 
-        {/* Settings (navigates to profile page) */}
+        {/* Settings */}
         <div className="px-4 py-1">
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              // Small delay so the account sheet close animation doesn't clash with
+              // the config sheet open animation
+              setTimeout(() => setConfigOpen(true), 300);
+            }}
             className="w-full flex items-center gap-3 py-3 text-sm text-foreground cursor-pointer hover:bg-accent rounded-md px-2 -mx-2 transition-colors"
           >
             <Settings className="h-5 w-5 text-muted-foreground" />
@@ -152,5 +159,7 @@ export function AccountMenu({ onLogout }: AccountMenuProps) {
         </div>
       </SheetContent>
     </Sheet>
+
+    <ConfigSheet open={configOpen} onOpenChange={setConfigOpen} />
   );
 }
