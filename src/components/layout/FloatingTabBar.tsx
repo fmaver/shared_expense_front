@@ -156,10 +156,10 @@ export function FloatingTabBar() {
       </button>
 
       {/* Floating Tab Bar — collapses to active tab + slides to bottom-left on scroll.
-          Only `transform` is animated — left stays at 0 — so there is no competing
-          left+transform animation that causes an overshoot/rebound effect.
-          When expanded: translateX(50vw - 50%) centres the element regardless of its width.
-          When collapsed: translateX(1rem) parks it 16 px from the left edge. */}
+          Expand sequence: tabs widen first (220ms), then nav slides to centre (200ms delay=220ms).
+          This keeps the `50%` in calc(50vw - 50%) stable when the translate starts, preventing
+          the overshoot/rebound caused by a moving target mid-animation.
+          Collapse: translate + tab-shrink happen simultaneously (feels snappy). */}
       <nav
         className="fixed z-40 lg:hidden"
         style={{
@@ -168,7 +168,9 @@ export function FloatingTabBar() {
           transform: tabBarCollapsed
             ? 'translateX(1rem)'
             : 'translateX(calc(50vw - 50%))',
-          transition: 'transform 280ms ease-out',
+          transition: tabBarCollapsed
+            ? 'transform 200ms ease-in'
+            : 'transform 200ms ease-out 220ms',
         }}
       >
         <div className="flex items-center gap-1 rounded-full bg-card/80 backdrop-blur-xl border border-border/40 shadow-2xl px-2 py-2">
@@ -178,7 +180,11 @@ export function FloatingTabBar() {
               <NavLink
                 key={to}
                 to={to}
-                style={{ transition: 'width 280ms ease-out, opacity 220ms ease-out' }}
+                style={{
+                  transition: tabBarCollapsed
+                    ? 'width 200ms ease-in, opacity 180ms ease-in'
+                    : 'width 220ms ease-out, opacity 200ms ease-out',
+                }}
                 className={cn(
                   'relative flex flex-col items-center justify-center h-10 rounded-full overflow-hidden',
                   isActive ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
