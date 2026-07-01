@@ -9,30 +9,30 @@ import { XIcon } from "lucide-react"
 
 // Swipe-down-to-dismiss: directly mutate popup.style.transform so the DOM updates
 // every frame without waiting for React's batched re-render cycle.
+//
+// Uses a callback ref (not useRef+useEffect) so listeners attach the instant the
+// handle mounts — which only happens when the dialog is open. useEffect runs on
+// *component* mount, at which point Base UI hasn't rendered the popup children yet
+// (open=false), so dragHandleRef.current would be null and listeners would never attach.
 function useDragToDismiss(threshold = 80) {
   const closeBtnRef = React.useRef<HTMLButtonElement>(null);
-  const dragHandleRef = React.useRef<HTMLDivElement>(null);
+  const cleanupRef  = React.useRef<(() => void) | null>(null);
 
-  React.useEffect(() => {
-    const handle = dragHandleRef.current;
+  const dragHandleRef = React.useCallback((handle: HTMLDivElement | null) => {
+    // Always run previous cleanup first (handles StrictMode double-invoke + remounts)
+    cleanupRef.current?.();
+    cleanupRef.current = null;
     if (!handle) return;
 
-    // Walk up to the nearest [data-slot="dialog-content"] popup element.
     const popup = handle.closest('[data-slot="dialog-content"]') as HTMLElement | null;
     if (!popup) return;
 
-    // The visual pill inside the handle (<div class="w-10 h-1 ...">)
     const pill = handle.querySelector('div') as HTMLElement | null;
-
     let startY = 0;
 
     const onTouchStart = (e: TouchEvent) => {
-      // passive:false + preventDefault stops iOS from claiming the gesture at
-      // touchstart, so our touchmove handler always runs without being ignored.
-      e.preventDefault();
       startY = e.touches[0].clientY;
       popup.style.transition = 'none';
-      // Widen + brighten the pill to signal it's being grabbed
       if (pill) {
         pill.style.transition = 'width 150ms ease-out, opacity 150ms ease-out';
         pill.style.width = '2.5rem';
@@ -41,6 +41,7 @@ function useDragToDismiss(threshold = 80) {
     };
 
     const onTouchMove = (e: TouchEvent) => {
+      // preventDefault stops the parent overflow-y-auto from scrolling while dragging
       e.preventDefault();
       const delta = Math.max(0, e.touches[0].clientY - startY);
       popup.style.transform = `translateY(${delta}px)`;
@@ -48,30 +49,30 @@ function useDragToDismiss(threshold = 80) {
 
     const onTouchEnd = (e: TouchEvent) => {
       const delta = Math.max(0, e.changedTouches[0].clientY - startY);
-      // Reset pill appearance
-      if (pill) {
-        pill.style.width = '';
-        pill.style.opacity = '';
-      }
+      if (pill) { pill.style.width = ''; pill.style.opacity = ''; }
       popup.style.transition = 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)';
       if (delta > threshold) {
-        // Mark popup so CSS sheet-exit is suppressed; our spring handles the exit.
-        // @base-ui listens for transitionend (350ms) then unmounts.
+        // Suppress CSS sheet-exit; our spring handles the visual exit.
+        // @base-ui waits for transitionend (350ms) then unmounts.
         popup.dataset.dragDismiss = '';
         popup.style.transform = `translateY(${window.innerHeight}px)`;
         closeBtnRef.current?.click();
       } else {
-        popup.style.transform = ''; // spring back
+        popup.style.transform = '';
       }
     };
 
-    handle.addEventListener('touchstart', onTouchStart, { passive: false });
-    handle.addEventListener('touchmove', onTouchMove, { passive: false });
-    handle.addEventListener('touchend', onTouchEnd, { passive: true });
-    return () => {
+    // passive:true on touchstart so the browser doesn't complain; touch-action:none
+    // on the handle element (CSS) is what actually prevents iOS scroll-claim.
+    // passive:false on touchmove so we can call preventDefault() mid-drag.
+    handle.addEventListener('touchstart', onTouchStart, { passive: true });
+    handle.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    handle.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
+    cleanupRef.current = () => {
       handle.removeEventListener('touchstart', onTouchStart);
-      handle.removeEventListener('touchmove', onTouchMove);
-      handle.removeEventListener('touchend', onTouchEnd);
+      handle.removeEventListener('touchmove',  onTouchMove);
+      handle.removeEventListener('touchend',   onTouchEnd);
     };
   }, [threshold]);
 
