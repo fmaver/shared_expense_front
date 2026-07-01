@@ -9,7 +9,7 @@ import { XIcon } from "lucide-react"
 
 // Swipe-down-to-dismiss: directly mutate popup.style.transform so the DOM updates
 // every frame without waiting for React's batched re-render cycle.
-function useDragToDismiss(threshold = 100) {
+function useDragToDismiss(threshold = 80) {
   const closeBtnRef = React.useRef<HTMLButtonElement>(null);
   const dragHandleRef = React.useRef<HTMLDivElement>(null);
 
@@ -21,6 +21,9 @@ function useDragToDismiss(threshold = 100) {
     const popup = handle.closest('[data-slot="dialog-content"]') as HTMLElement | null;
     if (!popup) return;
 
+    // The visual pill inside the handle (<div class="w-10 h-1 ...">)
+    const pill = handle.querySelector('div') as HTMLElement | null;
+
     let startY = 0;
 
     const onTouchStart = (e: TouchEvent) => {
@@ -29,6 +32,12 @@ function useDragToDismiss(threshold = 100) {
       e.preventDefault();
       startY = e.touches[0].clientY;
       popup.style.transition = 'none';
+      // Widen + brighten the pill to signal it's being grabbed
+      if (pill) {
+        pill.style.transition = 'width 150ms ease-out, opacity 150ms ease-out';
+        pill.style.width = '2.5rem';
+        pill.style.opacity = '0.6';
+      }
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -39,6 +48,11 @@ function useDragToDismiss(threshold = 100) {
 
     const onTouchEnd = (e: TouchEvent) => {
       const delta = Math.max(0, e.changedTouches[0].clientY - startY);
+      // Reset pill appearance
+      if (pill) {
+        pill.style.width = '';
+        pill.style.opacity = '';
+      }
       popup.style.transition = 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)';
       if (delta > threshold) {
         // Mark popup so CSS sheet-exit is suppressed; our spring handles the exit.
@@ -131,7 +145,7 @@ function DialogContent({
           ref={dragHandleRef}
           className="lg:hidden -mx-4 flex justify-center items-center py-3 touch-none cursor-grab active:cursor-grabbing"
         >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 transition-[width,opacity] duration-150" />
         </div>
 
         {/* Hidden close button used by swipe-to-dismiss */}
