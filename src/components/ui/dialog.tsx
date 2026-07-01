@@ -49,16 +49,30 @@ function useDragToDismiss(threshold = 80) {
     };
 
     const onTouchEnd = (e: TouchEvent) => {
+      // Prevent iOS from synthesising a click event at the finger's release position.
+      // Without this, if the finger lands over the overlay backdrop on release, the
+      // overlay's click handler fires and closes the dialog via the normal (non-animated)
+      // path — making the popup vanish instantly instead of sliding off-screen.
+      e.preventDefault();
+
       const delta = Math.max(0, e.changedTouches[0].clientY - startY);
       if (pill) { pill.style.width = ''; pill.style.opacity = ''; }
+
+      // Set transition while transform is still at the drag position (transition:none).
       popup.style.transition = 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)';
+
       if (delta > threshold) {
         popup.dataset.dragDismiss = '';
-        popup.style.transform = `translateY(${window.innerHeight}px)`;
-        // Delay the React close signal until after the spring finishes.
-        // Calling click() immediately causes Base UI to unmount the popup
-        // before the 350ms animation has a chance to play.
-        dismissTimeout = setTimeout(() => closeBtnRef.current?.click(), 350);
+        // rAF lets the browser commit the current drag position as the animation
+        // "from" value before we set the target in the next frame. Without this,
+        // transition + transform land in the same style batch and the browser
+        // skips the animation entirely (no perceived "from → to" change).
+        requestAnimationFrame(() => {
+          popup.style.transform = `translateY(${window.innerHeight}px)`;
+          // Close after the slide finishes; closing synchronously would unmount
+          // the popup before the animation has time to play.
+          dismissTimeout = setTimeout(() => closeBtnRef.current?.click(), 360);
+        });
       } else {
         popup.style.transform = '';
       }
@@ -66,10 +80,10 @@ function useDragToDismiss(threshold = 80) {
 
     // passive:true on touchstart so the browser doesn't complain; touch-action:none
     // on the handle element (CSS) is what actually prevents iOS scroll-claim.
-    // passive:false on touchmove so we can call preventDefault() mid-drag.
+    // passive:false on touchmove AND touchend so we can call preventDefault().
     handle.addEventListener('touchstart', onTouchStart, { passive: true });
     handle.addEventListener('touchmove',  onTouchMove,  { passive: false });
-    handle.addEventListener('touchend',   onTouchEnd,   { passive: true });
+    handle.addEventListener('touchend',   onTouchEnd,   { passive: false });
 
     cleanupRef.current = () => {
       handle.removeEventListener('touchstart', onTouchStart);
