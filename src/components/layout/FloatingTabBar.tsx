@@ -174,12 +174,13 @@ export function FloatingTabBar() {
         }}
       >
         <div
-          className="liquid-glass relative flex items-center gap-1 rounded-full overflow-hidden"
+          className="liquid-glass relative flex items-center rounded-full overflow-hidden"
           style={{
             padding: tabBarCollapsed ? '4px' : '8px',
+            gap: tabBarCollapsed ? '0px' : '4px',
             transition: tabBarCollapsed
-              ? 'padding 200ms ease-in'
-              : 'padding 200ms ease-out 220ms',
+              ? 'padding 200ms ease-in, gap 200ms ease-in'
+              : 'padding 200ms ease-out 220ms, gap 220ms ease-out',
           }}
         >
           {/* Top specular highlight — simulates light catching the top edge of thick glass */}
