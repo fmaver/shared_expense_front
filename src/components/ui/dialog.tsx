@@ -29,6 +29,7 @@ function useDragToDismiss(threshold = 80) {
 
     const pill = handle.querySelector('div') as HTMLElement | null;
     let startY = 0;
+    let dismissTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const onTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
@@ -52,11 +53,12 @@ function useDragToDismiss(threshold = 80) {
       if (pill) { pill.style.width = ''; pill.style.opacity = ''; }
       popup.style.transition = 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)';
       if (delta > threshold) {
-        // Suppress CSS sheet-exit; our spring handles the visual exit.
-        // @base-ui waits for transitionend (350ms) then unmounts.
         popup.dataset.dragDismiss = '';
         popup.style.transform = `translateY(${window.innerHeight}px)`;
-        closeBtnRef.current?.click();
+        // Delay the React close signal until after the spring finishes.
+        // Calling click() immediately causes Base UI to unmount the popup
+        // before the 350ms animation has a chance to play.
+        dismissTimeout = setTimeout(() => closeBtnRef.current?.click(), 350);
       } else {
         popup.style.transform = '';
       }
@@ -73,6 +75,7 @@ function useDragToDismiss(threshold = 80) {
       handle.removeEventListener('touchstart', onTouchStart);
       handle.removeEventListener('touchmove',  onTouchMove);
       handle.removeEventListener('touchend',   onTouchEnd);
+      if (dismissTimeout !== null) clearTimeout(dismissTimeout);
     };
   }, [threshold]);
 
