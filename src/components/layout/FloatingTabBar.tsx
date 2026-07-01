@@ -173,7 +173,15 @@ export function FloatingTabBar() {
             : 'transform 200ms ease-out 220ms',
         }}
       >
-        <div className="flex items-center gap-1 rounded-full bg-card/80 backdrop-blur-xl border border-border/40 shadow-2xl px-2 py-2">
+        <div className="liquid-glass relative flex items-center gap-1 rounded-full px-2 py-2 overflow-hidden">
+          {/* Top specular highlight — simulates light catching the top edge of thick glass */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] z-10 rounded-full"
+            style={{
+              background: 'linear-gradient(90deg, transparent 4%, rgba(255,255,255,0.60) 28%, rgba(255,255,255,0.90) 50%, rgba(255,255,255,0.60) 72%, transparent 96%)',
+            }}
+          />
           {TABS.map(({ to, icon: Icon, label }) => {
             const isActive = location.pathname === to || (to !== '/personal' && location.pathname.startsWith(to));
             return (
@@ -187,7 +195,9 @@ export function FloatingTabBar() {
                 }}
                 className={cn(
                   'relative flex flex-col items-center justify-center h-10 rounded-full overflow-hidden',
-                  isActive ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                  isActive
+                    ? 'text-brand bg-white/30 dark:bg-white/15'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-white/20 dark:hover:bg-white/10',
                   tabBarCollapsed
                     ? isActive ? 'w-10 opacity-100' : 'w-0 opacity-0 pointer-events-none'
                     : 'w-14 opacity-100',
