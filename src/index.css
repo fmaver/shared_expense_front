@@ -61,6 +61,36 @@
   }
 }
 
+/* ── Liquid Glass — iOS 26 material ────────────────────────────────────────
+   Heavy blur + saturation lets background colours bleed through (the "liquid"
+   quality). The inset box-shadows simulate the top specular edge and a faint
+   bottom rim — thickness of the glass. Dark mode shifts the tint to the app's
+   purple brand hue so the pill reads as part of the design system.
+   -------------------------------------------------------------------------- */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(60px) saturate(220%) brightness(103%);
+  -webkit-backdrop-filter: blur(60px) saturate(220%) brightness(103%);
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px   0 rgba(255, 255, 255, 0.14),
+    0 2px  8px  rgba(0, 0, 0, 0.10),
+    0 8px  28px rgba(0, 0, 0, 0.14),
+    0 0    0 0.5px rgba(0, 0, 0, 0.04);
+}
+.dark .liquid-glass {
+  background: rgba(28, 22, 50, 0.48);
+  backdrop-filter: blur(60px) saturate(220%) brightness(88%);
+  -webkit-backdrop-filter: blur(60px) saturate(220%) brightness(88%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -1px   0 rgba(255, 255, 255, 0.05),
+    0 2px  8px  rgba(0, 0, 0, 0.40),
+    0 8px  28px rgba(0, 0, 0, 0.50);
+}
+
 /* Mobile bottom sheet animations — bypasses tailwindcss-animate compound variants */
 @keyframes sheet-enter {
   from { transform: translateY(100%); opacity: 0; }
