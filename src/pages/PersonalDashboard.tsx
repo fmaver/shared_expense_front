@@ -262,19 +262,22 @@ export function PersonalDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden" onScroll={handleScroll}>
-        <div className="max-w-2xl mx-auto px-4 pt-6 pb-24 lg:pb-6 space-y-4 w-full">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-          <Skeleton className="h-48 w-full rounded-xl" />
+      <div className="flex flex-col flex-1">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
+          <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-48 w-full rounded-xl" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden" onScroll={handleScroll}>
-      <div className="max-w-2xl mx-auto px-4 pt-6 pb-24 lg:pb-6 space-y-5 w-full overflow-x-hidden">
+    <div className="flex flex-col flex-1">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-5 overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-foreground">{t('personal.title')}</h1>
@@ -983,6 +986,7 @@ export function PersonalDashboard() {
           hidePayerAndSplit
         />
       )}
+      </div>
       </div>
     </div>
   );
