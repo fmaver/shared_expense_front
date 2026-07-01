@@ -7,7 +7,8 @@ React + TypeScript frontend for the `shared_expense_manager` backend. Companion 
 ## Tech stack
 
 - **Framework**: React 18 + TypeScript + Vite
-- **UI**: Tailwind CSS + MUI (Material UI v6) — mixed usage; prefer Tailwind for new components
+- **UI**: Tailwind CSS + Base UI (Radix-based shadcn components) — prefer Tailwind for new components
+- **Charts**: **recharts** — `PieChart/Pie/Cell`, `BarChart/Bar`, `XAxis/YAxis`, `Tooltip`, `Legend`, `ResponsiveContainer`
 - **HTTP**: `axios` (sets default `Authorization` header on login) + `fetch` (used in `src/api/`)
 - **PDF export**: jsPDF + jsPDF-autotable (client-side)
 - **Dev server**: `npm run dev` → http://localhost:5173
@@ -27,54 +28,92 @@ Backend URL: set `VITE_API_URL` in `.env` (defaults to `http://localhost:8000`).
 
 ---
 
+## Desktop vs Mobile
+
+The app serves two distinct experiences from the same codebase, gated by the `lg:` Tailwind breakpoint (≥1024px).
+
+| Layer | Desktop (`lg:`) | Mobile (default) |
+|---|---|---|
+| **Shell** | `AppShell` — fixed left `Sidebar` + main content area | `AppShell` — no sidebar; `MobileHeader` fixed at top + `FloatingTabBar` fixed at bottom |
+| **Navigation** | `Sidebar` — vertical nav list with group links | `FloatingTabBar` — floating pill that collapses to active-tab circle on scroll |
+| **Header** | None (sidebar has branding) | `MobileHeader` — brand mark · `DynamicIsland` (centered) · `AccountMenu` |
+| **Add expense** | Inline button in group header | FAB (plus button) in `FloatingTabBar` → speed-dial or direct group launcher |
+| **Forms / dialogs** | Centered modal (zoom in/out) | Bottom sheet (slides up from bottom, drag down to dismiss) |
+
+The breakpoint split is applied per-component with `lg:hidden` / `max-lg:` / `lg:` Tailwind prefixes. Never use JS to detect mobile — rely solely on CSS breakpoints.
+
+---
+
 ## Directory map
 
 ```
 src/
-├── App.tsx                  # root component — auth state, month picker, modals
+├── App.tsx                  # root component — auth state, routing, CurrencyProvider wrapper
 ├── api/
 │   ├── auth.ts              # POST /token, POST /register
 │   ├── categories.ts        # GET /categories, GET /categories/with-emojis
+│   ├── currency.ts          # GET /currency/rate — live dolarapi blue rate
 │   ├── expenses.ts          # CRUD for expenses
 │   ├── groups.ts            # CRUD, membership, invitations, join-link
 │   ├── invitations.ts       # resolve + accept invitation token
 │   ├── joinLinks.ts         # resolve + register-and-join via join link
 │   ├── members.ts           # GET /members, GET /me, PATCH /me
-│   └── shares.ts            # GET/settle/unsettle/recalculate monthly share
+│   └── shares.ts            # GET/settle/unsettle/recalculate monthly share; getGroupTrend()
+├── contexts/
+│   ├── CurrencyContext.tsx  # useCurrency(): displayMode, setDisplayMode, blueRate, formatAmount
+│   ├── ScrollContext.tsx    # useScroll(): isAtTop, tabBarCollapsed, notifyScroll(scrollTop)
+│   ├── IslandContext.tsx    # useIsland(): island state machine for DynamicIsland display
+│   └── FabActionsContext.tsx # useFabActions(): personalAdd callback (PersonalDashboard → FAB bridge)
 ├── components/
-│   ├── App.tsx              # ← entry; also defines all react-router-dom routes
-│   ├── BalanceSummary.tsx   # monthly balance panel — settle + reopen buttons
-│   ├── ConfirmationModal.tsx
-│   ├── CreateGroupModal.tsx
-│   ├── ExpenseContent.tsx   # orchestrates BalanceSummary + ExpenseList
-│   ├── ExpenseForm.tsx      # create/edit expense — all split types
-│   ├── ExpenseHeader.tsx
-│   ├── ExpenseList.tsx      # sortable table + edit/delete per row
-│   ├── ExpensesDashboard.tsx  # main view inside a group (month picker + expense list)
-│   ├── FormModal.tsx
-│   ├── GroupJoinLanding.tsx # public page for /join/:token (register + join group)
-│   ├── GroupLayout.tsx      # authenticated group shell — nested router outlet
-│   ├── GroupMembers.tsx     # member list + invite flow
-│   ├── GroupSelector.tsx    # root authenticated page — pick or create a group
-│   ├── GroupSettings.tsx    # rename group, manage join link
-│   ├── InvitationLanding.tsx  # public page for /invite/:token (accept invitation)
-│   ├── LoadingSpinner.tsx
-│   ├── LoadingState.tsx
-│   ├── Login.tsx
-│   ├── MoneyTransferForm.tsx # submits a "prestamo" category expense
-│   ├── MonthPicker.tsx
-│   ├── Profile.tsx
-│   └── Toast.tsx
-├── config/env.ts            # reads VITE_API_URL
+│   ├── expenses/
+│   │   ├── AddExpenseDialog.tsx    # create/edit expense — all split types, currency selector
+│   │   ├── BalancePanel.tsx        # monthly balances + "who pays whom" transfers
+│   │   ├── ExpenseDetailDialog.tsx # tap-to-expand detail popup
+│   │   ├── ExpenseListHeader.tsx   # filter/sort bar; currency filter + ARS/original toggle
+│   │   ├── ExpenseRow.tsx          # single expense row; recurring badge, internal-category emoji
+│   │   ├── MonthPicker.tsx
+│   │   └── TransferDialog.tsx      # "prestamo" money-transfer form
+│   ├── groups/
+│   │   └── CreateGroupDialog.tsx
+│   ├── layout/
+│   │   ├── AppShell.tsx            # top-level shell; renders MobileHeader + FloatingTabBar on mobile, Sidebar on desktop
+│   │   ├── MobileHeader.tsx        # mobile-only fixed top bar: brand · DynamicIsland (centered) · AccountMenu
+│   │   ├── DynamicIsland.tsx       # animated pill showing current group name or app state
+│   │   ├── AccountMenu.tsx         # avatar dropdown: profile, theme, logout
+│   │   ├── FloatingTabBar.tsx      # mobile bottom nav pill; collapses to active-tab circle on scroll; FAB + speed-dial
+│   │   ├── GroupExpenseLauncher.tsx # FAB target — opens AddExpenseDialog or TransferDialog for a group
+│   │   ├── Sidebar.tsx             # desktop left nav: personal, groups list, profile, theme/lang toggles
+│   │   └── TopBar.tsx              # legacy mobile header (hamburger → Sheet); kept for non-authenticated pages
+│   ├── members/
+│   │   ├── InviteDialog.tsx
+│   │   └── JoinLinkCard.tsx
+│   └── ui/                 # shadcn/Radix primitives: badge, button, dialog, input, select, sheet, etc.
 ├── hooks/
 │   ├── useCategories.ts
-│   ├── useExpenses.ts
+│   ├── useGroups.ts
 │   ├── useMembers.ts
-│   └── useMonthlyBalance.ts
-├── types/expense.ts         # all shared TS types
+│   ├── useMonthlyBalance.ts
+│   └── useTheme.ts
+├── i18n/
+│   └── locales/            # en.json, es.json — includes expenses.currency, tabs.charts, charts.*
+├── pages/
+│   ├── ExpensesDashboard.tsx   # main group view — month picker + expense list + balance panel
+│   ├── GroupChartsPage.tsx     # recharts: category donut, payer bar, payment-type bar, 6-month trend
+│   ├── GroupLayout.tsx         # group shell — tabs: Expenses | Members | Charts | Settings
+│   ├── GroupMembersPage.tsx
+│   ├── GroupSelectorPage.tsx
+│   ├── GroupSettingsPage.tsx
+│   ├── LandingPage.tsx
+│   ├── LoginPage.tsx
+│   ├── PersonalDashboard.tsx   # personal ledger + income-vs-expense bar + category donut (recharts)
+│   └── ProfilePage.tsx
+├── public-pages/
+│   ├── GroupJoinLanding.tsx    # /join/:token — register + join group
+│   └── InvitationLanding.tsx   # /invite/:token — accept invitation
+├── types/expense.ts         # all shared TS types (includes currency field on expenses)
 └── utils/
     ├── export.ts            # PDF export via jsPDF
-    └── format.ts            # formatCurrency, formatDate, capitalize
+    └── format.ts            # formatAmount (currency-aware, es-AR locale), formatDate, capitalize
 ```
 
 ---
@@ -87,12 +126,16 @@ Routes defined in `src/App.tsx` via `react-router-dom`:
 |------|-----------|------|
 | `/invite/:token` | `InvitationLanding` | public |
 | `/join/:token` | `GroupJoinLanding` | public |
-| `/` | `GroupSelector` | required |
-| `/profile` | `Profile` | required |
+| `/` | redirect → `/groups` | — |
+| `/login` | `LoginPage` | — |
+| `/groups` | `GroupSelectorPage` | required |
+| `/personal` | `PersonalDashboard` | required |
+| `/profile` | `ProfilePage` | required |
 | `/groups/:groupId` | `GroupLayout` (outlet) | required |
 | `/groups/:groupId` (index) | `ExpensesDashboard` | required |
-| `/groups/:groupId/members` | `GroupMembers` | required |
-| `/groups/:groupId/settings` | `GroupSettings` | required |
+| `/groups/:groupId/members` | `GroupMembersPage` | required |
+| `/groups/:groupId/settings` | `GroupSettingsPage` | required |
+| `/groups/:groupId/charts` | `GroupChartsPage` | required |
 
 ---
 
@@ -128,6 +171,7 @@ interface ExpenseCreate {
   paymentType: 'debit' | 'credit';
   installments: number;
   splitStrategy: SplitStrategy;
+  currency?: string;      // "ARS" (default) | "USD"
 }
 
 interface DebtTransfer {
@@ -188,6 +232,51 @@ Current non-internal categories (as of 2026-05): `comida`, `supermercado`, `entr
 
 ---
 
+## Mobile UX patterns
+
+### Scroll-aware tab bar collapse
+
+`ScrollContext` tracks scroll position across all pages. Pages must notify the context by calling `notifyScroll(scrollTop)` from their scroll container's `onScroll` handler. Failure to do this means `FloatingTabBar` never collapses on that page.
+
+**Required scroll container pattern** (copy from `GroupLayout` / `PersonalDashboard`):
+```tsx
+// Outer div: flex column, no overflow — fills remaining space
+<div className="flex flex-col flex-1">
+  {/* Inner div: the ONLY element with overflow-y-auto */}
+  <div
+    className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
+    onScroll={(e) => notifyScroll((e.target as HTMLDivElement).scrollTop)}
+  >
+    {/* Page content */}
+  </div>
+</div>
+```
+Never put `overflow-y-auto` on the same element as `flex flex-col flex-1` — that makes the content a flex child that shrinks instead of scrolling. `pb-24` provides clearance for the floating tab bar on mobile; `lg:pb-0` removes it on desktop.
+
+### Liquid Glass material
+
+The `.liquid-glass` CSS class (defined in `src/index.css`) implements the iOS 26 "Liquid Glass" frosted material used on `FloatingTabBar` and any surface that should float above the content:
+
+```css
+.liquid-glass { /* heavy backdrop blur, subtle white tint, inset highlights */ }
+.dark .liquid-glass { /* same with purple-shifted tint for dark mode */ }
+```
+
+Use it on floating pills/panels that sit over content. Do not use it on cards or inline elements.
+
+### Bottom sheet dialogs + drag-to-dismiss
+
+On mobile, all `DialogContent` from `src/components/ui/dialog.tsx` renders as a bottom sheet (slides up from the bottom via a CSS keyframe animation). A drag handle is automatically included at the top — users can grab it and swipe down to dismiss.
+
+The drag-to-dismiss logic lives in the `useDragToDismiss` hook inside `dialog.tsx`. Key implementation details:
+
+- **Callback ref** (not `useRef + useEffect`): listeners are attached the instant the handle mounts inside the open dialog, not on component mount when `open=false`.
+- **rAF animation loop for dismiss**: CSS transitions on iOS Safari are unreliable when the `transition` property and the animated value change in the same synchronous block. The dismiss exit is driven entirely by a `requestAnimationFrame` loop (no CSS transition). Only the spring-back (below threshold) uses a CSS transition.
+- **`e.preventDefault()` on touchend** (`passive: false`): prevents iOS from synthesising a click event at the finger's release position, which would otherwise hit the backdrop and close the dialog via the normal (non-animated) path.
+- **`data-drag-dismiss` attribute**: set on the popup before the rAF loop starts; the CSS rule `[data-drag-dismiss] { animation: none }` suppresses `sheet-exit` so it doesn't fight the JS-driven slide.
+
+---
+
 ## Conventions
 
 - All `fetch` calls need the bearer token header — see `src/api/expenses.ts` for the pattern.
@@ -195,14 +284,19 @@ Current non-internal categories (as of 2026-05): `comida`, `supermercado`, `entr
 - The backend sends camelCase JSON (`payerId`, `isSettled`, etc.).
 - Money is `float` throughout — no Decimal.
 - Credit installment expenses: only the parent (installmentNo === 1) can be edited or deleted. Editing/deleting the parent cascades to all children on the backend.
+- **Currency display**: use `useCurrency()` from `CurrencyContext` — never format amounts directly with hardcoded currency. `formatAmount(amount, currency)` applies the current `displayMode` and blue rate automatically.
+- **Safari flex height**: use `h-screen` directly on the AppShell root div. Never chain `h-full` through nested flex parents — Safari silently collapses them.
+- **iOS animations**: never rely on CSS `transition` for gesture-driven animations (drag, swipe). Use a `requestAnimationFrame` loop with `performance.now()` timing — CSS batching on iOS Safari will silently skip transitions when `transition` and the animated property change in the same JS block.
+- **Button elements**: plain `<button type="button">` for icon-only actions; add `cursor-pointer` to any button containing only an SVG.
+- **No SelectValue**: for Radix Select, render the selected value in a `<span>` inside the trigger instead of `<SelectValue>`.
+- **CSS tokens**: always use Tailwind CSS-variable tokens (`bg-card`, `text-foreground`, `border-border`, etc.) — they switch automatically for dark mode.
+- **Mobile breakpoint**: all mobile-specific code uses `lg:hidden` / `max-lg:` / `lg:` Tailwind prefixes. Never detect mobile in JavaScript.
 
 ---
 
 ## Known issues / tech-debt
 
-- `ExpenseList.tsx` still has a local `handleRecalculate` that duplicates the one in `ExpenseContent.tsx` — the list-level one can be removed once both are tested.
-- The `settleMonthlyBalance` function in `expenses.ts` duplicates the `settleMonthlyShare` in `shares.ts` — they call the same endpoint. Use the one in `shares.ts` for new code; the one in `expenses.ts` is used by `ExpenseContent` and can be migrated in a future cleanup.
-- Debug `console.log` calls remain in `App.tsx` and `ExpenseList.tsx`.
+- Debug `console.log` calls remain in various components — should be removed before production.
 
 ---
 
