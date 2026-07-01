@@ -46,6 +46,7 @@ export function AccountMenu({ onLogout }: AccountMenuProps) {
   const initials = getInitials(displayName);
 
   return (
+    <>
     <Sheet open={open} onOpenChange={setOpen}>
       {/* Avatar trigger */}
       <button
@@ -161,5 +162,6 @@ export function AccountMenu({ onLogout }: AccountMenuProps) {
     </Sheet>
 
     <ConfigSheet open={configOpen} onOpenChange={setConfigOpen} />
+    </>
   );
 }
