@@ -146,27 +146,26 @@ export function BalancePanel({
               return (
                 <div
                   key={i}
-                  className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2.5"
+                  className="flex flex-col gap-1 bg-muted/50 rounded-xl px-3 py-2.5"
                 >
-                  {/* Payer */}
-                  <MemberAvatar id={String(tr.fromMemberId)} name={fromName} />
-                  <span className="text-xs text-foreground truncate flex-1 min-w-0">
-                    {fromName}
-                  </span>
-
-                  {/* Arrow */}
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-
-                  {/* Receiver */}
-                  <span className="text-xs text-foreground truncate flex-1 min-w-0 text-right">
-                    {toName}
-                  </span>
-                  <MemberAvatar id={String(tr.toMemberId)} name={toName} />
-
-                  {/* Amount */}
-                  <span className="text-sm font-bold tabular-nums text-foreground flex-shrink-0 pl-1">
-                    {formatCurrency(tr.amount)}
-                  </span>
+                  {/* Row 1: payer → receiver */}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MemberAvatar id={String(tr.fromMemberId)} name={fromName} />
+                    <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0">
+                      {fromName}
+                    </span>
+                    <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0 text-right">
+                      {toName}
+                    </span>
+                    <MemberAvatar id={String(tr.toMemberId)} name={toName} />
+                  </div>
+                  {/* Row 2: amount */}
+                  <div className="flex justify-end">
+                    <span className="text-sm font-bold tabular-nums text-foreground">
+                      {formatCurrency(tr.amount)}
+                    </span>
+                  </div>
                 </div>
               );
             })}
