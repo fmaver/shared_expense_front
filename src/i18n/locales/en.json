@@ -384,6 +384,10 @@
     "deleteRecurringTitle": "Delete recurring expense?",
     "deleteRecurringDesc": "This will remove the expense from this month onwards.",
     "deleteExpenseTitle": "Delete expense?",
-    "deleteExpenseDesc": "This cannot be undone."
+    "deleteExpenseDesc": "This cannot be undone.",
+    "budgetBar": "Budget",
+    "savingsRate": "{{rate}}% saved",
+    "overBudget": "Over budget",
+    "projectedTick": "Projected"
   }
 }
