@@ -192,6 +192,29 @@ export function ExpensesDashboard() {
     }
   };
 
+  const handlePayTransfer = async (transfer: { fromMemberId: number; toMemberId: number; amount: number }) => {
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const fromName = members.find(m => m.id === transfer.fromMemberId)?.name ?? 'Unknown';
+    const toName   = members.find(m => m.id === transfer.toMemberId)?.name ?? 'Unknown';
+    const data: ExpenseCreate = {
+      description: `${fromName} → ${toName}`,
+      amount: transfer.amount,
+      date: dateStr,
+      category: { name: 'prestamo' },
+      payerId: transfer.fromMemberId,
+      paymentType: 'debit',
+      installments: 1,
+      currency: 'ARS',
+      splitStrategy: { type: 'exact', amounts: { [transfer.toMemberId]: transfer.amount } },
+    };
+    const { data: result, error } = await createExpense(groupId, data);
+    if (error || !result) throw new Error(error ?? 'Failed to create transfer');
+    refetch();
+    toast.success(t('toasts.expenseAdded'));
+    island.success();
+  };
+
   const handleSorted = useCallback((s: ExpenseResponse[]) => setSortedExpenses(s), []);
 
   if (loadingMembers) {
@@ -212,6 +235,7 @@ export function ExpensesDashboard() {
           isSettling={isSettling}
           onUnsettle={handleUnsettle} isUnsettling={isUnsettling}
           expenses={expenses}
+          onPayTransfer={handlePayTransfer}
         />
       )}
 
