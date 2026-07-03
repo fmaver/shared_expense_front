@@ -154,6 +154,7 @@ export interface RecurringIncomeResponse {
   personalGroupId: number;
   label: string;
   amount: number;
+  currency?: string;
   active: boolean;
   startYear?: number | null;
   startMonth?: number | null;
