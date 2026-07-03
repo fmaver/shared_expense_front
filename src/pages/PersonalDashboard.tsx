@@ -21,6 +21,8 @@ import {
 import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { useScroll } from '@/contexts/ScrollContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { cn } from '@/lib/utils';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -48,9 +50,10 @@ import {
   deleteRecurringPersonalExpense,
   getPersonalLedger,
 } from '@/api/personal';
-import { updateExpense, deleteExpense } from '@/api/expenses';
+import { updateExpense, deleteExpense, checkSimilarExpenses } from '@/api/expenses';
 import { getCurrentUser } from '@/api/auth';
 import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringPersonalExpenseInstanceResponse, MirroredShareItem, PersonalLedgerResponse } from '@/types/expense';
+import { DialogFooter } from '@/components/ui/dialog';
 
 const CHART_COLORS = ['#6366f1','#22c55e','#f59e0b','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4','#84cc16'];
 
@@ -251,6 +254,7 @@ export function PersonalDashboard() {
   const [month, setMonth] = useState(today.getMonth() + 1); // 1-indexed
   const { data: ledger, isLoading, refetch } = usePersonalLedger(year, month);
   const { data: categories } = useCategories();
+  const { displayMode, setDisplayMode, blueRate, formatAmount } = useCurrency();
 
   // Personal group + current member
   const [personalGroupId, setPersonalGroupId] = useState<number | null>(null);
@@ -306,7 +310,11 @@ export function PersonalDashboard() {
   const [selectedMirroredShare, setSelectedMirroredShare] = useState<MirroredShareItem | null>(null);
 
   // Confirmation dialog state — replaces window.confirm()
-  const [confirm, setConfirm] = useState<{ title: string; description?: string; onConfirm: () => void } | null>(null);
+  const [confirm, setConfirm] = useState<{ title: string; description?: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void } | null>(null);
+
+  // Duplicate expense detection
+  const [pendingExpenseData, setPendingExpenseData] = useState<ExpenseCreate | null>(null);
+  const [expenseDuplicates, setExpenseDuplicates] = useState<ExpenseResponse[]>([]);
 
   // Chart interactivity
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
@@ -361,7 +369,7 @@ export function PersonalDashboard() {
     setMonth(newMonth);
   };
 
-  const handleSaveIncome = async () => {
+  const doSaveIncome = async () => {
     if (!incomeLabel || !incomeAmount || !incomeForm || incomeForm === 'pick') return;
     setSavingIncome(true);
     try {
@@ -381,6 +389,25 @@ export function PersonalDashboard() {
     } finally {
       setSavingIncome(false);
     }
+  };
+
+  const handleSaveIncome = async () => {
+    if (!incomeLabel || !incomeAmount || !incomeForm || incomeForm === 'pick') return;
+    const amt = parseFloat(incomeAmount);
+    const isDuplicate = ledger?.incomes.some(
+      i => Math.abs(i.amount - amt) < 0.01 && i.label.trim().toLowerCase() === incomeLabel.trim().toLowerCase()
+    );
+    if (isDuplicate) {
+      setConfirm({
+        title: t('expenses.duplicateTitle'),
+        description: t('expenses.duplicateDesc') + ' ' + t('expenses.addAnywayQuestion'),
+        confirmLabel: t('expenses.addAnyway'),
+        destructive: false,
+        onConfirm: async () => { setConfirm(null); await doSaveIncome(); },
+      });
+      return;
+    }
+    await doSaveIncome();
   };
 
   const handleSaveEditIncome = async (income: IncomeInstanceResponse) => {
@@ -429,7 +456,7 @@ export function PersonalDashboard() {
     });
   };
 
-  const handleSaveRecurringExpense = async () => {
+  const doSaveRecurringExpense = async () => {
     if (!recExpLabel || !recExpAmount || !recExpCategory) return;
     setSavingRecExp(true);
     try {
@@ -450,6 +477,25 @@ export function PersonalDashboard() {
     } finally {
       setSavingRecExp(false);
     }
+  };
+
+  const handleSaveRecurringExpense = async () => {
+    if (!recExpLabel || !recExpAmount || !recExpCategory) return;
+    const amt = parseFloat(recExpAmount);
+    const isDuplicate = ledger?.recurringPersonalExpenses.some(
+      i => Math.abs(i.amount - amt) < 0.01 && i.label.trim().toLowerCase() === recExpLabel.trim().toLowerCase()
+    );
+    if (isDuplicate) {
+      setConfirm({
+        title: t('expenses.duplicateTitle'),
+        description: t('expenses.duplicateDesc') + ' ' + t('expenses.addAnywayQuestion'),
+        confirmLabel: t('expenses.addAnyway'),
+        destructive: false,
+        onConfirm: async () => { setConfirm(null); await doSaveRecurringExpense(); },
+      });
+      return;
+    }
+    await doSaveRecurringExpense();
   };
 
   const handleSaveEditRecurringExpense = async (instance: RecurringPersonalExpenseInstanceResponse) => {
@@ -488,25 +534,41 @@ export function PersonalDashboard() {
     });
   };
 
-  const handleSubmitExpense = async (data: ExpenseCreate) => {
+  const doCreatePersonalExpense = async (data: ExpenseCreate) => {
     if (!personalGroupId || !currentMemberId) return;
-    if (editingExpense) {
-      // Edit mode
-      const id = editingExpense.parentExpenseId ?? editingExpense.id;
-      const { error } = await updateExpense(personalGroupId, id, data);
-      if (error) { toast.error(error); return; }
-      toast.success(t('toasts.expenseUpdated'));
-    } else {
-      // Create mode
-      const { createExpense } = await import('@/api/expenses');
-      const result = await createExpense(personalGroupId, { ...data, payerId: currentMemberId, splitStrategy: { type: 'equal' } });
-      if (result.error) { toast.error(result.error); return; }
-      toast.success(t('toasts.expenseAdded'));
-    }
+    const { createExpense } = await import('@/api/expenses');
+    const result = await createExpense(personalGroupId, { ...data, payerId: currentMemberId, splitStrategy: { type: 'equal' } });
+    if (result.error) { toast.error(result.error); return; }
+    toast.success(t('toasts.expenseAdded'));
+    setPendingExpenseData(null);
+    setExpenseDuplicates([]);
     setShowExpenseDialog(false);
     setEditingExpense(null);
     refetch();
     island.success();
+  };
+
+  const handleSubmitExpense = async (data: ExpenseCreate) => {
+    if (!personalGroupId || !currentMemberId) return;
+    if (editingExpense) {
+      const id = editingExpense.parentExpenseId ?? editingExpense.id;
+      const { error } = await updateExpense(personalGroupId, id, data);
+      if (error) { toast.error(error); return; }
+      toast.success(t('toasts.expenseUpdated'));
+      setShowExpenseDialog(false);
+      setEditingExpense(null);
+      refetch();
+      island.success();
+      return;
+    }
+    const [y, m] = data.date.split('-').map(Number);
+    const { data: similar } = await checkSimilarExpenses(personalGroupId, y, m, data.amount, data.description, data.date);
+    if (similar && similar.length > 0) {
+      setPendingExpenseData(data);
+      setExpenseDuplicates(similar);
+      return;
+    }
+    await doCreatePersonalExpense(data);
   };
 
   if (isLoading) {
@@ -641,9 +703,25 @@ export function PersonalDashboard() {
       {/* Income section */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
+            </h2>
+            {blueRate !== null && ledger?.incomes.some(i => i.currency === 'USD') && (
+              <button
+                type="button"
+                onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
+                className={cn(
+                  'h-6 px-2 rounded-full text-xs font-semibold transition-colors cursor-pointer shrink-0',
+                  displayMode === 'ars'
+                    ? 'bg-brand/20 text-brand hover:bg-brand/30'
+                    : 'text-muted-foreground border border-border hover:bg-accent hover:text-foreground',
+                )}
+              >
+                {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
+              </button>
+            )}
+          </div>
           <Button variant="outline" size="sm" onClick={() => setIncomeForm(f => f ? null : 'pick')}>
             <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('personal.add')}</span>
           </Button>
@@ -712,7 +790,7 @@ export function PersonalDashboard() {
                     {income.currency === 'USD' && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">USD</span>
                     )}
-                    <span className="font-semibold text-green-600 tabular-nums w-24 text-right">{formatCurrency(income.amount, income.currency ?? 'ARS')}</span>
+                    <span className="font-semibold text-green-600 tabular-nums w-24 text-right">{formatAmount(income.amount, income.currency)}</span>
                   </div>
                   <div className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
                     <Button variant="ghost" size="icon" className="h-7 w-7"
@@ -752,9 +830,25 @@ export function PersonalDashboard() {
       {/* Personal Expenses Section */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.personalExpenses')}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.personalExpenses')}
+            </h2>
+            {blueRate !== null && (ledger?.personalExpenses.some(e => e.currency === 'USD') || ledger?.recurringPersonalExpenses.some(i => i.currency === 'USD')) && (
+              <button
+                type="button"
+                onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
+                className={cn(
+                  'h-6 px-2 rounded-full text-xs font-semibold transition-colors cursor-pointer shrink-0',
+                  displayMode === 'ars'
+                    ? 'bg-brand/20 text-brand hover:bg-brand/30'
+                    : 'text-muted-foreground border border-border hover:bg-accent hover:text-foreground',
+                )}
+              >
+                {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
+              </button>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => { setEditingExpense(null); setShowExpenseDialog(true); }}>
               <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('expenses.add')}</span>
@@ -846,7 +940,7 @@ export function PersonalDashboard() {
                     {instance.currency === 'USD' && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">USD</span>
                     )}
-                    <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatCurrency(instance.amount, instance.currency ?? 'ARS')}</span>
+                    <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatAmount(instance.amount, instance.currency)}</span>
                   </div>
                   {/* Actions */}
                   <div
@@ -1201,11 +1295,37 @@ export function PersonalDashboard() {
           onOpenChange={open => { if (!open) setConfirm(null); }}
           title={confirm.title}
           description={confirm.description}
-          confirmLabel={t('common.delete')}
+          confirmLabel={confirm.confirmLabel ?? t('common.delete')}
           onConfirm={confirm.onConfirm}
-          destructive
+          destructive={confirm.destructive ?? true}
         />
       )}
+
+      {/* Duplicate expense dialog */}
+      <Dialog open={expenseDuplicates.length > 0} onOpenChange={isOpen => { if (!isOpen) { setPendingExpenseData(null); setExpenseDuplicates([]); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>{t('expenses.duplicateTitle')}</DialogTitle></DialogHeader>
+          <div className="text-sm space-y-1 text-muted-foreground">
+            <p>{t('expenses.duplicateDesc')}</p>
+            {expenseDuplicates[0] && (
+              <div className="mt-2 bg-muted rounded-lg p-3 text-foreground space-y-0.5">
+                <p className="font-medium">{expenseDuplicates[0].description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatAmount(expenseDuplicates[0].amount, expenseDuplicates[0].currency)} · {expenseDuplicates[0].date}
+                </p>
+              </div>
+            )}
+            <p className="mt-2">{t('expenses.addAnywayQuestion')}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPendingExpenseData(null); setExpenseDuplicates([]); }}>{t('expenses.cancel')}</Button>
+            <Button className="bg-brand hover:bg-brand/90 text-white"
+              onClick={async () => { if (pendingExpenseData) await doCreatePersonalExpense(pendingExpenseData); }}>
+              {t('expenses.addAnyway')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
       </div>
     </div>
