@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatCurrency } from '@/utils/format';
 import { Separator } from '@/components/ui/separator';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import type { DebtTransfer, Member, ExpenseResponse } from '@/types/expense';
 
 // Deterministic avatar palette — cycles by member ID so each person always gets
@@ -54,6 +56,7 @@ interface BalancePanelProps {
   onUnsettle: () => void;
   isUnsettling: boolean;
   expenses: ExpenseResponse[];
+  onPayTransfer?: (transfer: DebtTransfer) => Promise<void>;
 }
 
 export function BalancePanel({
@@ -61,8 +64,11 @@ export function BalancePanel({
   onSettleRequest, isSettling,
   onUnsettle, isUnsettling,
   expenses,
+  onPayTransfer,
 }: BalancePanelProps) {
   const { t } = useTranslation();
+  const [pendingTransfer, setPendingTransfer] = useState<DebtTransfer | null>(null);
+  const [isPaying, setIsPaying] = useState(false);
 
   const memberName = (id: string) =>
     members.find(m => m.id === parseInt(id))?.name ?? 'Unknown';
@@ -143,10 +149,17 @@ export function BalancePanel({
             {transfers.map((tr, i) => {
               const fromName = memberName(String(tr.fromMemberId));
               const toName   = memberName(String(tr.toMemberId));
+              const isClickable = !!onPayTransfer;
               return (
-                <div
+                <button
                   key={i}
-                  className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2 bg-muted/50 rounded-xl px-3 py-2.5"
+                  type="button"
+                  onClick={() => isClickable && setPendingTransfer(tr)}
+                  className={cn(
+                    'w-full flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2 bg-muted/50 rounded-xl px-3 py-2.5 text-left',
+                    isClickable && '[@media(hover:hover)]:hover:bg-muted active:bg-muted/80 transition-colors cursor-pointer',
+                    !isClickable && 'cursor-default',
+                  )}
                 >
                   {/* Names row (both breakpoints) — stacks on mobile, inline on desktop */}
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -160,13 +173,18 @@ export function BalancePanel({
                     </span>
                     <MemberAvatar id={String(tr.toMemberId)} name={toName} />
                   </div>
-                  {/* Amount: right-aligned on its own row on mobile, inline on desktop */}
-                  <div className="flex justify-end lg:justify-start lg:ml-auto lg:flex-shrink-0">
+                  {/* Amount + optional pay hint */}
+                  <div className="flex items-center justify-between lg:justify-start lg:ml-auto lg:flex-shrink-0 gap-2">
                     <span className="text-sm font-bold tabular-nums text-foreground">
                       {formatCurrency(tr.amount)}
                     </span>
+                    {isClickable && (
+                      <span className="text-[10px] font-semibold text-muted-foreground lg:hidden">
+                        {t('balance.tapToPay')}
+                      </span>
+                    )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -179,6 +197,62 @@ export function BalancePanel({
         <span className="text-muted-foreground">{t('balance.totalExpenses')}</span>
         <span className="font-semibold text-foreground tabular-nums">{formatCurrency(total)}</span>
       </div>
+
+      {/* ── Pay transfer confirmation dialog ────────────────────────── */}
+      <Dialog open={!!pendingTransfer} onOpenChange={(isOpen) => { if (!isOpen && !isPaying) setPendingTransfer(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('balance.payTitle')}</DialogTitle>
+          </DialogHeader>
+          {pendingTransfer && (
+            <div className="flex items-center justify-center gap-4 py-3">
+              <div className="flex flex-col items-center gap-1.5 min-w-0">
+                <MemberAvatar id={String(pendingTransfer.fromMemberId)} name={memberName(String(pendingTransfer.fromMemberId))} size="md" />
+                <span className="text-xs font-medium text-foreground text-center max-w-[80px] truncate">
+                  {memberName(String(pendingTransfer.fromMemberId))}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                <span className="text-base font-bold tabular-nums text-foreground">
+                  {formatCurrency(pendingTransfer.amount)}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 min-w-0">
+                <MemberAvatar id={String(pendingTransfer.toMemberId)} name={memberName(String(pendingTransfer.toMemberId))} size="md" />
+                <span className="text-xs font-medium text-foreground text-center max-w-[80px] truncate">
+                  {memberName(String(pendingTransfer.toMemberId))}
+                </span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingTransfer(null)}
+              disabled={isPaying}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!pendingTransfer || !onPayTransfer) return;
+                setIsPaying(true);
+                try {
+                  await onPayTransfer(pendingTransfer);
+                  setPendingTransfer(null);
+                } finally {
+                  setIsPaying(false);
+                }
+              }}
+              disabled={isPaying}
+              className="bg-settle/10 text-settle hover:bg-settle/20"
+            >
+              {isPaying ? t('common.loading') : t('balance.pay')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
