@@ -291,13 +291,23 @@ function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalanc
             style={{ left: `${expensePct}%`, right: 0, borderRadius: expensePct <= 0 ? '9999px' : undefined }}
           />
         )}
-        {/* Projected balance tick */}
+        {/* Projected balance indicator: downward triangle above bar + contrasting line through it */}
         {hasPending && (
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-[2px] h-5 bg-white dark:bg-background rounded-full shadow-sm z-10 transition-[left] duration-700 ease-out"
-            style={{ left: `calc(${projectedPct}% - 1px)` }}
-            title={`${t('personal.projectedTick')}: ${formatAmt(projectedBalance)}`}
-          />
+          <>
+            <div
+              className="absolute -top-2.5 z-20 -translate-x-1/2 pointer-events-none select-none transition-[left] duration-700 ease-out"
+              style={{ left: `${projectedPct}%` }}
+            >
+              <svg width="9" height="5" viewBox="0 0 9 5" aria-hidden="true" className="fill-foreground/50 dark:fill-foreground/40 drop-shadow-sm">
+                <path d="M0 0 L9 0 L4.5 5 Z" />
+              </svg>
+            </div>
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-[2px] h-5 bg-foreground/60 dark:bg-foreground/50 rounded-full z-10 transition-[left] duration-700 ease-out"
+              style={{ left: `calc(${projectedPct}% - 1px)` }}
+              title={`${t('personal.projectedTick')}: ${formatAmt(projectedBalance)}`}
+            />
+          </>
         )}
       </div>
 
