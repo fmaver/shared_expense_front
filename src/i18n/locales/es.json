@@ -384,6 +384,10 @@
     "deleteRecurringTitle": "¿Eliminar gasto recurrente?",
     "deleteRecurringDesc": "Se eliminará el gasto desde este mes en adelante.",
     "deleteExpenseTitle": "¿Eliminar gasto?",
-    "deleteExpenseDesc": "Esta acción no se puede deshacer."
+    "deleteExpenseDesc": "Esta acción no se puede deshacer.",
+    "budgetBar": "Presupuesto",
+    "savingsRate": "{{rate}}% ahorrado",
+    "overBudget": "Excedido",
+    "projectedTick": "Proyectado"
   }
 }

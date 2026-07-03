@@ -241,6 +241,87 @@ function PersonalCharts({ ledger, prevLedger, year, month, hiddenCategories, onT
   );
 }
 
+interface BudgetBarProps {
+  totalIncome: number;
+  totalExpenses: number;
+  currentBalance: number;
+  projectedBalance: number;
+  pendingSettlementsTotal: number;
+  formatAmt: (n: number) => string;
+}
+
+function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalance, pendingSettlementsTotal, formatAmt }: BudgetBarProps) {
+  const { t } = useTranslation();
+  if (totalIncome <= 0.01) return null;
+
+  const expensePct = Math.min((totalExpenses / totalIncome) * 100, 100);
+  const isOverspent = totalExpenses > totalIncome;
+  const savingsRate = isOverspent ? 0 : Math.round((currentBalance / totalIncome) * 100);
+  const hasPending = Math.abs(pendingSettlementsTotal) > 0.01;
+  const projectedPct = Math.max(0, Math.min((projectedBalance / totalIncome) * 100, 100));
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-foreground">{t('personal.budgetBar')}</p>
+        <p className={cn(
+          'text-sm font-bold',
+          isOverspent ? 'text-red-500' : savingsRate >= 30 ? 'text-emerald-600' : savingsRate > 0 ? 'text-amber-500' : 'text-red-500',
+        )}>
+          {isOverspent ? t('personal.overBudget') : t('personal.savingsRate', { rate: savingsRate })}
+        </p>
+      </div>
+
+      {/* Bar */}
+      <div className="relative h-3.5">
+        {/* Track */}
+        <div className="absolute inset-0 rounded-full bg-muted" />
+        {/* Expense fill */}
+        {expensePct > 0 && (
+          <div
+            className="absolute left-0 top-0 h-full bg-rose-400 dark:bg-rose-500 rounded-l-full transition-[width] duration-700 ease-out"
+            style={{ width: `${expensePct}%`, borderRadius: expensePct >= 100 ? '9999px' : undefined }}
+          />
+        )}
+        {/* Balance fill */}
+        {!isOverspent && expensePct < 100 && (
+          <div
+            className="absolute top-0 h-full bg-emerald-400 dark:bg-emerald-500 rounded-r-full transition-all duration-700 ease-out"
+            style={{ left: `${expensePct}%`, right: 0, borderRadius: expensePct <= 0 ? '9999px' : undefined }}
+          />
+        )}
+        {/* Projected balance tick */}
+        {hasPending && (
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-[2px] h-5 bg-white dark:bg-background rounded-full shadow-sm z-10 transition-[left] duration-700 ease-out"
+            style={{ left: `calc(${projectedPct}% - 1px)` }}
+            title={`${t('personal.projectedTick')}: ${formatAmt(projectedBalance)}`}
+          />
+        )}
+      </div>
+
+      {/* Labels */}
+      <div className="flex items-end justify-between text-xs">
+        <div className="space-y-0.5">
+          <p className="font-semibold text-rose-500 dark:text-rose-400 tabular-nums">{formatAmt(totalExpenses)}</p>
+          <p className="text-muted-foreground">{t('personal.totalExpenses')}</p>
+        </div>
+        {hasPending && (
+          <div className="text-center space-y-0.5">
+            <p className="font-semibold text-foreground/60 tabular-nums text-[11px]">{formatAmt(projectedBalance)}</p>
+            <p className="text-muted-foreground text-[10px]">{t('personal.projectedTick')}</p>
+          </div>
+        )}
+        <div className="text-right space-y-0.5">
+          <p className="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatAmt(totalIncome)}</p>
+          <p className="text-muted-foreground">{t('personal.totalIncome')}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PersonalDashboard() {
   const { t } = useTranslation();
   const island = useIsland();
@@ -617,6 +698,16 @@ export function PersonalDashboard() {
               <p className="text-sm font-bold text-red-500 mt-1 truncate">{formatCurrency(ledger.totalPersonalExpenses)}</p>
             </div>
           </div>
+
+          {/* Budget bar */}
+          <BudgetBar
+            totalIncome={ledger.totalIncome}
+            totalExpenses={ledger.totalPersonalExpenses}
+            currentBalance={ledger.currentBalance}
+            projectedBalance={ledger.projectedBalance}
+            pendingSettlementsTotal={ledger.pendingSettlementsTotal}
+            formatAmt={formatCurrency}
+          />
 
           {/* Main balance card */}
           <div className="bg-card border border-border rounded-xl p-4 space-y-3">
