@@ -708,7 +708,12 @@ export function PersonalDashboard() {
                     </span>
                     <span className="text-foreground truncate">{income.label}</span>
                   </div>
-                  <span className="font-semibold text-green-600 tabular-nums w-24 text-right flex-shrink-0">{formatCurrency(income.amount)}</span>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {income.currency === 'USD' && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">USD</span>
+                    )}
+                    <span className="font-semibold text-green-600 tabular-nums w-24 text-right">{formatCurrency(income.amount, income.currency ?? 'ARS')}</span>
+                  </div>
                   <div className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
                     <Button variant="ghost" size="icon" className="h-7 w-7"
                       onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
