@@ -9,7 +9,11 @@
     "personal": "Personal"
   },
   "landing": {
-    "nav": { "features": "Features", "signIn": "Sign in", "getStarted": "Get started" },
+    "nav": {
+      "features": "Features",
+      "signIn": "Sign in",
+      "getStarted": "Get started"
+    },
     "hero": {
       "badge": "Now with WhatsApp AI",
       "headline1": "Shared expenses,",
@@ -21,19 +25,42 @@
     "features": {
       "title": "Everything your group needs",
       "subtitle": "Built for couples, roommates, and friends who share costs.",
-      "whatsapp": { "title": "WhatsApp bot", "desc": "Add expenses by chat — type \"gasté 500 en comida\" and it's logged." },
-      "settle": { "title": "Monthly settle", "desc": "One-click balance settlement at end of month." },
-      "receipt": { "title": "Receipt scan", "desc": "Send a receipt photo via WhatsApp. AI extracts amount and category." },
-      "groups": { "title": "Multiple groups", "desc": "Home, trips, friends — each group has its own members and history." }
+      "whatsapp": {
+        "title": "WhatsApp bot",
+        "desc": "Add expenses by chat — type \"gasté 500 en comida\" and it's logged."
+      },
+      "settle": {
+        "title": "Monthly settle",
+        "desc": "One-click balance settlement at end of month."
+      },
+      "receipt": {
+        "title": "Receipt scan",
+        "desc": "Send a receipt photo via WhatsApp. AI extracts amount and category."
+      },
+      "groups": {
+        "title": "Multiple groups",
+        "desc": "Home, trips, friends — each group has its own members and history."
+      }
     },
     "howItWorks": {
       "title": "How it works",
-      "step1": { "title": "Add an expense", "desc": "Via the web app or a WhatsApp message." },
-      "step2": { "title": "Splits are calculated", "desc": "Equal, by percentage, or exact amounts per person." },
-      "step3": { "title": "Settle at month end", "desc": "One click balances everyone with minimum transfers." },
+      "step1": {
+        "title": "Add an expense",
+        "desc": "Via the web app or a WhatsApp message."
+      },
+      "step2": {
+        "title": "Splits are calculated",
+        "desc": "Equal, by percentage, or exact amounts per person."
+      },
+      "step3": {
+        "title": "Settle at month end",
+        "desc": "One click balances everyone with minimum transfers."
+      },
       "cta": "Start splitting smarter"
     },
-    "footer": { "freeToUse": "Free to use" }
+    "footer": {
+      "freeToUse": "Free to use"
+    }
   },
   "auth": {
     "continueWithGoogle": "Continue with Google",
@@ -145,7 +172,20 @@
     "viewOriginal": "View original",
     "recurringBadgeTitle": "Recurring expense"
   },
-  "months": ["January","February","March","April","May","June","July","August","September","October","November","December"],
+  "months": [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ],
   "expenseForm": {
     "addExpense": "Add expense",
     "editExpense": "Edit expense",
@@ -267,7 +307,9 @@
   "common": {
     "cancel": "Cancel",
     "save": "Save",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "confirm": "Confirm",
+    "delete": "Delete"
   },
   "categories": {
     "comida": "Food",
@@ -333,6 +375,12 @@
     "afterReceiving": "After receiving {{amount}}",
     "afterPaying": "After paying {{amount}}",
     "netAtSettlement": "Net at settlement",
-    "realizedBalanceDesc": "Your balance after all settled group months have been paid out"
+    "realizedBalanceDesc": "Your balance after all settled group months have been paid out",
+    "deleteIncomeTitle": "Delete income entry?",
+    "deleteIncomeDesc": "This cannot be undone.",
+    "deleteRecurringTitle": "Delete recurring expense?",
+    "deleteRecurringDesc": "This will remove the expense from this month onwards.",
+    "deleteExpenseTitle": "Delete expense?",
+    "deleteExpenseDesc": "This cannot be undone."
   }
 }

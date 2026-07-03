@@ -9,7 +9,11 @@
     "personal": "Personal"
   },
   "landing": {
-    "nav": { "features": "Funciones", "signIn": "Iniciar sesión", "getStarted": "Comenzar" },
+    "nav": {
+      "features": "Funciones",
+      "signIn": "Iniciar sesión",
+      "getStarted": "Comenzar"
+    },
     "hero": {
       "badge": "Ahora con IA en WhatsApp",
       "headline1": "Gastos compartidos,",
@@ -21,19 +25,42 @@
     "features": {
       "title": "Todo lo que tu grupo necesita",
       "subtitle": "Hecho para parejas, compañeros de cuarto y amigos que comparten gastos.",
-      "whatsapp": { "title": "Bot de WhatsApp", "desc": "Agregá gastos por chat — escribí \"gasté 500 en comida\" y listo." },
-      "settle": { "title": "Saldar mensual", "desc": "Saldar balances con un clic al final del mes." },
-      "receipt": { "title": "Escanear recibos", "desc": "Mandá una foto del ticket por WhatsApp. La IA extrae el monto y categoría." },
-      "groups": { "title": "Múltiples grupos", "desc": "Casa, viajes, amigos — cada grupo tiene sus propios miembros e historial." }
+      "whatsapp": {
+        "title": "Bot de WhatsApp",
+        "desc": "Agregá gastos por chat — escribí \"gasté 500 en comida\" y listo."
+      },
+      "settle": {
+        "title": "Saldar mensual",
+        "desc": "Saldar balances con un clic al final del mes."
+      },
+      "receipt": {
+        "title": "Escanear recibos",
+        "desc": "Mandá una foto del ticket por WhatsApp. La IA extrae el monto y categoría."
+      },
+      "groups": {
+        "title": "Múltiples grupos",
+        "desc": "Casa, viajes, amigos — cada grupo tiene sus propios miembros e historial."
+      }
     },
     "howItWorks": {
       "title": "Cómo funciona",
-      "step1": { "title": "Agregá un gasto", "desc": "Desde la app web o un mensaje de WhatsApp." },
-      "step2": { "title": "Se calculan las divisiones", "desc": "Igualitario, por porcentaje o montos exactos por persona." },
-      "step3": { "title": "Saldá a fin de mes", "desc": "Un clic balancea a todos con las mínimas transferencias." },
+      "step1": {
+        "title": "Agregá un gasto",
+        "desc": "Desde la app web o un mensaje de WhatsApp."
+      },
+      "step2": {
+        "title": "Se calculan las divisiones",
+        "desc": "Igualitario, por porcentaje o montos exactos por persona."
+      },
+      "step3": {
+        "title": "Saldá a fin de mes",
+        "desc": "Un clic balancea a todos con las mínimas transferencias."
+      },
       "cta": "Empezá a dividir mejor"
     },
-    "footer": { "freeToUse": "Gratis" }
+    "footer": {
+      "freeToUse": "Gratis"
+    }
   },
   "auth": {
     "continueWithGoogle": "Continuar con Google",
@@ -145,7 +172,20 @@
     "viewOriginal": "Ver original",
     "recurringBadgeTitle": "Gasto recurrente"
   },
-  "months": ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
+  "months": [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre"
+  ],
   "expenseForm": {
     "addExpense": "Agregar gasto",
     "editExpense": "Editar gasto",
@@ -267,7 +307,9 @@
   "common": {
     "cancel": "Cancelar",
     "save": "Guardar",
-    "loading": "Cargando…"
+    "loading": "Cargando…",
+    "confirm": "Confirmar",
+    "delete": "Eliminar"
   },
   "categories": {
     "comida": "Comida",
@@ -333,6 +375,12 @@
     "afterReceiving": "Tras recibir {{amount}}",
     "afterPaying": "Tras pagar {{amount}}",
     "netAtSettlement": "Neto al liquidar",
-    "realizedBalanceDesc": "Tu balance después de que todos los meses de grupo liquidados han sido pagados"
+    "realizedBalanceDesc": "Tu balance después de que todos los meses de grupo liquidados han sido pagados",
+    "deleteIncomeTitle": "¿Eliminar ingreso?",
+    "deleteIncomeDesc": "Esta acción no se puede deshacer.",
+    "deleteRecurringTitle": "¿Eliminar gasto recurrente?",
+    "deleteRecurringDesc": "Se eliminará el gasto desde este mes en adelante.",
+    "deleteExpenseTitle": "¿Eliminar gasto?",
+    "deleteExpenseDesc": "Esta acción no se puede deshacer."
   }
 }

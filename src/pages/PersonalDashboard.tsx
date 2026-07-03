@@ -15,7 +15,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { cn } from '@/lib/utils';
 import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { useScroll } from '@/contexts/ScrollContext';
@@ -23,6 +22,10 @@ import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatCurrency, formatDate } from '@/utils/format';
@@ -112,6 +115,9 @@ export function PersonalDashboard() {
   const [selectedRecurringInstance, setSelectedRecurringInstance] = useState<RecurringPersonalExpenseInstanceResponse | null>(null);
   const [selectedMirroredShare, setSelectedMirroredShare] = useState<MirroredShareItem | null>(null);
 
+  // Confirmation dialog state — replaces window.confirm()
+  const [confirm, setConfirm] = useState<{ title: string; description?: string; onConfirm: () => void } | null>(null);
+
   // Keep recExpCategory in sync when categories load
   useEffect(() => {
     if (categories.length > 0 && !recExpCategory) {
@@ -171,19 +177,25 @@ export function PersonalDashboard() {
     }
   };
 
-  const handleDeleteIncome = async (income: IncomeInstanceResponse) => {
-    if (!window.confirm('Delete this income entry?')) return;
-    try {
-      if (income.source === 'recurring' && income.recurringIncomeId) {
-        await deleteRecurringIncome(income.recurringIncomeId, year, month);
-      } else {
-        await deleteVariableIncome(income.id);
-      }
-      toast.success(t('toasts.expenseDeleted'));
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete');
-    }
+  const handleDeleteIncome = (income: IncomeInstanceResponse) => {
+    setConfirm({
+      title: t('personal.deleteIncomeTitle'),
+      description: t('personal.deleteIncomeDesc'),
+      onConfirm: async () => {
+        setConfirm(null);
+        try {
+          if (income.source === 'recurring' && income.recurringIncomeId) {
+            await deleteRecurringIncome(income.recurringIncomeId, year, month);
+          } else {
+            await deleteVariableIncome(income.id);
+          }
+          toast.success(t('toasts.expenseDeleted'));
+          refetch();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Failed to delete');
+        }
+      },
+    });
   };
 
   const handleSaveRecurringExpense = async () => {
@@ -228,15 +240,21 @@ export function PersonalDashboard() {
     }
   };
 
-  const handleDeleteRecurringExpense = async (instance: RecurringPersonalExpenseInstanceResponse) => {
-    if (!window.confirm('Delete this recurring expense from this month onwards?')) return;
-    try {
-      await deleteRecurringPersonalExpense(instance.recurringExpenseId, year, month);
-      toast.success(t('toasts.expenseDeleted'));
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete');
-    }
+  const handleDeleteRecurringExpense = (instance: RecurringPersonalExpenseInstanceResponse) => {
+    setConfirm({
+      title: t('personal.deleteRecurringTitle'),
+      description: t('personal.deleteRecurringDesc'),
+      onConfirm: async () => {
+        setConfirm(null);
+        try {
+          await deleteRecurringPersonalExpense(instance.recurringExpenseId, year, month);
+          toast.success(t('toasts.expenseDeleted'));
+          refetch();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Failed to delete');
+        }
+      },
+    });
   };
 
   const handleSubmitExpense = async (data: ExpenseCreate) => {
@@ -264,7 +282,7 @@ export function PersonalDashboard() {
     return (
       <div className="flex flex-col flex-1">
         <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
-          <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+          <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 space-y-4">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-32 w-full rounded-xl" />
             <Skeleton className="h-48 w-full rounded-xl" />
@@ -277,15 +295,23 @@ export function PersonalDashboard() {
   return (
     <div className="flex flex-col flex-1">
       <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-5 overflow-x-hidden">
+      <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 overflow-x-hidden">
       {/* Header */}
-      <div>
+      <div className="mb-5">
         <h1 className="text-xl font-bold text-foreground">{t('personal.title')}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{t('personal.subtitle')}</p>
       </div>
 
       {/* Month picker */}
-      <MonthPicker year={year} month={month} onNavigate={handleNavigate} />
+      <div className="mb-5">
+        <MonthPicker year={year} month={month} onNavigate={handleNavigate} />
+      </div>
+
+      {/* Two-column grid on desktop, single column on mobile */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-5 lg:space-y-0">
+
+      {/* LEFT COLUMN: summary cards + charts */}
+      <div className="space-y-5">
 
       {/* Balance summary cards */}
       {ledger && (
@@ -441,6 +467,11 @@ export function PersonalDashboard() {
         </div>
       )}
 
+      </div>{/* end LEFT COLUMN */}
+
+      {/* RIGHT COLUMN: income, expenses, mirrored shares */}
+      <div className="space-y-5">
+
       {/* Income section */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
@@ -477,37 +508,13 @@ export function PersonalDashboard() {
             <p className="text-xs font-medium text-muted-foreground">
               {incomeForm === 'recurring' ? t('personal.recurringTitle') : t('personal.variableTitle')}
             </p>
-            <input className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
+            <Input
               placeholder={t('personal.salaryLabel')} value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} />
             <div className="flex gap-2 items-center">
-              <input className="flex-1 border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand"
+              <Input
+                className="flex-1"
                 type="number" placeholder={t('personal.salaryAmount')} value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} />
-              <div className="flex rounded-md border border-border overflow-hidden flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIncomeCurrency('ARS')}
-                  className={cn(
-                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                    incomeCurrency === 'ARS'
-                      ? 'bg-brand/20 text-brand border-r border-brand/30'
-                      : 'bg-transparent text-muted-foreground border-r border-border hover:bg-accent',
-                  )}
-                >
-                  ARS
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIncomeCurrency('USD')}
-                  className={cn(
-                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                    incomeCurrency === 'USD'
-                      ? 'bg-brand/20 text-brand'
-                      : 'bg-transparent text-muted-foreground hover:bg-accent',
-                  )}
-                >
-                  USD
-                </button>
-              </div>
+              <CurrencyToggle value={incomeCurrency} onChange={setIncomeCurrency} />
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => { setIncomeForm('pick'); setIncomeLabel(''); setIncomeAmount(''); setIncomeCurrency('ARS'); }}>
@@ -549,13 +556,11 @@ export function PersonalDashboard() {
                 </div>
                 {editingIncomeId === income.id && (
                   <div className="mt-1 mb-2 p-2 bg-muted/40 rounded-md space-y-1.5">
-                    <input
-                      className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                    <Input
                       value={editIncomeLabel}
                       onChange={e => setEditIncomeLabel(e.target.value)} />
-                    <input
+                    <Input
                       type="number"
-                      className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
                       value={editIncomeAmount}
                       onChange={e => setEditIncomeAmount(e.target.value)} />
                     <div className="flex gap-1.5 justify-end">
@@ -593,42 +598,25 @@ export function PersonalDashboard() {
         {showRecurringExpForm && personalGroupId && (
           <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2 text-sm">
             <p className="text-xs text-muted-foreground font-medium">{t('personal.recurringExpenseTitle')}</p>
-            <input placeholder={t('expenseForm.description')} value={recExpLabel} onChange={e => setRecExpLabel(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+            <Input placeholder={t('expenseForm.description')} value={recExpLabel} onChange={e => setRecExpLabel(e.target.value)} />
             <div className="flex gap-2 items-center">
-              <input type="number" placeholder={t('expenseForm.amount')} value={recExpAmount} onChange={e => setRecExpAmount(e.target.value)}
-                className="flex-1 border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
-              <div className="flex rounded-md border border-border overflow-hidden flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setRecExpCurrency('ARS')}
-                  className={cn(
-                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                    recExpCurrency === 'ARS'
-                      ? 'bg-brand/20 text-brand border-r border-brand/30'
-                      : 'bg-transparent text-muted-foreground border-r border-border hover:bg-accent',
-                  )}
-                >
-                  ARS
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRecExpCurrency('USD')}
-                  className={cn(
-                    'px-2 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                    recExpCurrency === 'USD'
-                      ? 'bg-brand/20 text-brand'
-                      : 'bg-transparent text-muted-foreground hover:bg-accent',
-                  )}
-                >
-                  USD
-                </button>
-              </div>
+              <Input type="number" placeholder={t('expenseForm.amount')} value={recExpAmount} onChange={e => setRecExpAmount(e.target.value)} className="flex-1" />
+              <CurrencyToggle value={recExpCurrency} onChange={setRecExpCurrency} />
             </div>
-            <select value={recExpCategory} onChange={e => setRecExpCategory(e.target.value)}
-              className="w-full border border-border rounded-md px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-brand">
-              {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
-            </select>
+            <Select value={recExpCategory} onValueChange={setRecExpCategory}>
+              <SelectTrigger className="w-full">
+                <span className="flex-1 text-left text-sm">
+                  {categories.find(c => c.name === recExpCategory)
+                    ? `${categories.find(c => c.name === recExpCategory)!.emoji} ${recExpCategory}`
+                    : recExpCategory}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(c => (
+                  <SelectItem key={c.name} value={c.name}>{c.emoji} {c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setShowRecurringExpForm(false)}>{t('common.cancel')}</Button>
               <Button size="sm" disabled={savingRecExp} onClick={handleSaveRecurringExpense}
@@ -653,7 +641,7 @@ export function PersonalDashboard() {
                   onClick={() => setSelectedRecurringInstance(instance)}
                 >
                   {/* Category icon — matches ExpenseRow */}
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                     {catEmoji
                       ? <span className="text-lg leading-none">{catEmoji}</span>
                       : <span className="text-xs font-bold text-muted-foreground uppercase">{instance.categoryName.slice(0, 2)}</span>
@@ -705,14 +693,25 @@ export function PersonalDashboard() {
                 {editingRecExpId === instance.id && (
                   <div className="px-4 pb-3">
                     <div className="p-2 bg-muted/40 rounded-md space-y-1.5">
-                      <input className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                      <Input
                         value={editRecExpLabel} onChange={e => setEditRecExpLabel(e.target.value)} />
-                      <input type="number" className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
+                      <Input
+                        type="number"
                         value={editRecExpAmount} onChange={e => setEditRecExpAmount(e.target.value)} />
-                      <select className="w-full border border-border rounded px-2 py-1 bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-brand"
-                        value={editRecExpCategory} onChange={e => setEditRecExpCategory(e.target.value)}>
-                        {categories.map(c => <option key={c.name} value={c.name}>{c.emoji} {c.name}</option>)}
-                      </select>
+                      <Select value={editRecExpCategory} onValueChange={setEditRecExpCategory}>
+                        <SelectTrigger className="w-full h-7 text-xs">
+                          <span className="flex-1 text-left">
+                            {categories.find(c => c.name === editRecExpCategory)
+                              ? `${categories.find(c => c.name === editRecExpCategory)!.emoji} ${editRecExpCategory}`
+                              : editRecExpCategory}
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(c => (
+                            <SelectItem key={c.name} value={c.name}>{c.emoji} {c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <div className="flex gap-1.5 justify-end">
                         <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingRecExpId(null)}>{t('common.cancel')}</Button>
                         <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
@@ -733,14 +732,20 @@ export function PersonalDashboard() {
                 isSettled={false}
                 hideSplitBadge
                 onEdit={e => { setEditingExpense(e); setShowExpenseDialog(true); }}
-                onDelete={async e => {
+                onDelete={e => {
                   const id = e.parentExpenseId ?? e.id;
-                  if (!window.confirm('Delete this expense?')) return;
-                  if (!personalGroupId) return;
-                  const { success, error } = await deleteExpense(personalGroupId, id);
-                  if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
-                  toast.success(t('toasts.expenseDeleted'));
-                  refetch();
+                  setConfirm({
+                    title: t('personal.deleteExpenseTitle'),
+                    description: t('personal.deleteExpenseDesc'),
+                    onConfirm: async () => {
+                      setConfirm(null);
+                      if (!personalGroupId) return;
+                      const { success, error } = await deleteExpense(personalGroupId, id);
+                      if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
+                      toast.success(t('toasts.expenseDeleted'));
+                      refetch();
+                    },
+                  });
                 }}
               />
             ))}
@@ -795,7 +800,7 @@ export function PersonalDashboard() {
                     /* Payer layout: show paid / pending receipt / net */
                     <div className="flex items-center gap-3 px-4 py-3 [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation" onClick={() => setSelectedMirroredShare(share)}>
                       {/* Category icon */}
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                         {catEmoji
                           ? <span className="text-lg leading-none">{catEmoji}</span>
                           : <span className="text-xs font-bold text-muted-foreground uppercase">{share.category.slice(0, 2)}</span>}
@@ -825,7 +830,7 @@ export function PersonalDashboard() {
                   ) : (
                     /* Non-payer layout */
                     <div className="flex items-center gap-3 px-4 py-3 [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation" onClick={() => setSelectedMirroredShare(share)}>
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                         {catEmoji
                           ? <span className="text-lg leading-none">{catEmoji}</span>
                           : <span className="text-xs font-bold text-muted-foreground uppercase">{share.category.slice(0, 2)}</span>}
@@ -851,6 +856,9 @@ export function PersonalDashboard() {
           </div>
         )}
       </div>
+
+      </div>{/* end RIGHT COLUMN */}
+      </div>{/* end two-column grid */}
 
       {/* Mirrored share detail popup */}
       {selectedMirroredShare && (() => {
@@ -984,6 +992,19 @@ export function PersonalDashboard() {
           initialExpense={editingExpense ?? undefined}
           isSettled={false}
           hidePayerAndSplit
+        />
+      )}
+
+      {/* Confirm dialog (replaces window.confirm) */}
+      {confirm && (
+        <ConfirmDialog
+          open={!!confirm}
+          onOpenChange={open => { if (!open) setConfirm(null); }}
+          title={confirm.title}
+          description={confirm.description}
+          confirmLabel={t('common.delete')}
+          onConfirm={confirm.onConfirm}
+          destructive
         />
       )}
       </div>
