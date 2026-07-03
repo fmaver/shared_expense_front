@@ -17,12 +17,17 @@ interface TransferDialogProps {
   currentMemberId?: number | null;
 }
 
+function firstOther(members: Member[], excludeId: number) {
+  return members.find(m => m.id !== excludeId)?.id ?? 0;
+}
+
 export function TransferDialog({ open, onOpenChange, onSubmit, members, currentMemberId }: TransferDialogProps) {
   const { t } = useTranslation();
   const defaultPayer = (currentMemberId && members.some(m => m.id === currentMemberId))
     ? currentMemberId
     : (members[0]?.id ?? 0);
   const [payerId, setPayerId] = useState<number>(defaultPayer);
+  const [recipientId, setRecipientId] = useState<number>(() => firstOther(members, defaultPayer));
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(() => formatDate(new Date()));
@@ -30,10 +35,13 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Reset payer to current user when dialog re-opens
+  const multiMember = members.length > 2;
+
+  // Reset form when dialog re-opens
   useEffect(() => {
     if (open) {
       setPayerId(defaultPayer);
+      setRecipientId(firstOther(members, defaultPayer));
       setAmount('');
       setDescription('');
       setCurrency('ARS');
@@ -42,13 +50,22 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  const handlePayerChange = (v: string) => {
+    const newId = parseInt(v);
+    setPayerId(newId);
+    if (recipientId === newId) setRecipientId(firstOther(members, newId));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
+    const effectiveRecipientId = multiMember
+      ? recipientId
+      : firstOther(members, payerId);
+
     try {
-      // Create a complete expense object with the transfer data
       const expense: ExpenseCreate = {
         description,
         amount: parseFloat(amount),
@@ -59,11 +76,9 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
         installments: 1,
         currency,
         splitStrategy: {
-          type: 'percentage',
-          percentages: Object.fromEntries(
-            members.map(m => [m.id, m.id === payerId ? 0 : 100 / (members.length - 1)])
-          )
-        }
+          type: 'exact',
+          amounts: { [effectiveRecipientId]: parseFloat(amount) },
+        },
       };
 
       await onSubmit(expense);
@@ -86,7 +101,7 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
 
           <div className="space-y-1.5">
             <Label htmlFor="transfer-payer">{t('transfer.lender')}</Label>
-            <Select value={String(payerId)} onValueChange={v => setPayerId(parseInt(v))}>
+            <Select value={String(payerId)} onValueChange={handlePayerChange}>
               <SelectTrigger id="transfer-payer">
                 <span className="flex-1 text-left truncate">
                   {members.find(m => m.id === payerId)?.name ?? 'Select…'}
@@ -97,6 +112,24 @@ export function TransferDialog({ open, onOpenChange, onSubmit, members, currentM
               </SelectContent>
             </Select>
           </div>
+
+          {multiMember && (
+            <div className="space-y-1.5">
+              <Label htmlFor="transfer-recipient">{t('transfer.borrower')}</Label>
+              <Select value={String(recipientId)} onValueChange={v => setRecipientId(parseInt(v))}>
+                <SelectTrigger id="transfer-recipient">
+                  <span className="flex-1 text-left truncate">
+                    {members.find(m => m.id === recipientId)?.name ?? 'Select…'}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {members.filter(m => m.id !== payerId).map(m => (
+                    <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="transfer-amount">{t('transfer.amount')}</Label>
