@@ -162,7 +162,7 @@ function DialogContent({
           "bottom-0 inset-x-0 rounded-t-2xl rounded-b-none max-h-[88vh] overflow-y-auto grid gap-4 px-4 pb-4 pt-0",
           // Desktop: centered dialog with tailwindcss-animate zoom
           "lg:bottom-auto lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
-          "lg:max-w-[calc(100%-2rem)] lg:sm:max-w-sm lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
+          "lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
           "lg:duration-150 lg:[animation-timing-function:ease-out]",
           "lg:data-open:animate-in lg:data-open:fade-in-0 lg:data-open:zoom-in-95",
           "lg:data-closed:animate-out lg:data-closed:fade-out-0 lg:data-closed:zoom-out-95",
