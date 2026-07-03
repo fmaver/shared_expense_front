@@ -56,6 +56,9 @@ const CHART_COLORS = ['#6366f1','#22c55e','#f59e0b','#ec4899','#14b8a6','#f97316
 
 interface PersonalChartsProps {
   ledger: PersonalLedgerResponse;
+  prevLedger: PersonalLedgerResponse | null;
+  year: number;
+  month: number;
   hiddenCategories: Set<string>;
   onToggleCategory: (cat: string) => void;
   trendRange: 3|6|12;
@@ -64,7 +67,7 @@ interface PersonalChartsProps {
   trendLoading: boolean;
 }
 
-function PersonalCharts({ ledger, hiddenCategories, onToggleCategory, trendRange, onTrendRangeChange, trendData, trendLoading }: PersonalChartsProps) {
+function PersonalCharts({ ledger, prevLedger, year, month, hiddenCategories, onToggleCategory, trendRange, onTrendRangeChange, trendData, trendLoading }: PersonalChartsProps) {
   const { t } = useTranslation();
 
   const catMap: Record<string, number> = {};
@@ -92,10 +95,32 @@ function PersonalCharts({ ledger, hiddenCategories, onToggleCategory, trendRange
   for (const s of (ledger.mirroredShares ?? [])) {
     dayMap[s.date] = (dayMap[s.date] ?? 0) + s.shareAmount;
   }
-  let running = 0;
-  const cumulativeData = Object.entries(dayMap)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, amount]) => ({ date: date.slice(5), total: (running += amount) }));
+  const prevDayMap: Record<string, number> = {};
+  if (prevLedger) {
+    for (const e of (prevLedger.personalExpenses ?? [])) {
+      prevDayMap[e.date] = (prevDayMap[e.date] ?? 0) + e.amount;
+    }
+    for (const s of (prevLedger.mirroredShares ?? [])) {
+      prevDayMap[s.date] = (prevDayMap[s.date] ?? 0) + s.shareAmount;
+    }
+  }
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const prevYear = month === 1 ? year - 1 : year;
+  const prevMonthNum = month === 1 ? 12 : month - 1;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const prevDaysInMonth = new Date(prevYear, prevMonthNum, 0).getDate();
+  const totalDays = Math.max(daysInMonth, prevLedger ? prevDaysInMonth : 0);
+  let running = 0, prevRunning = 0;
+  const cumulativeData: {day: string; total: number | null; prev: number | null}[] = [];
+  for (let i = 1; i <= totalDays; i++) {
+    if (i <= daysInMonth) running += dayMap[`${year}-${pad(month)}-${pad(i)}`] ?? 0;
+    if (prevLedger && i <= prevDaysInMonth) prevRunning += prevDayMap[`${prevYear}-${pad(prevMonthNum)}-${pad(i)}`] ?? 0;
+    cumulativeData.push({
+      day: String(i),
+      total: i <= daysInMonth ? running : null,
+      prev: (prevLedger && i <= prevDaysInMonth) ? prevRunning : null,
+    });
+  }
 
   const noData = ledger.totalIncome === 0 && ledger.totalPersonalExpenses === 0 && ledger.mirroredShares.length === 0;
   if (noData) return null;
@@ -134,9 +159,9 @@ function PersonalCharts({ ledger, hiddenCategories, onToggleCategory, trendRange
               <XAxis dataKey="label" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
               <Tooltip formatter={(v: number) => fmt(v)} />
-              <Bar dataKey="income" name={t('charts.income')} fill="#22c55e" radius={[3,3,0,0]} />
-              <Bar dataKey="personal" name="Personal" fill="#f97316" radius={[3,3,0,0]} />
-              <Bar dataKey="groups" name="Groups" fill="#6366f1" radius={[3,3,0,0]} />
+              <Bar dataKey="groups" name="Groups" fill="#6366f1" stackId="stack" />
+              <Bar dataKey="personal" name="Personal" fill="#f97316" stackId="stack" />
+              <Bar dataKey="income" name={t('charts.income')} fill="#22c55e" stackId="stack" radius={[3,3,0,0]} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
             </BarChart>
           </ResponsiveContainer>
@@ -193,16 +218,18 @@ function PersonalCharts({ ledger, hiddenCategories, onToggleCategory, trendRange
       </div>
 
       {/* Cumulative spend this month */}
-      {cumulativeData.length > 1 && (
+      {cumulativeData.some(p => (p.total ?? 0) > 0 || (p.prev ?? 0) > 0) && (
         <div>
           <p className="text-xs text-muted-foreground mb-2">Cumulative spend this month</p>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={cumulativeData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.08} />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} interval={4} />
               <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
-              <Tooltip formatter={(v: number) => fmt(v)} />
-              <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} />
+              <Tooltip formatter={(v: number | null) => v != null ? fmt(v) : '—'} />
+              <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+              <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} name="This month" connectNulls={false} />
+              {prevLedger && <Line type="monotone" dataKey="prev" stroke="#94a3b8" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="Last month" connectNulls={false} />}
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -286,6 +313,17 @@ export function PersonalDashboard() {
   const [trendRange, setTrendRange] = useState<3|6|12>(6);
   const [trendData, setTrendData] = useState<{label: string, income: number, personal: number, groups: number}[]>([]);
   const [trendLoading, setTrendLoading] = useState(false);
+  const [prevLedger, setPrevLedger] = useState<PersonalLedgerResponse | null>(null);
+  const [chartKey, setChartKey] = useState(0);
+
+  // Auto-bump chartKey whenever the main ledger refreshes so trend data stays in sync
+  useEffect(() => { setChartKey(k => k + 1); }, [ledger]);
+
+  useEffect(() => {
+    const prevYear = month === 1 ? year - 1 : year;
+    const prevMonthNum = month === 1 ? 12 : month - 1;
+    getPersonalLedger(prevYear, prevMonthNum).then(setPrevLedger).catch(() => setPrevLedger(null));
+  }, [year, month]);
 
   useEffect(() => {
     setTrendLoading(true);
@@ -309,7 +347,7 @@ export function PersonalDashboard() {
       })
       .catch(() => {})
       .finally(() => setTrendLoading(false));
-  }, [year, month, trendRange]);
+  }, [year, month, trendRange, chartKey]);
 
   // Keep recExpCategory in sync when categories load
   useEffect(() => {
@@ -500,8 +538,8 @@ export function PersonalDashboard() {
         <MonthPicker year={year} month={month} onNavigate={handleNavigate} />
       </div>
 
-      {/* Summary stats — centered, narrower than the main grid */}
-      <div className="max-w-2xl mx-auto w-full space-y-5">
+      {/* Summary stats */}
+      <div className="w-full space-y-5">
 
       {/* Balance summary cards */}
       {ledger && (
@@ -997,6 +1035,9 @@ export function PersonalDashboard() {
       {ledger && (
         <PersonalCharts
           ledger={ledger}
+          prevLedger={prevLedger}
+          year={year}
+          month={month}
           hiddenCategories={hiddenCategories}
           onToggleCategory={(cat) => setHiddenCategories(prev => {
             const next = new Set(prev);
