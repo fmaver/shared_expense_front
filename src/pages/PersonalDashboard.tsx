@@ -9,6 +9,9 @@ import {
   Cell,
   BarChart,
   Bar,
+  LineChart,
+  Line,
+  CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
@@ -43,10 +46,170 @@ import {
   createRecurringPersonalExpense,
   updateRecurringPersonalExpense,
   deleteRecurringPersonalExpense,
+  getPersonalLedger,
 } from '@/api/personal';
 import { updateExpense, deleteExpense } from '@/api/expenses';
 import { getCurrentUser } from '@/api/auth';
-import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringPersonalExpenseInstanceResponse, MirroredShareItem } from '@/types/expense';
+import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringPersonalExpenseInstanceResponse, MirroredShareItem, PersonalLedgerResponse } from '@/types/expense';
+
+const CHART_COLORS = ['#6366f1','#22c55e','#f59e0b','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4','#84cc16'];
+
+interface PersonalChartsProps {
+  ledger: PersonalLedgerResponse;
+  hiddenCategories: Set<string>;
+  onToggleCategory: (cat: string) => void;
+  trendRange: 3|6|12;
+  onTrendRangeChange: (r: 3|6|12) => void;
+  trendData: {label: string, income: number, personal: number, groups: number}[];
+  trendLoading: boolean;
+}
+
+function PersonalCharts({ ledger, hiddenCategories, onToggleCategory, trendRange, onTrendRangeChange, trendData, trendLoading }: PersonalChartsProps) {
+  const { t } = useTranslation();
+
+  const catMap: Record<string, number> = {};
+  for (const e of (ledger.personalExpenses ?? [])) {
+    catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
+  }
+  for (const e of (ledger.recurringPersonalExpenses ?? [])) {
+    catMap[e.categoryName] = (catMap[e.categoryName] ?? 0) + e.amount;
+  }
+  const allCategories = Object.keys(catMap);
+  const catData = Object.entries(catMap)
+    .filter(([name]) => !hiddenCategories.has(name))
+    .map(([name, value]) => ({ name, value }));
+
+  const groupMap: Record<string, number> = {};
+  for (const s of (ledger.mirroredShares ?? [])) {
+    groupMap[s.sourceGroupName] = (groupMap[s.sourceGroupName] ?? 0) + s.shareAmount;
+  }
+  const groupData = Object.entries(groupMap).map(([name, value]) => ({ name, value }));
+
+  const dayMap: Record<string, number> = {};
+  for (const e of (ledger.personalExpenses ?? [])) {
+    dayMap[e.date] = (dayMap[e.date] ?? 0) + e.amount;
+  }
+  for (const s of (ledger.mirroredShares ?? [])) {
+    dayMap[s.date] = (dayMap[s.date] ?? 0) + s.shareAmount;
+  }
+  let running = 0;
+  const cumulativeData = Object.entries(dayMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, amount]) => ({ date: date.slice(5), total: (running += amount) }));
+
+  const noData = ledger.totalIncome === 0 && ledger.totalPersonalExpenses === 0 && ledger.mirroredShares.length === 0;
+  if (noData) return null;
+
+  const fmt = (v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 space-y-6 overflow-x-hidden">
+      <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+        <BarChart2 className="h-4 w-4 text-brand" /> {t('charts.title')}
+      </h2>
+
+      {/* Monthly trend bar */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-muted-foreground">Monthly trend</p>
+          <div className="inline-flex rounded-full bg-muted p-0.5 gap-0.5">
+            {([3, 6, 12] as const).map(r => (
+              <button key={r} type="button" onClick={() => onTrendRangeChange(r)}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  trendRange === r ? 'bg-card shadow-sm text-brand' : 'text-muted-foreground hover:text-foreground'
+                }`}>
+                {r}m
+              </button>
+            ))}
+          </div>
+        </div>
+        {trendLoading ? (
+          <div className="h-36 flex items-center justify-center text-xs text-muted-foreground">Loading…</div>
+        ) : trendData.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={150}>
+            <BarChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.08} />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
+              <Tooltip formatter={(v: number) => fmt(v)} />
+              <Bar dataKey="income" name={t('charts.income')} fill="#22c55e" radius={[3,3,0,0]} />
+              <Bar dataKey="personal" name="Personal" fill="#f97316" radius={[3,3,0,0]} />
+              <Bar dataKey="groups" name="Groups" fill="#6366f1" radius={[3,3,0,0]} />
+              <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Category breakdown + group contribution side by side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">{t('charts.categoryBreakdown')}</p>
+          {catData.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={catData} cx="50%" cy="45%" innerRadius={45} outerRadius={75} dataKey="value">
+                    {catData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => fmt(v)} />
+                  <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {allCategories.map(cat => (
+                  <button key={cat} type="button" onClick={() => onToggleCategory(cat)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      hiddenCategories.has(cat)
+                        ? 'border-border text-muted-foreground bg-transparent'
+                        : 'border-brand/40 text-brand bg-brand/5'
+                    }`}>
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {groupData.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Group contribution</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={groupData} cx="50%" cy="45%" innerRadius={45} outerRadius={75} dataKey="value">
+                  {groupData.map((_, i) => <Cell key={i} fill={CHART_COLORS[(i + 4) % CHART_COLORS.length]} />)}
+                </Pie>
+                <Tooltip formatter={(v: number) => fmt(v)} />
+                <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Cumulative spend this month */}
+      {cumulativeData.length > 1 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Cumulative spend this month</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={cumulativeData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.08} />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
+              <Tooltip formatter={(v: number) => fmt(v)} />
+              <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -117,6 +280,36 @@ export function PersonalDashboard() {
 
   // Confirmation dialog state — replaces window.confirm()
   const [confirm, setConfirm] = useState<{ title: string; description?: string; onConfirm: () => void } | null>(null);
+
+  // Chart interactivity
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
+  const [trendRange, setTrendRange] = useState<3|6|12>(6);
+  const [trendData, setTrendData] = useState<{label: string, income: number, personal: number, groups: number}[]>([]);
+  const [trendLoading, setTrendLoading] = useState(false);
+
+  useEffect(() => {
+    setTrendLoading(true);
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const pts: {year: number, month: number}[] = [];
+    let y = year, m = month;
+    for (let i = 0; i < trendRange; i++) {
+      pts.unshift({ year: y, month: m });
+      if (--m === 0) { m = 12; y--; }
+    }
+    Promise.all(pts.map(p => getPersonalLedger(p.year, p.month)))
+      .then(results => {
+        setTrendData(results.map((r, i) => ({
+          label: pts[i].year !== year
+            ? `${MONTHS[pts[i].month - 1]} '${String(pts[i].year).slice(2)}`
+            : MONTHS[pts[i].month - 1],
+          income: r.totalIncome,
+          personal: r.totalPersonalExpenses,
+          groups: r.mirroredShares.reduce((s, sh) => s + sh.shareAmount, 0),
+        })));
+      })
+      .catch(() => {})
+      .finally(() => setTrendLoading(false));
+  }, [year, month, trendRange]);
 
   // Keep recExpCategory in sync when categories load
   useEffect(() => {
@@ -282,7 +475,7 @@ export function PersonalDashboard() {
     return (
       <div className="flex flex-col flex-1">
         <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
-          <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 space-y-4">
+          <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-32 w-full rounded-xl" />
             <Skeleton className="h-48 w-full rounded-xl" />
@@ -295,7 +488,7 @@ export function PersonalDashboard() {
   return (
     <div className="flex flex-col flex-1">
       <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
-      <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="mb-5">
         <h1 className="text-xl font-bold text-foreground">{t('personal.title')}</h1>
@@ -307,11 +500,8 @@ export function PersonalDashboard() {
         <MonthPicker year={year} month={month} onNavigate={handleNavigate} />
       </div>
 
-      {/* Two-column grid on desktop, single column on mobile */}
-      <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-5 lg:space-y-0">
-
-      {/* LEFT COLUMN: summary cards + charts */}
-      <div className="space-y-5">
+      {/* Summary stats — centered, narrower than the main grid */}
+      <div className="max-w-2xl mx-auto w-full space-y-5">
 
       {/* Balance summary cards */}
       {ledger && (
@@ -402,74 +592,12 @@ export function PersonalDashboard() {
         </div>
       )}
 
-      {/* Charts */}
-      {ledger && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-4 overflow-x-hidden">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <BarChart2 className="h-4 w-4 text-brand" /> {t('charts.title')}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Income vs expenses bar */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">{t('charts.paymentType')}</p>
-              {(ledger.totalIncome === 0 && ledger.totalPersonalExpenses === 0) ? (
-                <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart
-                    data={[
-                      { name: t('charts.income'), value: ledger.totalIncome },
-                      { name: t('charts.expenses'), value: ledger.totalPersonalExpenses },
-                    ]}
-                    margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-                  >
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 11 }} width={60} />
-                    <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                      <Cell fill="#22c55e" />
-                      <Cell fill="#f97316" />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
+      </div>{/* end summary */}
 
-            {/* Category breakdown donut */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">{t('charts.categoryBreakdown')}</p>
-              {(ledger.personalExpenses ?? []).length === 0 && (ledger.recurringPersonalExpenses ?? []).length === 0 ? (
-                <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
-              ) : (() => {
-                const catMap: Record<string, number> = {};
-                for (const e of (ledger.personalExpenses ?? [])) {
-                  catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
-                }
-                for (const e of (ledger.recurringPersonalExpenses ?? [])) {
-                  catMap[e.categoryName] = (catMap[e.categoryName] ?? 0) + e.amount;
-                }
-                const catData = Object.entries(catMap).map(([name, value]) => ({ name, value }));
-                const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#06b6d4', '#84cc16'];
-                return (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie data={catData} cx="50%" cy="45%" innerRadius={45} outerRadius={75} dataKey="value">
-                        {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-                      <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Two-column grid on desktop, single column on mobile */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-5 lg:space-y-0">
 
-      </div>{/* end LEFT COLUMN */}
-
-      {/* RIGHT COLUMN: income, expenses, mirrored shares */}
+      {/* LEFT COLUMN: income + personal expenses */}
       <div className="space-y-5">
 
       {/* Income section */}
@@ -753,6 +881,11 @@ export function PersonalDashboard() {
         )}
       </div>
 
+      </div>{/* end left column (income + personal expenses) */}
+
+      {/* RIGHT COLUMN: mirrored shares */}
+      <div className="space-y-5">
+
       {/* Mirrored shares from shared groups */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="px-4 pt-4 pb-3">
@@ -857,8 +990,25 @@ export function PersonalDashboard() {
         )}
       </div>
 
-      </div>{/* end RIGHT COLUMN */}
+      </div>{/* end right column */}
       </div>{/* end two-column grid */}
+
+      {/* ── Analytics (full width) ──────────────────────────────── */}
+      {ledger && (
+        <PersonalCharts
+          ledger={ledger}
+          hiddenCategories={hiddenCategories}
+          onToggleCategory={(cat) => setHiddenCategories(prev => {
+            const next = new Set(prev);
+            if (next.has(cat)) next.delete(cat); else next.add(cat);
+            return next;
+          })}
+          trendRange={trendRange}
+          onTrendRangeChange={setTrendRange}
+          trendData={trendData}
+          trendLoading={trendLoading}
+        />
+      )}
 
       {/* Mirrored share detail popup */}
       {selectedMirroredShare && (() => {
