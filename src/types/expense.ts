@@ -267,6 +267,7 @@ export interface RecurringPersonalExpenseResponse {
   ownerMemberId: number;
   label: string;
   amount: number;
+  currency?: string;
   categoryName: string;
   active: boolean;
   startYear?: number | null;
@@ -283,5 +284,6 @@ export interface RecurringPersonalExpenseInstanceResponse {
   month: number;
   label: string;
   amount: number;
+  currency?: string;
   categoryName: string;
 }

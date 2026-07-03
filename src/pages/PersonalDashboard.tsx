@@ -842,8 +842,11 @@ export function PersonalDashboard() {
                     </span>
                   </div>
                   {/* Amount — separate child so gap-3 spacing matches ExpenseRow */}
-                  <div className="text-sm font-semibold text-foreground tabular-nums flex-shrink-0 w-24 text-right">
-                    {formatCurrency(instance.amount)}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {instance.currency === 'USD' && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">USD</span>
+                    )}
+                    <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatCurrency(instance.amount, instance.currency ?? 'ARS')}</span>
                   </div>
                   {/* Actions */}
                   <div
