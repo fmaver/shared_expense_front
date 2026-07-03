@@ -258,7 +258,16 @@ function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalanc
   const isOverspent = totalExpenses > totalIncome;
   const savingsRate = isOverspent ? 0 : Math.round((currentBalance / totalIncome) * 100);
   const hasPending = Math.abs(pendingSettlementsTotal) > 0.01;
-  const projectedPct = Math.max(0, Math.min((projectedBalance / totalIncome) * 100, 100));
+  // Position the projected indicator within the green (savings) zone, not as a raw % of income.
+  // projectedBalance is reduced by group payer payments while the bar's red zone only shows
+  // personal expenses — using totalIncome as denominator would push the indicator into the red zone
+  // or off the left edge. Instead, map projectedBalance onto [0, savingsAmount] so the indicator
+  // stays inside the green zone: left edge = all savings consumed, right edge = full savings kept.
+  const savingsAmount = totalIncome - totalExpenses;
+  const greenWidth = 100 - expensePct;
+  const projectedPct = savingsAmount > 0.01 && greenWidth > 0.01
+    ? expensePct + Math.max(0, Math.min(projectedBalance / savingsAmount, 1)) * greenWidth
+    : expensePct;
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 space-y-3">
