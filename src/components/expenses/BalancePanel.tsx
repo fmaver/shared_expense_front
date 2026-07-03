@@ -146,22 +146,22 @@ export function BalancePanel({
               return (
                 <div
                   key={i}
-                  className="flex flex-col gap-1 bg-muted/50 rounded-xl px-3 py-2.5"
+                  className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2 bg-muted/50 rounded-xl px-3 py-2.5"
                 >
-                  {/* Row 1: payer → receiver */}
-                  <div className="flex items-center gap-2 min-w-0">
+                  {/* Names row (both breakpoints) — stacks on mobile, inline on desktop */}
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     <MemberAvatar id={String(tr.fromMemberId)} name={fromName} />
                     <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0">
                       {fromName}
                     </span>
                     <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0 text-right">
+                    <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0 text-right lg:text-left">
                       {toName}
                     </span>
                     <MemberAvatar id={String(tr.toMemberId)} name={toName} />
                   </div>
-                  {/* Row 2: amount */}
-                  <div className="flex justify-end">
+                  {/* Amount: right-aligned on its own row on mobile, inline on desktop */}
+                  <div className="flex justify-end lg:justify-start lg:ml-auto lg:flex-shrink-0">
                     <span className="text-sm font-bold tabular-nums text-foreground">
                       {formatCurrency(tr.amount)}
                     </span>

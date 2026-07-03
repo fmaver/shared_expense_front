@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { useCategories } from '@/hooks/useCategories';
 import { formatDate } from '@/utils/format';
 import { createRecurringGroupExpense } from '@/api/recurringExpenses';
@@ -209,34 +210,10 @@ export function AddExpenseDialog({
                 value={expense.amount === '' ? '' : expense.amount}
                 onChange={e => set({ amount: e.target.value ? parseFloat(e.target.value) : '' as unknown as number })} />
               {!isLoanEdit && (
-                <div className="flex rounded-md border border-border overflow-hidden flex-shrink-0">
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => set({ currency: 'ARS' })}
-                    className={cn(
-                      'px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                      (expense.currency ?? 'ARS') === 'ARS'
-                        ? 'bg-brand/20 text-brand border-r border-brand/30'
-                        : 'bg-transparent text-muted-foreground border-r border-border hover:bg-accent',
-                    )}
-                  >
-                    ARS $
-                  </button>
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => set({ currency: 'USD' })}
-                    className={cn(
-                      'px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
-                      (expense.currency ?? 'ARS') === 'USD'
-                        ? 'bg-brand/20 text-brand'
-                        : 'bg-transparent text-muted-foreground hover:bg-accent',
-                    )}
-                  >
-                    USD
-                  </button>
-                </div>
+                <CurrencyToggle
+                  value={(expense.currency ?? 'ARS') as 'ARS' | 'USD'}
+                  onChange={v => set({ currency: v })}
+                />
               )}
             </div>
           </div>

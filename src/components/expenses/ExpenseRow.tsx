@@ -85,7 +85,7 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
       )}
     >
       {/* Category icon — emoji from API, first 2 letters as fallback */}
-      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
         {categoryEmoji
           ? <span className="text-lg leading-none">{categoryEmoji}</span>
           : <span className="text-xs font-bold text-muted-foreground uppercase">{expense.category.slice(0, 2)}</span>

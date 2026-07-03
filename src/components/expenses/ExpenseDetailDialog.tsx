@@ -107,7 +107,7 @@ export function ExpenseDetailDialog({
         <DialogHeader>
           {/* Emoji + title */}
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-muted flex items-center justify-center flex-shrink-0">
               {categoryEmoji
                 ? <span className="text-2xl leading-none">{categoryEmoji}</span>
                 : <span className="text-sm font-bold text-muted-foreground uppercase">{expense.category.slice(0, 2)}</span>

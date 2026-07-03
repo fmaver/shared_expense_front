@@ -43,7 +43,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
       {/* Brand */}
       <div className="px-4 pt-5 pb-4">
         <button onClick={() => go('/groups')} className="flex items-center gap-2.5 w-full text-left">
-          <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-black text-base flex-shrink-0">✦</div>
+          <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center text-white font-black text-base flex-shrink-0">✦</div>
           <div>
             <div className="font-extrabold text-base tracking-tight text-foreground leading-none">Jirens</div>
             <div className="text-[9px] font-medium uppercase tracking-widest text-muted-foreground mt-0.5">Shared Expenses</div>
@@ -59,9 +59,9 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
         <nav className="space-y-0.5 mb-3">
           <NavLink to="/personal" onClick={onNavigate}
             className={({ isActive }) => cn(
-              'flex items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors',
+              'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
               isActive
-                ? 'bg-primary/10 text-foreground font-semibold border-l-2 border-brand'
+                ? 'bg-primary/10 text-foreground font-semibold'
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground'
             )}>
             <User className="h-4 w-4 flex-shrink-0" />
@@ -73,9 +73,9 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
           {groups.map(group => (
             <NavLink key={group.id} to={`/groups/${group.id}`} onClick={onNavigate}
               className={({ isActive }) => cn(
-                'flex items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors',
+                'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
                 isActive
-                  ? 'bg-primary/10 text-foreground font-semibold border-l-2 border-brand'
+                  ? 'bg-primary/10 text-foreground font-semibold'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               )}>
               <span className="truncate">{group.name}</span>
@@ -83,7 +83,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
           ))}
         </nav>
         <button onClick={() => { onNewGroup?.(); onNavigate?.(); }}
-          className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-primary hover:bg-accent w-full mt-1">
+          className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-primary hover:bg-accent w-full mt-1">
           <Plus className="h-3.5 w-3.5" /> {t('groups.newGroup')}
         </button>
       </div>
@@ -104,7 +104,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
           <button
             type="button"
             onClick={toggleLang}
-            className="h-7 px-1.5 rounded-md text-[11px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+            className="h-7 px-2 rounded-full text-[11px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
             aria-label="Switch language"
           >
             {t('language')}
@@ -112,7 +112,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
           <button
             type="button"
             onClick={toggle}
-            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+            className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
             aria-label={t('nav.toggleTheme')}
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -120,7 +120,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
           <button
             type="button"
             onClick={onLogout}
-            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+            className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
             aria-label={t('nav.logout')}
           >
             <LogOut className="h-4 w-4" />
