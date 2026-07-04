@@ -258,16 +258,13 @@ function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalanc
   const isOverspent = totalExpenses > totalIncome;
   const savingsRate = isOverspent ? 0 : Math.round((currentBalance / totalIncome) * 100);
   const hasPending = Math.abs(pendingSettlementsTotal) > 0.01;
-  // Position the projected indicator within the green (savings) zone, not as a raw % of income.
-  // projectedBalance is reduced by group payer payments while the bar's red zone only shows
-  // personal expenses — using totalIncome as denominator would push the indicator into the red zone
-  // or off the left edge. Instead, map projectedBalance onto [0, savingsAmount] so the indicator
-  // stays inside the green zone: left edge = all savings consumed, right edge = full savings kept.
-  const savingsAmount = totalIncome - totalExpenses;
-  const greenWidth = 100 - expensePct;
-  const projectedPct = savingsAmount > 0.01 && greenWidth > 0.01
-    ? expensePct + Math.max(0, Math.min(projectedBalance / savingsAmount, 1)) * greenWidth
-    : expensePct;
+  // Raw projected position as % of total income — the proportionally correct placement.
+  // Only render the indicator when this falls inside the green (savings) zone; otherwise
+  // projectedBalance ≤ personalExpenses means the indicator would sit in the red zone or at 0%,
+  // which is visually misleading (appears to track "personal expenses", not the projected value).
+  const projectedPctRaw = (projectedBalance / totalIncome) * 100;
+  const projectedPct = Math.min(projectedPctRaw, 100);
+  const showProjected = hasPending && projectedPctRaw > expensePct;
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 space-y-3">
@@ -301,7 +298,7 @@ function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalanc
           />
         )}
         {/* Projected balance indicator: downward triangle above bar + contrasting line through it */}
-        {hasPending && (
+        {showProjected && (
           <>
             <div
               className="absolute -top-2.5 z-20 -translate-x-1/2 pointer-events-none select-none transition-[left] duration-700 ease-out"
