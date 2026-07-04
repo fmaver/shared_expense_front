@@ -387,6 +387,7 @@
     "deleteExpenseDesc": "Esta acción no se puede deshacer.",
     "budgetBar": "Presupuesto",
     "savingsRate": "{{rate}}% ahorrado",
+    "projectedSavings": "{{rate}}% proyectado",
     "overBudget": "Excedido",
     "projectedTick": "Proyectado"
   }
