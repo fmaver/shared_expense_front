@@ -387,6 +387,7 @@
     "deleteExpenseDesc": "This cannot be undone.",
     "budgetBar": "Budget",
     "savingsRate": "{{rate}}% saved",
+    "projectedSavings": "{{rate}}% projected",
     "overBudget": "Over budget",
     "projectedTick": "Projected"
   }
