@@ -156,12 +156,17 @@ export function FloatingTabBar() {
               )}
               style={{ transitionDelay: speedDialOpen ? delay : '0ms' }}
             >
-              <span className="text-xs font-semibold text-foreground bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm border border-border/40">
-                {item.label}
-              </span>
               <button
                 type="button"
                 onClick={item.onClick}
+                className="text-xs font-semibold text-foreground bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm border border-border/40 cursor-pointer"
+              >
+                {item.label}
+              </button>
+              <button
+                type="button"
+                onClick={item.onClick}
+                aria-label={item.label}
                 className="w-10 h-10 rounded-full bg-brand/90 text-white shadow-lg flex items-center justify-center cursor-pointer hover:bg-brand transition-colors"
               >
                 <Icon className="h-4 w-4" />

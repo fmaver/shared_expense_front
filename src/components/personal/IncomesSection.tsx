@@ -144,7 +144,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
@@ -164,7 +164,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 ml-auto">
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={ledger.incomes.length} />}
           <Button variant="outline" size="sm" onClick={() => setIncomeForm(f => f ? null : 'pick')}>
             <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('personal.add')}</span>
