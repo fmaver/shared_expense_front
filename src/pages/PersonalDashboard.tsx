@@ -23,6 +23,7 @@ import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { PersonalCharts } from '@/components/personal/PersonalCharts';
+import { BudgetBar } from '@/components/personal/BudgetBar';
 import {
   createRecurringIncome,
   createVariableIncome,
@@ -40,136 +41,6 @@ import { updateExpense, deleteExpense, checkSimilarExpenses } from '@/api/expens
 import { getCurrentUser } from '@/api/auth';
 import type { ExpenseResponse, ExpenseCreate, IncomeInstanceResponse, RecurringPersonalExpenseInstanceResponse, MirroredShareItem, PersonalLedgerResponse } from '@/types/expense';
 import { DialogFooter } from '@/components/ui/dialog';
-
-interface BudgetBarProps {
-  totalIncome: number;
-  totalExpenses: number;
-  currentBalance: number;
-  projectedBalance: number;
-  pendingSettlementsTotal: number;
-  formatAmt: (n: number) => string;
-}
-
-function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalance, pendingSettlementsTotal, formatAmt }: BudgetBarProps) {
-  const { t } = useTranslation();
-  if (totalIncome <= 0.01) return null;
-
-  // Personal expenses zone (rose, left-anchored)
-  const personalPct = Math.min(100, Math.max(0, (totalExpenses / totalIncome) * 100));
-
-  // Three-zone bar: personal (rose) | group net costs (amber) | projected savings (emerald)
-  // Green zone = projected savings as % of income, right-anchored.
-  // Amber fills the gap between personal and green so the green zone width
-  // directly matches the projected savings rate — 1% savings → 1% green.
-  const projectedPctRaw = (projectedBalance / totalIncome) * 100;
-  const greenPct = Math.min(100 - personalPct, Math.max(0, projectedPctRaw));
-  const amberPct = Math.max(0, 100 - personalPct - greenPct);
-  // Indicator sits at the amber→green boundary = start of savings
-  const indicatorPct = 100 - greenPct;
-
-  const hasPending = Math.abs(pendingSettlementsTotal) > 0.01;
-  // Show indicator only when both amber and green zones have meaningful width
-  const showProjected = hasPending && greenPct > 0.5 && amberPct > 0.5;
-
-  const projectedSavingsRate = Math.max(0, Math.round(projectedPctRaw));
-  const currentSavingsRate = Math.max(0, Math.round((currentBalance / totalIncome) * 100));
-  const isOverBudget = projectedBalance < 0 || totalExpenses > totalIncome;
-
-  const headerColor = isOverBudget
-    ? 'text-red-500'
-    : projectedSavingsRate >= 30
-    ? 'text-emerald-600'
-    : projectedSavingsRate > 0
-    ? 'text-amber-500'
-    : 'text-red-500';
-
-  return (
-    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-      {/* Header row */}
-      <div className="flex items-start justify-between">
-        <p className="text-sm font-semibold text-foreground">{t('personal.budgetBar')}</p>
-        <div className="text-right">
-          <p className={cn('text-sm font-bold', headerColor)}>
-            {isOverBudget ? t('personal.overBudget') : t('personal.projectedSavings', { rate: projectedSavingsRate })}
-          </p>
-          {hasPending && !isOverBudget && (
-            <p className="text-xs text-muted-foreground">
-              {t('personal.savingsRate', { rate: currentSavingsRate })}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Bar — fills clipped inside rounded overflow-hidden layer; indicator sits outside it */}
-      <div className="relative h-3.5">
-        <div className="absolute inset-0 rounded-full overflow-hidden">
-          {/* Track */}
-          <div className="absolute inset-0 bg-muted" />
-          {/* Personal expenses (rose) */}
-          {personalPct > 0 && (
-            <div
-              className="absolute left-0 top-0 h-full bg-rose-400 dark:bg-rose-500 transition-[width] duration-700 ease-out"
-              style={{ width: `${personalPct}%` }}
-            />
-          )}
-          {/* Group net costs (amber) */}
-          {amberPct > 0 && (
-            <div
-              className="absolute top-0 h-full bg-amber-400 dark:bg-amber-500 transition-all duration-700 ease-out"
-              style={{ left: `${personalPct}%`, right: `${greenPct}%` }}
-            />
-          )}
-          {/* Projected savings (emerald, right-anchored) */}
-          {greenPct > 0 && (
-            <div
-              className="absolute top-0 h-full bg-emerald-400 dark:bg-emerald-500 transition-all duration-700 ease-out"
-              style={{ left: `${indicatorPct}%`, right: 0 }}
-            />
-          )}
-        </div>
-        {/* Projected indicator — outside overflow-hidden so triangle can sit above bar */}
-        {showProjected && (
-          <>
-            <div
-              className="absolute -top-2.5 z-20 -translate-x-1/2 pointer-events-none select-none transition-[left] duration-700 ease-out"
-              style={{ left: `${indicatorPct}%` }}
-            >
-              <svg width="9" height="5" viewBox="0 0 9 5" aria-hidden="true" className="fill-foreground/50 dark:fill-foreground/40 drop-shadow-sm">
-                <path d="M0 0 L9 0 L4.5 5 Z" />
-              </svg>
-            </div>
-            <div
-              className="absolute top-1/2 -translate-y-1/2 w-[2px] h-5 bg-foreground/60 dark:bg-foreground/50 rounded-full z-10 transition-[left] duration-700 ease-out"
-              style={{ left: `calc(${indicatorPct}% - 1px)` }}
-              title={`${t('personal.projectedTick')}: ${formatAmt(projectedBalance)}`}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Labels — absolutely positioned so projected label tracks the triangle */}
-      <div className="relative h-9 text-xs">
-        <div className="absolute left-0 bottom-0 space-y-0.5">
-          <p className="font-semibold text-rose-500 dark:text-rose-400 tabular-nums">{formatAmt(totalExpenses)}</p>
-          <p className="text-muted-foreground">{t('personal.totalExpenses')}</p>
-        </div>
-        {showProjected && (
-          <div
-            className="absolute bottom-0 -translate-x-1/2 text-center space-y-0.5 transition-[left] duration-700 ease-out"
-            style={{ left: `${Math.max(18, Math.min(82, indicatorPct))}%` }}
-          >
-            <p className="font-semibold text-foreground/60 tabular-nums text-[11px]">{formatAmt(projectedBalance)}</p>
-            <p className="text-muted-foreground text-[10px]">{t('personal.projectedTick')}</p>
-          </div>
-        )}
-        <div className="absolute right-0 bottom-0 text-right space-y-0.5">
-          <p className="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatAmt(totalIncome)}</p>
-          <p className="text-muted-foreground">{t('personal.totalIncome')}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -555,6 +426,8 @@ export function PersonalDashboard() {
             currentBalance={ledger.currentBalance}
             projectedBalance={ledger.projectedBalance}
             pendingSettlementsTotal={ledger.pendingSettlementsTotal}
+            year={year}
+            month={month}
             formatAmt={formatCurrency}
           />
 
