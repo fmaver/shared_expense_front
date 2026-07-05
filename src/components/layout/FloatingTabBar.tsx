@@ -34,7 +34,7 @@ export function FloatingTabBar() {
   const groupMatchSub = useMatch('/groups/:groupId/*');
   const groupMatch = groupMatchExact ?? groupMatchSub;
   const parsedGroupId = groupMatch?.params?.groupId ? parseInt(groupMatch.params.groupId, 10) : null;
-  const groupId = parsedGroupId !== null && Number.isFinite(parsedGroupId) ? parsedGroupId : null;
+  const groupId = parsedGroupId !== null && Number.isFinite(parsedGroupId) && parsedGroupId > 0 ? parsedGroupId : null;
   const inGroup = groupId !== null;
 
   // Speed-dial open/closed
@@ -58,7 +58,7 @@ export function FloatingTabBar() {
   }, []);
 
   // On /personal (and its sub-pages) the first action is personal add
-  const isPersonal = location.pathname.startsWith('/personal');
+  const isPersonal = location.pathname === '/personal' || location.pathname.startsWith('/personal/');
 
   // Tab set swaps with the route: global sections, or the current group's pages
   const groupBase = `/groups/${groupId}`;

@@ -135,7 +135,14 @@
     "debit": "Debit",
     "credit": "Credit",
     "income": "Income",
-    "expenses": "Expenses"
+    "expenses": "Expenses",
+    "monthlyTrend": "Monthly trend",
+    "groups": "Groups",
+    "personal": "Personal",
+    "groupContribution": "Group contribution",
+    "cumulativeSpend": "Cumulative spend this month",
+    "thisMonth": "This month",
+    "lastMonth": "Last month"
   },
   "balance": {
     "title": "Balance",
@@ -190,7 +197,8 @@
     "currency": "Currency",
     "viewInARS": "View in ARS",
     "viewOriginal": "View original",
-    "recurringBadgeTitle": "Recurring expense"
+    "recurringBadgeTitle": "Recurring expense",
+    "installment": "Instalment"
   },
   "months": [
     "January",
@@ -415,6 +423,11 @@
     "paceInsight": "At this pace, you'd save ≈ {{amount}} this month",
     "paceOverspend": "At this pace, you'd overspend by ≈ {{amount}} this month",
     "monthResult": "This month closed with {{amount}} saved",
-    "monthResultNegative": "This month closed {{amount}} over budget"
+    "monthResultNegative": "This month closed {{amount}} over budget",
+    "paid": "Paid",
+    "myShare": "My share",
+    "toReceive": "To receive",
+    "group": "Group",
+    "status": "Status"
   }
 }

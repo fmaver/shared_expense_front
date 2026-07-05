@@ -207,7 +207,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
           </div>
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" size="sm" onClick={() => { setIncomeForm('pick'); setIncomeLabel(''); setIncomeAmount(''); setIncomeCurrency('ARS'); }}>
-              ← Back
+              ← {t('common.back')}
             </Button>
             <Button size="sm" disabled={savingIncome} onClick={handleSaveIncome}
               className="bg-brand hover:bg-brand/90 text-white">

@@ -135,7 +135,14 @@
     "debit": "Débito",
     "credit": "Crédito",
     "income": "Ingresos",
-    "expenses": "Gastos"
+    "expenses": "Gastos",
+    "monthlyTrend": "Tendencia mensual",
+    "groups": "Grupos",
+    "personal": "Personal",
+    "groupContribution": "Contribución por grupo",
+    "cumulativeSpend": "Gasto acumulado del mes",
+    "thisMonth": "Este mes",
+    "lastMonth": "Mes pasado"
   },
   "balance": {
     "title": "Balance",
@@ -190,7 +197,8 @@
     "currency": "Moneda",
     "viewInARS": "Ver en ARS",
     "viewOriginal": "Ver original",
-    "recurringBadgeTitle": "Gasto recurrente"
+    "recurringBadgeTitle": "Gasto recurrente",
+    "installment": "Cuota"
   },
   "months": [
     "Enero",
@@ -415,6 +423,11 @@
     "paceInsight": "A este ritmo, ahorrarías ≈ {{amount}} este mes",
     "paceOverspend": "A este ritmo, te excederías ≈ {{amount}} este mes",
     "monthResult": "Este mes cerró con {{amount}} ahorrado",
-    "monthResultNegative": "Este mes cerró {{amount}} excedido"
+    "monthResultNegative": "Este mes cerró {{amount}} excedido",
+    "paid": "Pagado",
+    "myShare": "Mi parte",
+    "toReceive": "A recibir",
+    "group": "Grupo",
+    "status": "Estado"
   }
 }

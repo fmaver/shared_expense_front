@@ -103,7 +103,7 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
       {/* Monthly trend bar */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground">Monthly trend</p>
+          <p className="text-xs text-muted-foreground">{t('charts.monthlyTrend')}</p>
           <div className="inline-flex rounded-full bg-muted p-0.5 gap-0.5">
             {([3, 6, 12] as const).map(r => (
               <button key={r} type="button" onClick={() => onTrendRangeChange(r)}
@@ -116,7 +116,7 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
           </div>
         </div>
         {trendLoading ? (
-          <div className="h-36 flex items-center justify-center text-xs text-muted-foreground">Loading…</div>
+          <div className="h-36 flex items-center justify-center text-xs text-muted-foreground">{t('common.loading')}</div>
         ) : trendData.length === 0 ? (
           <p className="text-xs text-muted-foreground">{t('charts.noData')}</p>
         ) : (
@@ -126,8 +126,8 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
               <XAxis dataKey="label" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
               <Tooltip formatter={(v: number) => fmt(v)} />
-              <Bar dataKey="groups" name="Groups" fill="#6366f1" stackId="stack" />
-              <Bar dataKey="personal" name="Personal" fill="#f97316" stackId="stack" />
+              <Bar dataKey="groups" name={t('charts.groups')} fill="#6366f1" stackId="stack" />
+              <Bar dataKey="personal" name={t('charts.personal')} fill="#f97316" stackId="stack" />
               <Bar dataKey="income" name={t('charts.income')} fill="#22c55e" stackId="stack" radius={[3,3,0,0]} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
             </BarChart>
@@ -165,7 +165,7 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
 
         {groupData.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Group contribution</p>
+            <p className="text-xs text-muted-foreground mb-2">{t('charts.groupContribution')}</p>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={groupData} cx="50%" cy="45%" innerRadius={45} outerRadius={75} dataKey="value">
@@ -182,7 +182,7 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
       {/* Cumulative spend this month */}
       {cumulativeData.some(p => (p.total ?? 0) > 0 || (p.prev ?? 0) > 0) && (
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Cumulative spend this month</p>
+          <p className="text-xs text-muted-foreground mb-2">{t('charts.cumulativeSpend')}</p>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={cumulativeData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.08} />
@@ -190,8 +190,8 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
               <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
               <Tooltip formatter={(v: number | null) => v != null ? fmt(v) : '—'} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
-              <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} name="This month" connectNulls={false} />
-              {prevLedger && <Line type="monotone" dataKey="prev" stroke="#94a3b8" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="Last month" connectNulls={false} />}
+              <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} name={t('charts.thisMonth')} connectNulls={false} />
+              {prevLedger && <Line type="monotone" dataKey="prev" stroke="#94a3b8" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name={t('charts.lastMonth')} connectNulls={false} />}
             </LineChart>
           </ResponsiveContainer>
         </div>

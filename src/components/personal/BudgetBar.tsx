@@ -140,14 +140,14 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
           <span className="text-muted-foreground">{t('personal.legendExpenses')}</span>
           <span className="font-semibold text-foreground tabular-nums">{formatAmt(totalExpenses)}</span>
         </span>
-        {hasPending && amberPct > 0.5 && (
+        {hasPending && amberPct > 0 && (
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-amber-400 dark:bg-amber-500 shrink-0" />
             <span className="text-muted-foreground">{t('personal.legendPending')}</span>
             <span className="font-semibold text-foreground tabular-nums">{formatAmt(amberAmount)}</span>
           </span>
         )}
-        {greenPct > 0.5 && (
+        {greenPct > 0 && (
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-400 dark:bg-emerald-500 shrink-0" />
             <span className="text-muted-foreground">{t('personal.legendProjected')}</span>
