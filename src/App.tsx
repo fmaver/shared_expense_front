@@ -12,6 +12,7 @@ import { GroupSettingsPage } from './pages/GroupSettingsPage';
 import { GroupChartsPage } from './pages/GroupChartsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PersonalDashboard } from './pages/PersonalDashboard';
+import { PersonalSectionPage } from './pages/PersonalSectionPage';
 import { InvitationLanding } from './public-pages/InvitationLanding';
 import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 import { CurrencyProvider } from './contexts/CurrencyContext';
@@ -87,6 +88,9 @@ function App() {
               <Route path="charts" element={<GroupChartsPage />} />
             </Route>
             <Route path="/personal" element={<PersonalDashboard />} />
+            <Route path="/personal/incomes" element={<PersonalSectionPage section="incomes" />} />
+            <Route path="/personal/expenses" element={<PersonalSectionPage section="expenses" />} />
+            <Route path="/personal/shares" element={<PersonalSectionPage section="shares" />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<Navigate to="/groups" replace />} />
           </Route>
