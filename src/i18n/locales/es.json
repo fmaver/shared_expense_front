@@ -408,7 +408,7 @@
     "projectedSavings": "{{rate}}% proyectado",
     "overBudget": "Excedido",
     "projectedTick": "Proyectado",
-    "viewAll": "Ver todo ({{count}})",
+    "viewAll": "Ver todo ({{total}})",
     "legendExpenses": "Gastos",
     "legendPending": "Costos grupales pendientes",
     "legendProjected": "Ahorro proyectado",
