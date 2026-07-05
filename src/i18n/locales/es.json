@@ -108,6 +108,23 @@
     "settings": "Configuración",
     "charts": "Gráficos"
   },
+  "mobileNav": {
+    "personal": "Personal",
+    "groups": "Grupos",
+    "profile": "Perfil",
+    "backToGroups": "Volver a grupos"
+  },
+  "fab": {
+    "options": "Opciones",
+    "personalExpense": "Gasto personal",
+    "groupExpense": "Gasto grupal",
+    "addExpense": "Agregar gasto",
+    "transfer": "Transferencia",
+    "chooseGroup": "Elegir grupo",
+    "noGroups": "No tenés grupos aún.",
+    "members_one": "{{count}} miembro",
+    "members_other": "{{count}} miembros"
+  },
   "charts": {
     "title": "Gráficos",
     "categoryBreakdown": "Gastos por categoría",
@@ -312,7 +329,8 @@
     "save": "Guardar",
     "loading": "Cargando…",
     "confirm": "Confirmar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "back": "Volver"
   },
   "categories": {
     "comida": "Comida",
@@ -389,6 +407,14 @@
     "savingsRate": "{{rate}}% ahorrado",
     "projectedSavings": "{{rate}}% proyectado",
     "overBudget": "Excedido",
-    "projectedTick": "Proyectado"
+    "projectedTick": "Proyectado",
+    "viewAll": "Ver todo ({{count}})",
+    "legendExpenses": "Gastos",
+    "legendPending": "Costos grupales pendientes",
+    "legendProjected": "Ahorro proyectado",
+    "paceInsight": "A este ritmo, ahorrarías ≈ {{amount}} este mes",
+    "paceOverspend": "A este ritmo, te excederías ≈ {{amount}} este mes",
+    "monthResult": "Este mes cerró con {{amount}} ahorrado",
+    "monthResultNegative": "Este mes cerró {{amount}} excedido"
   }
 }

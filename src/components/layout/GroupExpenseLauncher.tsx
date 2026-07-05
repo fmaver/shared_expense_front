@@ -145,6 +145,7 @@ export function GroupExpenseLauncher({
   mode,
   presetGroupId,
 }: GroupExpenseLauncherProps) {
+  const { t } = useTranslation();
   const { data: groups = [], isLoading: loadingGroups } = useGroups();
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(
     presetGroupId ?? null,
@@ -167,7 +168,7 @@ export function GroupExpenseLauncher({
       <Dialog open={showPicker} onOpenChange={v => { if (!v) onClose(); }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Elegir grupo</DialogTitle>
+            <DialogTitle>{t('fab.chooseGroup')}</DialogTitle>
           </DialogHeader>
 
           {loadingGroups ? (
@@ -179,7 +180,7 @@ export function GroupExpenseLauncher({
           ) : groups.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No tenés grupos aún.</p>
+              <p className="text-sm text-muted-foreground">{t('fab.noGroups')}</p>
             </div>
           ) : (
             <div className="space-y-1.5 py-1">
@@ -193,7 +194,7 @@ export function GroupExpenseLauncher({
                   <div>
                     <p className="font-semibold text-foreground text-sm">{group.name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {group.members.length} miembro{group.members.length !== 1 ? 's' : ''}
+                      {t('fab.members', { count: group.members.length })}
                     </p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />

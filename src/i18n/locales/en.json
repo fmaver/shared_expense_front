@@ -108,6 +108,23 @@
     "settings": "Settings",
     "charts": "Charts"
   },
+  "mobileNav": {
+    "personal": "Personal",
+    "groups": "Groups",
+    "profile": "Profile",
+    "backToGroups": "Back to groups"
+  },
+  "fab": {
+    "options": "Options",
+    "personalExpense": "Personal expense",
+    "groupExpense": "Group expense",
+    "addExpense": "Add expense",
+    "transfer": "Transfer",
+    "chooseGroup": "Choose a group",
+    "noGroups": "You don't have any groups yet.",
+    "members_one": "{{count}} member",
+    "members_other": "{{count}} members"
+  },
   "charts": {
     "title": "Charts",
     "categoryBreakdown": "Spending by category",
@@ -312,7 +329,8 @@
     "save": "Save",
     "loading": "Loading…",
     "confirm": "Confirm",
-    "delete": "Delete"
+    "delete": "Delete",
+    "back": "Back"
   },
   "categories": {
     "comida": "Food",
@@ -389,6 +407,14 @@
     "savingsRate": "{{rate}}% saved",
     "projectedSavings": "{{rate}}% projected",
     "overBudget": "Over budget",
-    "projectedTick": "Projected"
+    "projectedTick": "Projected",
+    "viewAll": "View all ({{count}})",
+    "legendExpenses": "Expenses",
+    "legendPending": "Pending group costs",
+    "legendProjected": "Projected savings",
+    "paceInsight": "At this pace, you'd save ≈ {{amount}} this month",
+    "paceOverspend": "At this pace, you'd overspend by ≈ {{amount}} this month",
+    "monthResult": "This month closed with {{amount}} saved",
+    "monthResultNegative": "This month closed {{amount}} over budget"
   }
 }
