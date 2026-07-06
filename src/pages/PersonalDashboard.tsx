@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
@@ -46,7 +46,13 @@ export function PersonalDashboard() {
     getPersonalLedger(prevYear, prevMonthNum).then(setPrevLedger).catch(() => setPrevLedger(null));
   }, [year, month]);
 
+  // Per-month totals cache for the trend chart. Past months rarely change, so
+  // only the currently-viewed month is refetched on chartKey bumps (saves) —
+  // one request instead of re-firing the whole range.
+  const trendCacheRef = useRef(new Map<string, { income: number; personal: number; groups: number }>());
+
   useEffect(() => {
+    let cancelled = false;
     setTrendLoading(true);
     const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const pts: {year: number, month: number}[] = [];
@@ -55,19 +61,39 @@ export function PersonalDashboard() {
       pts.unshift({ year: y, month: m });
       if (--m === 0) { m = 12; y--; }
     }
-    Promise.all(pts.map(p => getPersonalLedger(p.year, p.month)))
-      .then(results => {
-        setTrendData(results.map((r, i) => ({
-          label: pts[i].year !== year
-            ? `${MONTHS[pts[i].month - 1]} '${String(pts[i].year).slice(2)}`
-            : MONTHS[pts[i].month - 1],
+    (async () => {
+      const cache = trendCacheRef.current;
+      const results: { income: number; personal: number; groups: number }[] = [];
+      for (const p of pts) {
+        const key = `${p.year}-${p.month}`;
+        const isViewedMonth = p.year === year && p.month === month;
+        const cached = cache.get(key);
+        if (cached && !isViewedMonth) {
+          results.push(cached);
+          continue;
+        }
+        // Fetch misses one at a time — a Promise.all burst here can starve
+        // the backend connection pool
+        const r = await getPersonalLedger(p.year, p.month);
+        const point = {
           income: r.totalIncome,
           personal: r.totalPersonalExpenses,
           groups: r.mirroredShares.reduce((s, sh) => s + sh.shareAmount, 0),
-        })));
-      })
+        };
+        cache.set(key, point);
+        results.push(point);
+      }
+      if (cancelled) return;
+      setTrendData(results.map((r, i) => ({
+        label: pts[i].year !== year
+          ? `${MONTHS[pts[i].month - 1]} '${String(pts[i].year).slice(2)}`
+          : MONTHS[pts[i].month - 1],
+        ...r,
+      })));
+    })()
       .catch(() => {})
-      .finally(() => setTrendLoading(false));
+      .finally(() => { if (!cancelled) setTrendLoading(false); });
+    return () => { cancelled = true; };
   }, [year, month, trendRange, chartKey]);
 
   const launcher = (
