@@ -3,15 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { TrendingUp, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useFabActions } from '@/contexts/FabActionsContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ViewAllLink } from './ViewAllLink';
 import {
-  createRecurringIncome,
-  createVariableIncome,
   updateRecurringIncome,
   updateVariableIncome,
   deleteRecurringIncome,
@@ -33,13 +31,7 @@ interface IncomesSectionProps {
 export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo }: IncomesSectionProps) {
   const { t } = useTranslation();
   const { displayMode, setDisplayMode, blueRate, formatAmount } = useCurrency();
-
-  // Income form state — null=hidden, 'recurring'=salary form, 'variable'=one-off form, 'pick'=type picker
-  const [incomeForm, setIncomeForm] = useState<'pick' | 'recurring' | 'variable' | null>(null);
-  const [incomeLabel, setIncomeLabel] = useState('');
-  const [incomeAmount, setIncomeAmount] = useState('');
-  const [incomeCurrency, setIncomeCurrency] = useState<'ARS' | 'USD'>('ARS');
-  const [savingIncome, setSavingIncome] = useState(false);
+  const { personalActions } = useFabActions();
 
   // Income edit state
   const [editingIncomeId, setEditingIncomeId] = useState<number | null>(null);
@@ -54,47 +46,6 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
   const sortedIncomes = [...ledger.incomes].sort((a, b) => b.id - a.id);
   const visibleIncomes = limit ? sortedIncomes.slice(0, limit) : sortedIncomes;
   const hasMore = limit !== undefined && ledger.incomes.length > limit;
-
-  const doSaveIncome = async () => {
-    if (!incomeLabel || !incomeAmount || !incomeForm || incomeForm === 'pick') return;
-    setSavingIncome(true);
-    try {
-      if (incomeForm === 'recurring') {
-        await createRecurringIncome({ label: incomeLabel, amount: parseFloat(incomeAmount), startYear: year, startMonth: month, currency: incomeCurrency });
-      } else {
-        await createVariableIncome({ year, month, label: incomeLabel, amount: parseFloat(incomeAmount), currency: incomeCurrency });
-      }
-      toast.success(t('toasts.expenseAdded'));
-      setIncomeForm(null);
-      setIncomeLabel('');
-      setIncomeAmount('');
-      setIncomeCurrency('ARS');
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSavingIncome(false);
-    }
-  };
-
-  const handleSaveIncome = async () => {
-    if (!incomeLabel || !incomeAmount || !incomeForm || incomeForm === 'pick') return;
-    const amt = parseFloat(incomeAmount);
-    const isDuplicate = ledger.incomes.some(
-      i => Math.abs(i.amount - amt) < 0.01 && i.label.trim().toLowerCase() === incomeLabel.trim().toLowerCase()
-    );
-    if (isDuplicate) {
-      setConfirm({
-        title: t('expenses.duplicateTitle'),
-        description: t('expenses.duplicateDesc') + ' ' + t('expenses.addAnywayQuestion'),
-        confirmLabel: t('expenses.addAnyway'),
-        destructive: false,
-        onConfirm: async () => { setConfirm(null); await doSaveIncome(); },
-      });
-      return;
-    }
-    await doSaveIncome();
-  };
 
   const handleSaveEditIncome = async (income: IncomeInstanceResponse) => {
     if (!editIncomeLabel || !editIncomeAmount) return;
@@ -144,8 +95,8 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
           </h2>
@@ -164,61 +115,18 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2.5 ml-auto">
+        <div className="flex items-center gap-2.5 shrink-0">
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={ledger.incomes.length} />}
-          <Button variant="outline" size="sm" onClick={() => setIncomeForm(f => f ? null : 'pick')}>
-            <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('personal.add')}</span>
+          {/* Mobile adds via the floating + dial; desktop keeps this button */}
+          <Button variant="outline" size="sm" className="hidden lg:inline-flex"
+            onClick={() => personalActions?.addIncome()}>
+            <Plus className="h-3.5 w-3.5 mr-1" /><span>{t('personal.add')}</span>
           </Button>
         </div>
       </div>
 
-      {/* Step 1: pick type */}
-      {incomeForm === 'pick' && (
-        <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-1.5">
-          <button onClick={() => setIncomeForm('recurring')}
-            className="w-full text-left px-3 py-2.5 rounded-md border border-border bg-background hover:border-brand/50 hover:bg-accent/50 transition-colors">
-            <p className="text-sm font-medium text-foreground">{t('personal.recurringTitle')}</p>
-            <p className="text-xs text-muted-foreground">{t('personal.recurringDesc')}</p>
-          </button>
-          <button onClick={() => setIncomeForm('variable')}
-            className="w-full text-left px-3 py-2.5 rounded-md border border-border bg-background hover:border-brand/50 hover:bg-accent/50 transition-colors">
-            <p className="text-sm font-medium text-foreground">{t('personal.variableTitle')}</p>
-            <p className="text-xs text-muted-foreground">{t('personal.variableDesc')}</p>
-          </button>
-          <div className="flex justify-end pt-1">
-            <Button variant="ghost" size="sm" onClick={() => setIncomeForm(null)}>{t('common.cancel')}</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: fill in details */}
-      {(incomeForm === 'recurring' || incomeForm === 'variable') && (
-        <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            {incomeForm === 'recurring' ? t('personal.recurringTitle') : t('personal.variableTitle')}
-          </p>
-          <Input
-            placeholder={t('personal.salaryLabel')} value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} />
-          <div className="flex gap-2 items-center">
-            <Input
-              className="flex-1"
-              type="number" placeholder={t('personal.salaryAmount')} value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} />
-            <CurrencyToggle value={incomeCurrency} onChange={setIncomeCurrency} />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="ghost" size="sm" onClick={() => { setIncomeForm('pick'); setIncomeLabel(''); setIncomeAmount(''); setIncomeCurrency('ARS'); }}>
-              ← {t('common.back')}
-            </Button>
-            <Button size="sm" disabled={savingIncome} onClick={handleSaveIncome}
-              className="bg-brand hover:bg-brand/90 text-white">
-              {savingIncome ? t('common.loading') : t('personal.saveSalary')}
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Income list */}
-      {ledger.incomes.length === 0 && !incomeForm ? (
+      {ledger.incomes.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('personal.noIncome')}</p>
       ) : (
         <div className="space-y-1.5">

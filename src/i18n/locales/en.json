@@ -116,8 +116,6 @@
   },
   "fab": {
     "options": "Options",
-    "personalExpense": "Personal expense",
-    "groupExpense": "Group expense",
     "addExpense": "Add expense",
     "transfer": "Transfer",
     "chooseGroup": "Choose a group",
@@ -428,6 +426,9 @@
     "myShare": "My share",
     "toReceive": "To receive",
     "group": "Group",
-    "status": "Status"
+    "status": "Status",
+    "addIncome": "Add income",
+    "oneOffExpense": "One-off expense",
+    "recurringExpense": "Recurring expense"
   }
 }

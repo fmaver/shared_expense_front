@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { IncomesSection } from '@/components/personal/IncomesSection';
 import { PersonalExpensesSection } from '@/components/personal/PersonalExpensesSection';
 import { MirroredSharesSection } from '@/components/personal/MirroredSharesSection';
+import { PersonalAddLauncher } from '@/components/personal/PersonalAddLauncher';
 
 type Section = 'incomes' | 'expenses' | 'shares';
 
@@ -64,6 +65,7 @@ export function PersonalSectionPage({ section }: { section: Section }) {
           )}
         </div>
       </div>
+      <PersonalAddLauncher ledger={ledger ?? null} year={year} month={month} categories={categories} refetch={refetch} />
     </div>
   );
 }

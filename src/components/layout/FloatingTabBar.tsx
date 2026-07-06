@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, Link, useLocation, useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
-import { Home, Users, User, Plus, ArrowLeftRight, ChevronLeft, Receipt, PieChart, Settings } from 'lucide-react';
+import { Home, Users, User, Plus, ArrowLeftRight, ChevronLeft, Receipt, PieChart, Settings, TrendingUp, TrendingDown, CalendarClock, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { GroupExpenseLauncher, type LauncherMode } from './GroupExpenseLauncher';
@@ -26,7 +26,7 @@ interface TabItem {
 export function FloatingTabBar() {
   const { t } = useTranslation();
   const location = useLocation();
-  const { personalAdd } = useFabActions();
+  const { personalActions } = useFabActions();
   const { tabBarCollapsed } = useScroll();
 
   // Detect group context from route
@@ -90,23 +90,26 @@ export function FloatingTabBar() {
       ]
     : isPersonal
     ? [
-        // Personal add only works where PersonalExpensesSection is mounted
-        ...(personalAdd
-          ? [{
-              icon: User,
-              label: t('fab.personalExpense'),
-              onClick: () => { closeDial(); personalAdd(); },
-            }]
-          : []),
+        // Personal-group entries — registered by PersonalAddLauncher on the personal pages
         {
-          icon: Plus,
-          label: t('fab.groupExpense'),
-          onClick: () => openLauncher('expense'),
+          icon: TrendingUp,
+          label: t('personal.variableTitle'),
+          onClick: () => { closeDial(); personalActions?.addIncome('variable'); },
         },
         {
-          icon: ArrowLeftRight,
-          label: t('fab.transfer'),
-          onClick: () => openLauncher('transfer'),
+          icon: CalendarClock,
+          label: t('personal.recurringTitle'),
+          onClick: () => { closeDial(); personalActions?.addIncome('recurring'); },
+        },
+        {
+          icon: TrendingDown,
+          label: t('personal.oneOffExpense'),
+          onClick: () => { closeDial(); personalActions?.addExpense(); },
+        },
+        {
+          icon: Repeat,
+          label: t('personal.recurringExpense'),
+          onClick: () => { closeDial(); personalActions?.addRecurringExpense(); },
         },
       ]
     : [

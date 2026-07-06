@@ -12,6 +12,7 @@ import { BudgetBar } from '@/components/personal/BudgetBar';
 import { IncomesSection } from '@/components/personal/IncomesSection';
 import { PersonalExpensesSection } from '@/components/personal/PersonalExpensesSection';
 import { MirroredSharesSection } from '@/components/personal/MirroredSharesSection';
+import { PersonalAddLauncher } from '@/components/personal/PersonalAddLauncher';
 import { getPersonalLedger } from '@/api/personal';
 import type { PersonalLedgerResponse } from '@/types/expense';
 
@@ -69,6 +70,10 @@ export function PersonalDashboard() {
       .finally(() => setTrendLoading(false));
   }, [year, month, trendRange, chartKey]);
 
+  const launcher = (
+    <PersonalAddLauncher ledger={ledger} year={year} month={month} categories={categories} refetch={refetch} />
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col flex-1">
@@ -79,6 +84,7 @@ export function PersonalDashboard() {
             <Skeleton className="h-48 w-full rounded-xl" />
           </div>
         </div>
+        {launcher}
       </div>
     );
   }
@@ -264,6 +270,7 @@ export function PersonalDashboard() {
       )}
       </div>
       </div>
+      {launcher}
     </div>
   );
 }

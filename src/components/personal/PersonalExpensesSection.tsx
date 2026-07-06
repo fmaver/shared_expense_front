@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { TrendingDown, Plus, Pencil, Trash2, Repeat } from 'lucide-react';
@@ -10,19 +10,16 @@ import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { ViewAllLink } from './ViewAllLink';
 import {
-  createRecurringPersonalExpense,
   updateRecurringPersonalExpense,
   deleteRecurringPersonalExpense,
 } from '@/api/personal';
-import { updateExpense, deleteExpense, checkSimilarExpenses } from '@/api/expenses';
+import { updateExpense, deleteExpense } from '@/api/expenses';
 import type { ExpenseResponse, ExpenseCreate, RecurringPersonalExpenseInstanceResponse, PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
 
 interface PersonalExpensesSectionProps {
@@ -40,31 +37,12 @@ interface PersonalExpensesSectionProps {
 export function PersonalExpensesSection({ ledger, year, month, refetch, categories, limit, viewAllTo }: PersonalExpensesSectionProps) {
   const { t } = useTranslation();
   const island = useIsland();
-  const { registerPersonalAdd } = useFabActions();
+  const { personalActions } = useFabActions();
   const { displayMode, setDisplayMode, blueRate, formatAmount } = useCurrency();
   const { personalGroupId, currentMemberId } = usePersonalContext();
 
-  // Personal expense dialog — shared for create and edit
-  const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  // One-off expense edit (creation lives in PersonalAddLauncher)
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
-
-  // Register the personal-add action with the global FAB so it can open this dialog
-  const openPersonalAdd = useCallback(() => {
-    setEditingExpense(null);
-    setShowExpenseDialog(true);
-  }, []);
-  useEffect(() => {
-    registerPersonalAdd(openPersonalAdd);
-    return () => registerPersonalAdd(null);
-  }, [registerPersonalAdd, openPersonalAdd]);
-
-  // Recurring expense add form
-  const [showRecurringExpForm, setShowRecurringExpForm] = useState(false);
-  const [recExpLabel, setRecExpLabel] = useState('');
-  const [recExpAmount, setRecExpAmount] = useState('');
-  const [recExpCategory, setRecExpCategory] = useState('');
-  const [recExpCurrency, setRecExpCurrency] = useState<'ARS' | 'USD'>('ARS');
-  const [savingRecExp, setSavingRecExp] = useState(false);
 
   // Recurring expense edit state
   const [editingRecExpId, setEditingRecExpId] = useState<number | null>(null);
@@ -77,17 +55,6 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
   // Confirmation dialog state — replaces window.confirm()
   const [confirm, setConfirm] = useState<{ title: string; description?: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void } | null>(null);
 
-  // Duplicate expense detection
-  const [pendingExpenseData, setPendingExpenseData] = useState<ExpenseCreate | null>(null);
-  const [expenseDuplicates, setExpenseDuplicates] = useState<ExpenseResponse[]>([]);
-
-  // Keep recExpCategory in sync when categories load
-  useEffect(() => {
-    if (categories.length > 0 && !recExpCategory) {
-      setRecExpCategory(categories[0].name);
-    }
-  }, [categories, recExpCategory]);
-
   // Recurring instances first (fixed monthly bills, API order), then one-offs latest-first.
   const recurring = ledger.recurringPersonalExpenses ?? [];
   const sortedOneOffs = [...(ledger.personalExpenses ?? [])].sort(
@@ -99,48 +66,6 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
     : sortedOneOffs;
   const totalCount = recurring.length + sortedOneOffs.length;
   const hasMore = limit !== undefined && totalCount > limit;
-
-  const doSaveRecurringExpense = async () => {
-    if (!recExpLabel || !recExpAmount || !recExpCategory) return;
-    setSavingRecExp(true);
-    try {
-      await createRecurringPersonalExpense({
-        label: recExpLabel,
-        amount: parseFloat(recExpAmount),
-        categoryName: recExpCategory,
-        startYear: year,
-        startMonth: month,
-        currency: recExpCurrency,
-      });
-      toast.success(t('toasts.expenseAdded'));
-      setShowRecurringExpForm(false);
-      setRecExpLabel(''); setRecExpAmount(''); setRecExpCategory(categories[0]?.name ?? ''); setRecExpCurrency('ARS');
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSavingRecExp(false);
-    }
-  };
-
-  const handleSaveRecurringExpense = async () => {
-    if (!recExpLabel || !recExpAmount || !recExpCategory) return;
-    const amt = parseFloat(recExpAmount);
-    const isDuplicate = ledger.recurringPersonalExpenses.some(
-      i => Math.abs(i.amount - amt) < 0.01 && i.label.trim().toLowerCase() === recExpLabel.trim().toLowerCase()
-    );
-    if (isDuplicate) {
-      setConfirm({
-        title: t('expenses.duplicateTitle'),
-        description: t('expenses.duplicateDesc') + ' ' + t('expenses.addAnywayQuestion'),
-        confirmLabel: t('expenses.addAnyway'),
-        destructive: false,
-        onConfirm: async () => { setConfirm(null); await doSaveRecurringExpense(); },
-      });
-      return;
-    }
-    await doSaveRecurringExpense();
-  };
 
   const handleSaveEditRecurringExpense = async (instance: RecurringPersonalExpenseInstanceResponse) => {
     if (!editRecExpLabel || !editRecExpAmount) return;
@@ -178,47 +103,21 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
     });
   };
 
-  const doCreatePersonalExpense = async (data: ExpenseCreate) => {
-    if (!personalGroupId || !currentMemberId) return;
-    const { createExpense } = await import('@/api/expenses');
-    const result = await createExpense(personalGroupId, { ...data, payerId: currentMemberId, splitStrategy: { type: 'equal' } });
-    if (result.error) { toast.error(result.error); return; }
-    toast.success(t('toasts.expenseAdded'));
-    setPendingExpenseData(null);
-    setExpenseDuplicates([]);
-    setShowExpenseDialog(false);
+  const handleSubmitExpense = async (data: ExpenseCreate) => {
+    if (!personalGroupId || !editingExpense) return;
+    const id = editingExpense.parentExpenseId ?? editingExpense.id;
+    const { error } = await updateExpense(personalGroupId, id, data);
+    if (error) { toast.error(error); return; }
+    toast.success(t('toasts.expenseUpdated'));
     setEditingExpense(null);
     refetch();
     island.success();
   };
 
-  const handleSubmitExpense = async (data: ExpenseCreate) => {
-    if (!personalGroupId || !currentMemberId) return;
-    if (editingExpense) {
-      const id = editingExpense.parentExpenseId ?? editingExpense.id;
-      const { error } = await updateExpense(personalGroupId, id, data);
-      if (error) { toast.error(error); return; }
-      toast.success(t('toasts.expenseUpdated'));
-      setShowExpenseDialog(false);
-      setEditingExpense(null);
-      refetch();
-      island.success();
-      return;
-    }
-    const [y, m] = data.date.split('-').map(Number);
-    const { data: similar } = await checkSimilarExpenses(personalGroupId, y, m, data.amount, data.description, data.date);
-    if (similar && similar.length > 0) {
-      setPendingExpenseData(data);
-      setExpenseDuplicates(similar);
-      return;
-    }
-    await doCreatePersonalExpense(data);
-  };
-
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.personalExpenses')}
           </h2>
@@ -237,51 +136,19 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2.5 ml-auto">
+        <div className="flex items-center gap-2.5 shrink-0">
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={totalCount} />}
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setEditingExpense(null); setShowExpenseDialog(true); }}>
-              <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('expenses.add')}</span>
+          {/* Mobile adds via the floating + dial; desktop keeps these buttons */}
+          <div className="hidden lg:flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => personalActions?.addExpense()}>
+              <Plus className="h-3.5 w-3.5 mr-1" /><span>{t('expenses.add')}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowRecurringExpForm(v => !v)}>
-              <Repeat className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">{t('personal.addRecurringExpense')}</span>
+            <Button variant="outline" size="sm" onClick={() => personalActions?.addRecurringExpense()}>
+              <Repeat className="h-3.5 w-3.5 mr-1" /><span>{t('personal.addRecurringExpense')}</span>
             </Button>
           </div>
         </div>
       </div>
-
-
-      {showRecurringExpForm && personalGroupId && (
-        <div className="mb-3 p-3 bg-muted/40 rounded-lg space-y-2 text-sm">
-          <p className="text-xs text-muted-foreground font-medium">{t('personal.recurringExpenseTitle')}</p>
-          <Input placeholder={t('expenseForm.description')} value={recExpLabel} onChange={e => setRecExpLabel(e.target.value)} />
-          <div className="flex gap-2 items-center">
-            <Input type="number" placeholder={t('expenseForm.amount')} value={recExpAmount} onChange={e => setRecExpAmount(e.target.value)} className="flex-1" />
-            <CurrencyToggle value={recExpCurrency} onChange={setRecExpCurrency} />
-          </div>
-          <Select value={recExpCategory} onValueChange={setRecExpCategory}>
-            <SelectTrigger className="w-full">
-              <span className="flex-1 text-left text-sm">
-                {categories.find(c => c.name === recExpCategory)
-                  ? `${categories.find(c => c.name === recExpCategory)!.emoji} ${recExpCategory}`
-                  : recExpCategory}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map(c => (
-                <SelectItem key={c.name} value={c.name}>{c.emoji} {c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex gap-2 justify-end">
-            <Button variant="ghost" size="sm" onClick={() => setShowRecurringExpForm(false)}>{t('common.cancel')}</Button>
-            <Button size="sm" disabled={savingRecExp} onClick={handleSaveRecurringExpense}
-              className="bg-brand hover:bg-brand/90 text-white">
-              {savingRecExp ? t('common.loading') : t('personal.saveSalary')}
-            </Button>
-          </div>
-        </div>
-      )}
 
       {ledger.personalExpenses.length === 0 && ledger.recurringPersonalExpenses.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('expenses.noExpenses')}</p>
@@ -390,7 +257,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
               members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
               isSettled={false}
               hideSplitBadge
-              onEdit={e => { setEditingExpense(e); setShowExpenseDialog(true); }}
+              onEdit={e => setEditingExpense(e)}
               onDelete={e => {
                 const id = e.parentExpenseId ?? e.id;
                 setConfirm({
@@ -446,14 +313,14 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
         />
       )}
 
-      {/* Add / Edit expense dialog */}
-      {showExpenseDialog && personalGroupId && currentMemberId && (
+      {/* Edit expense dialog (creation lives in PersonalAddLauncher) */}
+      {editingExpense && personalGroupId && currentMemberId && (
         <AddExpenseDialog
-          open={showExpenseDialog}
-          onOpenChange={open => { setShowExpenseDialog(open); if (!open) setEditingExpense(null); }}
+          open={!!editingExpense}
+          onOpenChange={open => { if (!open) setEditingExpense(null); }}
           onSubmit={handleSubmitExpense}
           members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
-          initialExpense={editingExpense ?? undefined}
+          initialExpense={editingExpense}
           isSettled={false}
           hidePayerAndSplit
         />
@@ -471,32 +338,6 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
           destructive={confirm.destructive ?? true}
         />
       )}
-
-      {/* Duplicate expense dialog */}
-      <Dialog open={expenseDuplicates.length > 0} onOpenChange={isOpen => { if (!isOpen) { setPendingExpenseData(null); setExpenseDuplicates([]); } }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>{t('expenses.duplicateTitle')}</DialogTitle></DialogHeader>
-          <div className="text-sm space-y-1 text-muted-foreground">
-            <p>{t('expenses.duplicateDesc')}</p>
-            {expenseDuplicates[0] && (
-              <div className="mt-2 bg-muted rounded-lg p-3 text-foreground space-y-0.5">
-                <p className="font-medium">{expenseDuplicates[0].description}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatAmount(expenseDuplicates[0].amount, expenseDuplicates[0].currency)} · {expenseDuplicates[0].date}
-                </p>
-              </div>
-            )}
-            <p className="mt-2">{t('expenses.addAnywayQuestion')}</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setPendingExpenseData(null); setExpenseDuplicates([]); }}>{t('expenses.cancel')}</Button>
-            <Button className="bg-brand hover:bg-brand/90 text-white"
-              onClick={async () => { if (pendingExpenseData) await doCreatePersonalExpense(pendingExpenseData); }}>
-              {t('expenses.addAnyway')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
