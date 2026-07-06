@@ -148,11 +148,11 @@ export function FloatingTabBar() {
         />
       )}
 
-      {/* Action menu — Slack-style panel scaling in from the FAB */}
+      {/* Action menu — Slack-style liquid-glass panel scaling in from the FAB */}
       <div
         className={cn(
           'fixed right-5 z-40 lg:hidden w-80 max-w-[calc(100vw-2.5rem)]',
-          'rounded-2xl bg-card/95 backdrop-blur-xl border border-border/60 shadow-2xl p-2',
+          'liquid-glass rounded-2xl p-2',
           'origin-bottom-right transition-all duration-200 ease-out',
           speedDialOpen
             ? 'opacity-100 scale-100 translate-y-0'
@@ -167,7 +167,7 @@ export function FloatingTabBar() {
               key={item.label}
               type="button"
               onClick={item.onClick}
-              className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-accent/60 active:bg-accent/40 transition-colors cursor-pointer text-left"
+              className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-white/20 dark:hover:bg-white/10 active:bg-white/25 dark:active:bg-white/15 transition-colors cursor-pointer text-left"
             >
               <span className="w-10 h-10 rounded-lg bg-brand/15 text-brand flex items-center justify-center shrink-0">
                 <Icon className="h-5 w-5" />
@@ -181,15 +181,15 @@ export function FloatingTabBar() {
         })}
       </div>
 
-      {/* Main FAB — floats above the tab-bar line, iOS-style */}
+      {/* Main FAB — liquid-glass circle floating above the tab-bar line */}
       <button
         type="button"
         onClick={handleFabPress}
         className={cn(
           'fixed right-5 z-40 lg:hidden',
-          'w-14 h-14 rounded-full bg-brand text-white shadow-xl',
+          'liquid-glass w-14 h-14 rounded-full text-brand',
           'flex items-center justify-center cursor-pointer',
-          'hover:bg-brand/90 active:scale-95 transition-all duration-150',
+          'hover:bg-white/20 dark:hover:bg-white/10 active:scale-95 transition-all duration-150',
         )}
         style={{ bottom: `calc(5.25rem + env(safe-area-inset-bottom))` }}
         aria-label={t('fab.options')}

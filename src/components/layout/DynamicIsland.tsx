@@ -14,8 +14,7 @@ export function DynamicIsland({ state, groupName }: DynamicIslandProps) {
   return (
     <div
       className={cn(
-        'bg-foreground text-background rounded-full px-4 py-1.5',
-        'backdrop-blur-md shadow-sm',
+        'liquid-glass text-foreground rounded-full px-4 py-1.5',
         'flex items-center justify-center gap-1.5',
         'h-8 transition-all duration-300 ease-out overflow-hidden',
         isExpanded ? 'min-w-[160px]' : 'min-w-[120px]',
@@ -37,7 +36,7 @@ export function DynamicIsland({ state, groupName }: DynamicIslandProps) {
 
       {state === 'success' && (
         <>
-          <Check className="h-3.5 w-3.5 shrink-0" />
+          <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
           <span className="font-semibold text-xs tracking-tight">Guardado</span>
         </>
       )}
