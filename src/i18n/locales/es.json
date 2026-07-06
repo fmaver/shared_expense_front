@@ -121,7 +121,9 @@
     "chooseGroup": "Elegir grupo",
     "noGroups": "No tenés grupos aún.",
     "members_one": "{{count}} miembro",
-    "members_other": "{{count}} miembros"
+    "members_other": "{{count}} miembros",
+    "addExpenseDesc": "Sumá un gasto compartido",
+    "transferDesc": "Registrá un pago entre miembros"
   },
   "charts": {
     "title": "Gráficos",
@@ -429,6 +431,8 @@
     "status": "Estado",
     "addIncome": "Agregar ingreso",
     "oneOffExpense": "Gasto puntual",
-    "recurringExpense": "Gasto recurrente"
+    "recurringExpense": "Gasto recurrente",
+    "oneOffExpenseDesc": "Un gasto único de este mes",
+    "recurringExpenseDesc": "Se repite automáticamente cada mes"
   }
 }
