@@ -75,16 +75,18 @@ export function FloatingTabBar() {
         { to: '/profile', icon: User, label: t('mobileNav.profile') },
       ];
 
-  const speedDialItems = inGroup
+  const menuItems = inGroup
     ? [
         {
           icon: Plus,
           label: t('fab.addExpense'),
+          desc: t('fab.addExpenseDesc'),
           onClick: () => openLauncher('expense', groupId),
         },
         {
           icon: ArrowLeftRight,
           label: t('fab.transfer'),
+          desc: t('fab.transferDesc'),
           onClick: () => openLauncher('transfer', groupId),
         },
       ]
@@ -94,21 +96,25 @@ export function FloatingTabBar() {
         {
           icon: TrendingUp,
           label: t('personal.variableTitle'),
+          desc: t('personal.variableDesc'),
           onClick: () => { closeDial(); personalActions?.addIncome('variable'); },
         },
         {
           icon: CalendarClock,
           label: t('personal.recurringTitle'),
+          desc: t('personal.recurringDesc'),
           onClick: () => { closeDial(); personalActions?.addIncome('recurring'); },
         },
         {
           icon: TrendingDown,
           label: t('personal.oneOffExpense'),
+          desc: t('personal.oneOffExpenseDesc'),
           onClick: () => { closeDial(); personalActions?.addExpense(); },
         },
         {
           icon: Repeat,
           label: t('personal.recurringExpense'),
+          desc: t('personal.recurringExpenseDesc'),
           onClick: () => { closeDial(); personalActions?.addRecurringExpense(); },
         },
       ]
@@ -116,11 +122,13 @@ export function FloatingTabBar() {
         {
           icon: Plus,
           label: t('fab.addExpense'),
+          desc: t('fab.addExpenseDesc'),
           onClick: () => openLauncher('expense'),
         },
         {
           icon: ArrowLeftRight,
           label: t('fab.transfer'),
+          desc: t('fab.transferDesc'),
           onClick: () => openLauncher('transfer'),
         },
       ];
@@ -140,46 +148,40 @@ export function FloatingTabBar() {
         />
       )}
 
-      {/* Speed-dial mini-FABs */}
+      {/* Action menu — Slack-style panel scaling in from the FAB */}
       <div
-        className={cn('fixed right-5 z-40 lg:hidden flex flex-col items-end gap-2', !speedDialOpen && 'pointer-events-none')}
-        style={{ bottom: `calc(5.5rem + env(safe-area-inset-bottom))` }}>
-        {speedDialItems.map((item, i) => {
+        className={cn(
+          'fixed right-5 z-40 lg:hidden w-80 max-w-[calc(100vw-2.5rem)]',
+          'rounded-2xl bg-card/95 backdrop-blur-xl border border-border/60 shadow-2xl p-2',
+          'origin-bottom-right transition-all duration-200 ease-out',
+          speedDialOpen
+            ? 'opacity-100 scale-100 translate-y-0'
+            : 'opacity-0 scale-95 translate-y-2 pointer-events-none',
+        )}
+        style={{ bottom: `calc(9.5rem + env(safe-area-inset-bottom))` }}
+      >
+        {menuItems.map(item => {
           const Icon = item.icon;
-          const delay = `${(speedDialItems.length - 1 - i) * 60}ms`;
           return (
-            <div
+            <button
               key={item.label}
-              className={cn(
-                'flex items-center gap-2',
-                'transition-all duration-200 ease-out',
-                speedDialOpen
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-4 pointer-events-none',
-              )}
-              style={{ transitionDelay: speedDialOpen ? delay : '0ms' }}
+              type="button"
+              onClick={item.onClick}
+              className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-accent/60 active:bg-accent/40 transition-colors cursor-pointer text-left"
             >
-              <button
-                type="button"
-                onClick={item.onClick}
-                className="text-xs font-semibold text-foreground bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm border border-border/40 cursor-pointer"
-              >
-                {item.label}
-              </button>
-              <button
-                type="button"
-                onClick={item.onClick}
-                aria-label={item.label}
-                className="w-10 h-10 rounded-full bg-brand/90 text-white shadow-lg flex items-center justify-center cursor-pointer hover:bg-brand transition-colors"
-              >
-                <Icon className="h-4 w-4" />
-              </button>
-            </div>
+              <span className="w-10 h-10 rounded-lg bg-brand/15 text-brand flex items-center justify-center shrink-0">
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">{item.label}</span>
+                {item.desc && <span className="block text-xs text-muted-foreground truncate">{item.desc}</span>}
+              </span>
+            </button>
           );
         })}
       </div>
 
-      {/* Main FAB */}
+      {/* Main FAB — floats above the tab-bar line, iOS-style */}
       <button
         type="button"
         onClick={handleFabPress}
@@ -189,7 +191,7 @@ export function FloatingTabBar() {
           'flex items-center justify-center cursor-pointer',
           'hover:bg-brand/90 active:scale-95 transition-all duration-150',
         )}
-        style={{ bottom: `calc(1.25rem + env(safe-area-inset-bottom))` }}
+        style={{ bottom: `calc(5.25rem + env(safe-area-inset-bottom))` }}
         aria-label={t('fab.options')}
       >
         <Plus
@@ -205,8 +207,8 @@ export function FloatingTabBar() {
           This keeps the `50%` in calc(50vw - 50%) stable when the translate starts, preventing
           the overshoot/rebound caused by a moving target mid-animation.
           Collapse: translate + tab-shrink happen simultaneously (feels snappy).
-          Inside a group the pill swaps to back-chevron + group tabs and centres in the
-          space left of the FAB. */}
+          Inside a group the pill swaps to back-chevron + group tabs; the FAB
+          floats above the bar line so both modes centre on the viewport. */}
       <nav
         className="fixed z-40 lg:hidden"
         style={{
@@ -214,9 +216,7 @@ export function FloatingTabBar() {
           left: 0,
           transform: tabBarCollapsed
             ? 'translateX(1rem)'
-            : inGroup
-              ? 'translateX(calc((100vw - 4.75rem) / 2 - 50%))'
-              : 'translateX(calc(50vw - 50%))',
+            : 'translateX(calc(50vw - 50%))',
           transition: tabBarCollapsed
             ? 'transform 200ms ease-in'
             : 'transform 200ms ease-out 220ms',

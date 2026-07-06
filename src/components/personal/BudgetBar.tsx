@@ -87,8 +87,11 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
         </div>
       </div>
 
-      {/* Bar — fills clipped inside rounded overflow-hidden layer; marker + chip sit outside it */}
-      <div className={cn('relative h-5', showProjected && 'mt-9')}>
+      {/* Bar — chip headroom is PADDING on a wrapper: the card's space-y-*
+          margin selector outranks an mt-* here and would collapse it,
+          letting the chip float into the header row */}
+      <div className={cn(showProjected && 'pt-9')}>
+      <div className="relative h-5">
         <div className="absolute inset-0 rounded-full overflow-hidden">
           {/* Track */}
           <div className="absolute inset-0 bg-muted" />
@@ -131,6 +134,7 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
             />
           </>
         )}
+      </div>
       </div>
 
       {/* Legend — amounts match the bar zones */}
