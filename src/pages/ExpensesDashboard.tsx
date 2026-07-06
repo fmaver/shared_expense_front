@@ -262,20 +262,21 @@ export function ExpensesDashboard() {
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground shrink-0"
               onClick={handleExportPDF}
               title={t('expenses.exportPdfTitle')}>
-              <FileDown className="h-3.5 w-3.5 sm:mr-1" />
-              <span className="hidden sm:inline">{t('expenses.exportPdf')}</span>
+              <FileDown className="h-3.5 w-3.5 mr-1" />
+              <span>{t('expenses.exportPdf')}</span>
             </Button>
-            <Button size="sm" variant="outline" className="h-7 px-2 text-xs shrink-0"
+            {/* Add + Transfer live in the FAB speed-dial on mobile — desktop only here */}
+            <Button size="sm" variant="outline" className="hidden lg:inline-flex h-7 px-2 text-xs shrink-0"
               title={t('expenses.transfer')}
               onClick={() => { setShowTransfer(true); setShowAdd(false); }}>
-              <ArrowLeftRight className="h-3.5 w-3.5 sm:mr-1.5" />
-              <span className="hidden sm:inline">{t('expenses.transfer')}</span>
+              <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" />
+              <span>{t('expenses.transfer')}</span>
             </Button>
-            <Button size="sm" className="h-7 px-2 text-xs bg-brand hover:bg-brand/90 text-white shrink-0"
+            <Button size="sm" className="hidden lg:inline-flex h-7 px-2 text-xs bg-brand hover:bg-brand/90 text-white shrink-0"
               title={t('expenses.add')}
               onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); }}>
-              <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-              <span className="hidden sm:inline">{t('expenses.add')}</span>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              <span>{t('expenses.add')}</span>
             </Button>
           </div>
         </div>

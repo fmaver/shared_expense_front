@@ -25,9 +25,18 @@ export function GroupLayout() {
 
   return (
     <div className="flex flex-col flex-1">
-      {/* Group header + tabs */}
-      <div className="bg-card border-b border-border flex-shrink-0">
-        <div className="px-4 sm:px-6 pt-4 pb-0">
+      {/* Group header + tabs (tabs are desktop-only — mobile uses the floating bottom pill).
+          On mobile the whole header collapses with the title so no empty strip remains. */}
+      <div
+        className={cn(
+          'bg-card border-b flex-shrink-0 transition-colors duration-300',
+          isAtTop ? 'border-border' : 'border-transparent lg:border-border',
+        )}
+      >
+        <div
+          className={cn('px-4 sm:px-6 pb-0 lg:pt-4', isAtTop ? 'pt-4' : 'pt-0')}
+          style={{ transition: 'padding 420ms cubic-bezier(0.32,0.72,0,1)' }}
+        >
           {/* Large collapsing title — visible at top, collapses on scroll (mobile only) */}
           <div
             style={{ transition: 'max-height 420ms cubic-bezier(0.32,0.72,0,1), opacity 350ms ease-out, margin-bottom 420ms cubic-bezier(0.32,0.72,0,1)' }}
@@ -42,7 +51,7 @@ export function GroupLayout() {
               <h2 className="text-lg font-bold text-foreground">{group?.name}</h2>
             )}
           </div>
-          <nav className="-mb-px flex gap-0">
+          <nav className="-mb-px hidden lg:flex gap-0">
             {TABS.map(tab => (
               <NavLink
                 key={tab.label}

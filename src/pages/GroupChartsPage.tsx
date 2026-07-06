@@ -2,19 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  PieChart,
-  Pie,
   Cell,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
+import { useCategories } from '@/hooks/useCategories';
+import { CategoryBarList } from '@/components/charts/CategoryBarList';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { getGroupTrend } from '@/api/shares';
 import type { MonthTrendPoint } from '@/api/shares';
@@ -37,6 +36,7 @@ export function GroupChartsPage() {
 
   const { data: balance } = useMonthlyBalance(groupId, year, month);
   const { data: members } = useGroupMembers(groupId);
+  const { data: categories } = useCategories();
 
   useEffect(() => {
     getGroupTrend(groupId, 6).then(setTrend);
@@ -106,24 +106,10 @@ export function GroupChartsPage() {
           {noData ? (
             <p className="text-sm text-muted-foreground">{t('charts.noData')}</p>
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  dataKey="value"
-                >
-                  {categoryData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <CategoryBarList
+              items={categoryData.map(d => ({ ...d, emoji: categories.find(c => c.name === d.name)?.emoji }))}
+              formatValue={(v) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+            />
           )}
         </div>
 

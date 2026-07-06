@@ -1,22 +1,29 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
+/** Add-entry actions for the personal area, registered by PersonalAddLauncher. */
+export interface PersonalAddActions {
+  /** Open the income dialog; omit `type` to start at the type picker. */
+  addIncome: (type?: 'recurring' | 'variable') => void;
+  addExpense: () => void;
+  addRecurringExpense: () => void;
+}
+
 interface FabActionsContextValue {
-  personalAdd: (() => void) | null;
-  registerPersonalAdd: (fn: (() => void) | null) => void;
+  personalActions: PersonalAddActions | null;
+  registerPersonalActions: (actions: PersonalAddActions | null) => void;
 }
 
 const FabActionsContext = createContext<FabActionsContextValue | null>(null);
 
 export function FabActionsProvider({ children }: { children: React.ReactNode }) {
-  const [personalAdd, setPersonalAdd] = useState<(() => void) | null>(null);
+  const [personalActions, setPersonalActions] = useState<PersonalAddActions | null>(null);
 
-  const registerPersonalAdd = useCallback((fn: (() => void) | null) => {
-    // Store as a function-returning-fn to avoid React treating fn itself as a state updater
-    setPersonalAdd(fn === null ? null : () => fn);
+  const registerPersonalActions = useCallback((actions: PersonalAddActions | null) => {
+    setPersonalActions(actions);
   }, []);
 
   return (
-    <FabActionsContext.Provider value={{ personalAdd, registerPersonalAdd }}>
+    <FabActionsContext.Provider value={{ personalActions, registerPersonalActions }}>
       {children}
     </FabActionsContext.Provider>
   );

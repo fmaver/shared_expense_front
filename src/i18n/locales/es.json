@@ -108,6 +108,21 @@
     "settings": "Configuración",
     "charts": "Gráficos"
   },
+  "mobileNav": {
+    "personal": "Personal",
+    "groups": "Grupos",
+    "profile": "Perfil",
+    "backToGroups": "Volver a grupos"
+  },
+  "fab": {
+    "options": "Opciones",
+    "addExpense": "Agregar gasto",
+    "transfer": "Transferencia",
+    "chooseGroup": "Elegir grupo",
+    "noGroups": "No tenés grupos aún.",
+    "members_one": "{{count}} miembro",
+    "members_other": "{{count}} miembros"
+  },
   "charts": {
     "title": "Gráficos",
     "categoryBreakdown": "Gastos por categoría",
@@ -118,7 +133,14 @@
     "debit": "Débito",
     "credit": "Crédito",
     "income": "Ingresos",
-    "expenses": "Gastos"
+    "expenses": "Gastos",
+    "monthlyTrend": "Tendencia mensual",
+    "groups": "Grupos",
+    "personal": "Personal",
+    "groupContribution": "Contribución por grupo",
+    "cumulativeSpend": "Gasto acumulado del mes",
+    "thisMonth": "Este mes",
+    "lastMonth": "Mes pasado"
   },
   "balance": {
     "title": "Balance",
@@ -173,7 +195,8 @@
     "currency": "Moneda",
     "viewInARS": "Ver en ARS",
     "viewOriginal": "Ver original",
-    "recurringBadgeTitle": "Gasto recurrente"
+    "recurringBadgeTitle": "Gasto recurrente",
+    "installment": "Cuota"
   },
   "months": [
     "Enero",
@@ -312,7 +335,8 @@
     "save": "Guardar",
     "loading": "Cargando…",
     "confirm": "Confirmar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "back": "Volver"
   },
   "categories": {
     "comida": "Comida",
@@ -389,6 +413,22 @@
     "savingsRate": "{{rate}}% ahorrado",
     "projectedSavings": "{{rate}}% proyectado",
     "overBudget": "Excedido",
-    "projectedTick": "Proyectado"
+    "projectedTick": "Proyectado",
+    "viewAll": "Ver todo ({{total}})",
+    "legendExpenses": "Gastos",
+    "legendPending": "Costos grupales pendientes",
+    "legendProjected": "Ahorro proyectado",
+    "paceInsight": "A este ritmo, ahorrarías ≈ {{amount}} este mes",
+    "paceOverspend": "A este ritmo, te excederías ≈ {{amount}} este mes",
+    "monthResult": "Este mes cerró con {{amount}} ahorrado",
+    "monthResultNegative": "Este mes cerró {{amount}} excedido",
+    "paid": "Pagado",
+    "myShare": "Mi parte",
+    "toReceive": "A recibir",
+    "group": "Grupo",
+    "status": "Estado",
+    "addIncome": "Agregar ingreso",
+    "oneOffExpense": "Gasto puntual",
+    "recurringExpense": "Gasto recurrente"
   }
 }

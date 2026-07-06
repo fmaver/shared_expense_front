@@ -108,6 +108,21 @@
     "settings": "Settings",
     "charts": "Charts"
   },
+  "mobileNav": {
+    "personal": "Personal",
+    "groups": "Groups",
+    "profile": "Profile",
+    "backToGroups": "Back to groups"
+  },
+  "fab": {
+    "options": "Options",
+    "addExpense": "Add expense",
+    "transfer": "Transfer",
+    "chooseGroup": "Choose a group",
+    "noGroups": "You don't have any groups yet.",
+    "members_one": "{{count}} member",
+    "members_other": "{{count}} members"
+  },
   "charts": {
     "title": "Charts",
     "categoryBreakdown": "Spending by category",
@@ -118,7 +133,14 @@
     "debit": "Debit",
     "credit": "Credit",
     "income": "Income",
-    "expenses": "Expenses"
+    "expenses": "Expenses",
+    "monthlyTrend": "Monthly trend",
+    "groups": "Groups",
+    "personal": "Personal",
+    "groupContribution": "Group contribution",
+    "cumulativeSpend": "Cumulative spend this month",
+    "thisMonth": "This month",
+    "lastMonth": "Last month"
   },
   "balance": {
     "title": "Balance",
@@ -173,7 +195,8 @@
     "currency": "Currency",
     "viewInARS": "View in ARS",
     "viewOriginal": "View original",
-    "recurringBadgeTitle": "Recurring expense"
+    "recurringBadgeTitle": "Recurring expense",
+    "installment": "Instalment"
   },
   "months": [
     "January",
@@ -312,7 +335,8 @@
     "save": "Save",
     "loading": "Loading…",
     "confirm": "Confirm",
-    "delete": "Delete"
+    "delete": "Delete",
+    "back": "Back"
   },
   "categories": {
     "comida": "Food",
@@ -389,6 +413,22 @@
     "savingsRate": "{{rate}}% saved",
     "projectedSavings": "{{rate}}% projected",
     "overBudget": "Over budget",
-    "projectedTick": "Projected"
+    "projectedTick": "Projected",
+    "viewAll": "View all ({{total}})",
+    "legendExpenses": "Expenses",
+    "legendPending": "Pending group costs",
+    "legendProjected": "Projected savings",
+    "paceInsight": "At this pace, you'd save ≈ {{amount}} this month",
+    "paceOverspend": "At this pace, you'd overspend by ≈ {{amount}} this month",
+    "monthResult": "This month closed with {{amount}} saved",
+    "monthResultNegative": "This month closed {{amount}} over budget",
+    "paid": "Paid",
+    "myShare": "My share",
+    "toReceive": "To receive",
+    "group": "Group",
+    "status": "Status",
+    "addIncome": "Add income",
+    "oneOffExpense": "One-off expense",
+    "recurringExpense": "Recurring expense"
   }
 }
