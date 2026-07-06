@@ -52,7 +52,7 @@ export function AccountMenu({ onLogout }: AccountMenuProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer flex-shrink-0"
+        className="liquid-glass w-8 h-8 rounded-full flex items-center justify-center text-brand text-xs font-bold cursor-pointer flex-shrink-0"
         aria-label="Abrir cuenta"
       >
         {initials}
