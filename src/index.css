@@ -91,6 +91,27 @@
     0 8px  28px rgba(0, 0, 0, 0.50);
 }
 
+/* ── Savings hatch — budget bar "projected savings" zone ───────────────────
+   A diagonal two-tone emerald stripe reads as "projected / what you keep",
+   distinct from the solid committed zones (spent + pending group costs).
+   Shades track Tailwind's emerald-400/500 (light) and 500/600 (dark), the
+   same scale the solid zones use, so light and dark stay coherent.
+   -------------------------------------------------------------------------- */
+.savings-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    #34d399 0, #34d399 6px,
+    #10b981 6px, #10b981 12px
+  );
+}
+.dark .savings-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    #10b981 0, #10b981 6px,
+    #059669 6px, #059669 12px
+  );
+}
+
 /* Floating tab bar mode swap (global ⇄ group tab sets) */
 @keyframes tabset-in {
   from { opacity: 0; transform: scale(0.96); }

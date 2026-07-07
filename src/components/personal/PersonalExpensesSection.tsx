@@ -116,10 +116,10 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <TrendingDown className="h-4 w-4 text-red-500" /> {t('personal.personalExpenses')}
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5 min-w-0">
+            <TrendingDown className="h-4 w-4 text-red-500 shrink-0" /> <span className="truncate">{t('personal.personalExpenses')}</span>
           </h2>
           {blueRate !== null && (ledger.personalExpenses.some(e => e.currency === 'USD') || ledger.recurringPersonalExpenses.some(i => i.currency === 'USD')) && (
             <button
@@ -136,7 +136,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 ml-auto">
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={totalCount} />}
           {/* Mobile adds via the floating + dial; desktop keeps these buttons */}
           <div className="hidden lg:flex gap-2">

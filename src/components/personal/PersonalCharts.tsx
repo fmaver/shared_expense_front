@@ -16,9 +16,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { CategoryBarList } from '@/components/charts/CategoryBarList';
+import { CHART_COLORS, SERIES } from '@/constants/chartColors';
 import type { PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
-
-const CHART_COLORS = ['#6366f1','#22c55e','#f59e0b','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4','#84cc16'];
 
 interface PersonalChartsProps {
   ledger: PersonalLedgerResponse;
@@ -76,15 +75,20 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
   const prevMonthNum = month === 1 ? 12 : month - 1;
   const daysInMonth = new Date(year, month, 0).getDate();
   const prevDaysInMonth = new Date(prevYear, prevMonthNum, 0).getDate();
-  const totalDays = Math.max(daysInMonth, prevLedger ? prevDaysInMonth : 0);
+  // For the current month, stop at today so there's no empty future tail; the
+  // last-month line is trimmed to the same day for a fair "same point in the
+  // month" comparison. Past months always show the full month.
+  const now = new Date();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+  const cap = isCurrentMonth ? Math.min(now.getDate(), daysInMonth) : daysInMonth;
   let running = 0, prevRunning = 0;
   const cumulativeData: {day: string; total: number | null; prev: number | null}[] = [];
-  for (let i = 1; i <= totalDays; i++) {
-    if (i <= daysInMonth) running += dayMap[`${year}-${pad(month)}-${pad(i)}`] ?? 0;
+  for (let i = 1; i <= cap; i++) {
+    running += dayMap[`${year}-${pad(month)}-${pad(i)}`] ?? 0;
     if (prevLedger && i <= prevDaysInMonth) prevRunning += prevDayMap[`${prevYear}-${pad(prevMonthNum)}-${pad(i)}`] ?? 0;
     cumulativeData.push({
       day: String(i),
-      total: i <= daysInMonth ? running : null,
+      total: running,
       prev: (prevLedger && i <= prevDaysInMonth) ? prevRunning : null,
     });
   }
@@ -126,9 +130,9 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
               <XAxis dataKey="label" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
               <Tooltip formatter={(v: number) => fmt(v)} />
-              <Bar dataKey="groups" name={t('charts.groups')} fill="#6366f1" stackId="stack" />
-              <Bar dataKey="personal" name={t('charts.personal')} fill="#f97316" stackId="stack" />
-              <Bar dataKey="income" name={t('charts.income')} fill="#22c55e" stackId="stack" radius={[3,3,0,0]} />
+              <Bar dataKey="groups" name={t('charts.groups')} fill={SERIES.groups} stackId="stack" />
+              <Bar dataKey="personal" name={t('charts.personal')} fill={SERIES.personal} stackId="stack" />
+              <Bar dataKey="income" name={t('charts.income')} fill={SERIES.income} stackId="stack" radius={[3,3,0,0]} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
             </BarChart>
           </ResponsiveContainer>
@@ -186,12 +190,12 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={cumulativeData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.08} />
-              <XAxis dataKey="day" tick={{ fontSize: 10 }} interval={4} />
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} interval={cumulativeData.length > 10 ? Math.floor(cumulativeData.length / 6) : 0} />
               <YAxis tick={{ fontSize: 11 }} width={60} tickFormatter={fmt} />
               <Tooltip formatter={(v: number | null) => v != null ? fmt(v) : '—'} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
-              <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} name={t('charts.thisMonth')} connectNulls={false} />
-              {prevLedger && <Line type="monotone" dataKey="prev" stroke="#94a3b8" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name={t('charts.lastMonth')} connectNulls={false} />}
+              <Line type="monotone" dataKey="total" stroke={SERIES.thisMonth} strokeWidth={2} dot={false} name={t('charts.thisMonth')} connectNulls={false} />
+              {prevLedger && <Line type="monotone" dataKey="prev" stroke={SERIES.lastMonth} strokeWidth={1.5} dot={false} strokeDasharray="4 2" name={t('charts.lastMonth')} connectNulls={false} />}
             </LineChart>
           </ResponsiveContainer>
         </div>

@@ -8,12 +8,16 @@ interface BudgetBarProps {
   currentBalance: number;
   projectedBalance: number;
   pendingSettlementsTotal: number;
+  /** One-off (non-recurring) personal spend so far this month, in ARS. Only
+   *  this portion is extrapolated for the pace projection — fixed recurring
+   *  bills and pending group costs are already inside `projectedBalance`. */
+  variableExpensesSoFar: number;
   year: number;
   month: number;
   formatAmt: (n: number) => string;
 }
 
-export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalance, pendingSettlementsTotal, year, month, formatAmt }: BudgetBarProps) {
+export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projectedBalance, pendingSettlementsTotal, variableExpensesSoFar, year, month, formatAmt }: BudgetBarProps) {
   const { t } = useTranslation();
   if (totalIncome <= 0.01) return null;
 
@@ -38,19 +42,23 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
   const currentSavingsRate = Math.max(0, Math.round((currentBalance / totalIncome) * 100));
   const isOverBudget = projectedBalance < 0 || totalExpenses > totalIncome;
 
-  const headerColor = isOverBudget
-    ? 'text-red-500'
+  // Status pill — semantic tint by projected savings health
+  const status = isOverBudget
+    ? { label: t('personal.overBudget'), cls: 'text-rose-600 bg-rose-500/15 dark:text-rose-300' }
     : projectedSavingsRate >= 30
-    ? 'text-emerald-600'
+    ? { label: t('personal.onTrack'), cls: 'text-emerald-600 bg-emerald-500/15 dark:text-emerald-300' }
     : projectedSavingsRate > 0
-    ? 'text-amber-500'
-    : 'text-red-500';
+    ? { label: t('personal.tight'), cls: 'text-amber-600 bg-amber-500/15 dark:text-amber-400' }
+    : { label: t('personal.overBudget'), cls: 'text-rose-600 bg-rose-500/15 dark:text-rose-300' };
 
   // Legend amounts derive from the same zone math so they always match the bar
   const amberAmount = (totalIncome * amberPct) / 100;
   const greenAmount = (totalIncome * greenPct) / 100;
 
-  // Insight line: pace-based projection for the current month, actual result for past months
+  // Insight line: pace-based projection for the current month, actual result for past months.
+  // Pace = projectedBalance (already nets out recurring bills + pending group costs)
+  // minus the *extra* variable spend expected for the remaining days. Derived from
+  // projectedBalance, so it can never contradict the emerald "projected savings" zone.
   const now = new Date();
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
   const isPastMonth = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
@@ -59,7 +67,8 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
     const dayOfMonth = now.getDate();
     const daysInMonth = new Date(year, month, 0).getDate();
     if (dayOfMonth >= 1 && totalExpenses > 0) {
-      const paceSavings = totalIncome - (totalExpenses / dayOfMonth) * daysInMonth;
+      const remainingFactor = (daysInMonth - dayOfMonth) / dayOfMonth;
+      const paceSavings = projectedBalance - variableExpensesSoFar * remainingFactor;
       insight = paceSavings >= 0
         ? t('personal.paceInsight', { amount: formatAmt(paceSavings) })
         : t('personal.paceOverspend', { amount: formatAmt(Math.abs(paceSavings)) });
@@ -73,16 +82,17 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
   return (
     <div className="bg-card border border-border rounded-xl p-4 space-y-3">
       {/* Header row */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-semibold text-foreground">{t('personal.budgetBar')}</p>
-        <div className="text-right">
-          <p className={cn('text-sm font-bold', headerColor)}>
-            {isOverBudget ? t('personal.overBudget') : t('personal.projectedSavings', { rate: projectedSavingsRate })}
-          </p>
+        <div className="flex flex-col items-end gap-1">
+          <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold', status.cls)}>
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {isOverBudget ? status.label : `${status.label} · ${t('personal.projectedSavings', { rate: projectedSavingsRate })}`}
+          </span>
           {hasPending && !isOverBudget && (
-            <p className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {t('personal.savingsRate', { rate: currentSavingsRate })}
-            </p>
+            </span>
           )}
         </div>
       </div>
@@ -91,7 +101,7 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
           margin selector outranks an mt-* here and would collapse it,
           letting the chip float into the header row */}
       <div className={cn(showProjected && 'pt-9')}>
-      <div className="relative h-5">
+      <div className="relative h-3.5">
         <div className="absolute inset-0 rounded-full overflow-hidden">
           {/* Track */}
           <div className="absolute inset-0 bg-muted" />
@@ -109,10 +119,11 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
               style={{ left: `${personalPct}%`, right: `${greenPct}%` }}
             />
           )}
-          {/* Projected savings (emerald, right-anchored) */}
+          {/* Projected savings (emerald hatch, right-anchored) — the diagonal
+              stripe reads as "what you keep / projected" vs the solid zones */}
           {greenPct > 0 && (
             <div
-              className="absolute top-0 h-full bg-emerald-400 dark:bg-emerald-500 transition-all duration-700 ease-out"
+              className="savings-hatch absolute top-0 h-full transition-all duration-700 ease-out"
               style={{ left: `${indicatorPct}%`, right: 0 }}
             />
           )}
@@ -153,7 +164,7 @@ export function BudgetBar({ totalIncome, totalExpenses, currentBalance, projecte
         )}
         {greenPct > 0 && (
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 dark:bg-emerald-500 shrink-0" />
+            <span className="savings-hatch h-2 w-2 rounded-full shrink-0" />
             <span className="text-muted-foreground">{t('personal.legendProjected')}</span>
             <span className="font-semibold text-foreground tabular-nums">
               {formatAmt(greenAmount)} ({projectedSavingsRate}%)

@@ -415,6 +415,8 @@
     "savingsRate": "{{rate}}% saved",
     "projectedSavings": "{{rate}}% projected",
     "overBudget": "Over budget",
+    "onTrack": "On track",
+    "tight": "Tight",
     "projectedTick": "Projected",
     "viewAll": "View all ({{total}})",
     "legendExpenses": "Expenses",
