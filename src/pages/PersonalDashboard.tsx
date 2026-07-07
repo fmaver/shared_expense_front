@@ -100,6 +100,17 @@ export function PersonalDashboard() {
     <PersonalAddLauncher ledger={ledger} year={year} month={month} categories={categories} refetch={refetch} />
   );
 
+  // Variable (one-off) spend so far, in ARS — the only portion the budget bar's
+  // pace projection extrapolates. Split recurring vs one-off by their nominal
+  // ratio, then anchor on the backend's ARS `totalPersonalExpenses` so it stays
+  // currency-correct (exact when single-currency; sound ratio if USD+ARS mixed).
+  const rawRecurring = (ledger?.recurringPersonalExpenses ?? []).reduce((s, e) => s + e.amount, 0);
+  const rawVariable = (ledger?.personalExpenses ?? []).reduce((s, e) => s + e.amount, 0);
+  const rawExpenses = rawRecurring + rawVariable;
+  const variableExpensesSoFar = ledger && rawExpenses > 0
+    ? ledger.totalPersonalExpenses * (rawVariable / rawExpenses)
+    : 0;
+
   if (isLoading) {
     return (
       <div className="flex flex-col flex-1">
@@ -155,6 +166,7 @@ export function PersonalDashboard() {
             currentBalance={ledger.currentBalance}
             projectedBalance={ledger.projectedBalance}
             pendingSettlementsTotal={ledger.pendingSettlementsTotal}
+            variableExpensesSoFar={variableExpensesSoFar}
             year={year}
             month={month}
             formatAmt={formatCurrency}

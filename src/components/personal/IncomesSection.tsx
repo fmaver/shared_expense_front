@@ -95,10 +95,10 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <TrendingUp className="h-4 w-4 text-green-600" />{t('personal.income')}
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5 min-w-0">
+            <TrendingUp className="h-4 w-4 text-green-600 shrink-0" /><span className="truncate">{t('personal.income')}</span>
           </h2>
           {blueRate !== null && ledger.incomes.some(i => i.currency === 'USD') && (
             <button
@@ -115,7 +115,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 ml-auto">
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={ledger.incomes.length} />}
           {/* Mobile adds via the floating + dial; desktop keeps this button */}
           <Button variant="outline" size="sm" className="hidden lg:inline-flex"

@@ -415,6 +415,8 @@
     "savingsRate": "{{rate}}% ahorrado",
     "projectedSavings": "{{rate}}% proyectado",
     "overBudget": "Excedido",
+    "onTrack": "En camino",
+    "tight": "Ajustado",
     "projectedTick": "Proyectado",
     "viewAll": "Ver todo ({{total}})",
     "legendExpenses": "Gastos",

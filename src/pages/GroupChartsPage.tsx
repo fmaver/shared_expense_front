@@ -17,11 +17,7 @@ import { CategoryBarList } from '@/components/charts/CategoryBarList';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { getGroupTrend } from '@/api/shares';
 import type { MonthTrendPoint } from '@/api/shares';
-
-const COLORS = [
-  '#6366f1', '#22c55e', '#f59e0b', '#ec4899',
-  '#14b8a6', '#f97316', '#8b5cf6', '#06b6d4', '#84cc16',
-];
+import { CHART_COLORS, SERIES } from '@/constants/chartColors';
 
 const MONTH_ABBREVS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -124,9 +120,9 @@ export function GroupChartsPage() {
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 11 }} width={60} />
                 <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-                <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="value" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]}>
                   {payerData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -145,9 +141,9 @@ export function GroupChartsPage() {
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={60} />
                 <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-                <Bar dataKey="value" fill="#22c55e" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="value" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]}>
                   {paymentTypeData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -167,7 +163,7 @@ export function GroupChartsPage() {
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 11 }} width={70} />
               <Tooltip formatter={(v: number) => v.toLocaleString('es-AR', { maximumFractionDigits: 0 })} />
-              <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="total" fill={SERIES.groups} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
