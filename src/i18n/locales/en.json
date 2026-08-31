@@ -268,7 +268,7 @@
     "whatsappChannel": "WhatsApp / Phone",
     "emailAddress": "Email address",
     "phoneNumber": "WhatsApp number",
-    "phoneHelp": "Include country code, no + sign.",
+    "phoneHelp": "Don't include the 9. For example: 11 3456 7890.",
     "sendInvite": "Send invite",
     "sending": "Sending…",
     "joinLinkTitle": "Shareable join link",
