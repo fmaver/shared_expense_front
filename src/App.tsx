@@ -19,6 +19,7 @@ import { CurrencyProvider } from './contexts/CurrencyContext';
 import { IslandProvider } from './contexts/IslandContext';
 import { FabActionsProvider } from './contexts/FabActionsContext';
 import { ScrollProvider } from './contexts/ScrollContext';
+import { ExpenseRefreshProvider } from './contexts/ExpenseRefreshContext';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -68,6 +69,7 @@ function App() {
       <IslandProvider>
         <ScrollProvider>
         <FabActionsProvider>
+        <ExpenseRefreshProvider>
       <Routes>
         {/* Public */}
         <Route path="/" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LandingPage />} />
@@ -96,6 +98,7 @@ function App() {
           </Route>
         )}
       </Routes>
+        </ExpenseRefreshProvider>
         </FabActionsProvider>
         </ScrollProvider>
       </IslandProvider>

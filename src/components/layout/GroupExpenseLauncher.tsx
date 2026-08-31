@@ -5,6 +5,7 @@ import { useGroupMembers } from '@/hooks/useMembers';
 import { getCurrentUser } from '@/api/auth';
 import { useGroupExpenseCreate } from '@/hooks/useGroupExpenseCreate';
 import { useIsland } from '@/contexts/IslandContext';
+import { useExpenseRefresh } from '@/contexts/ExpenseRefreshContext';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { TransferDialog } from '@/components/expenses/TransferDialog';
 import {
@@ -42,6 +43,7 @@ function GroupExpenseDialogs({
 }) {
   const { t } = useTranslation();
   const island = useIsland();
+  const { requestExpenseRefresh } = useExpenseRefresh();
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
 
@@ -53,8 +55,11 @@ function GroupExpenseDialogs({
 
   const handleDone = useCallback(() => {
     island.success();
+    // The launcher lives outside the group pages' subtree, so signal them to
+    // refetch instead of relying on a local refetch they can't reach.
+    requestExpenseRefresh();
     onClose();
-  }, [island, onClose]);
+  }, [island, requestExpenseRefresh, onClose]);
 
   const { create, duplicates, pendingExpense, confirm, cancel } = useGroupExpenseCreate({
     groupId,
