@@ -338,6 +338,7 @@
     "loading": "Cargando…",
     "confirm": "Confirmar",
     "delete": "Eliminar",
+    "edit": "Editar",
     "back": "Volver"
   },
   "categories": {
@@ -419,6 +420,7 @@
     "tight": "Ajustado",
     "projectedTick": "Proyectado",
     "viewAll": "Ver todo ({{total}})",
+    "showMore": "Ver más ({{count}})",
     "legendExpenses": "Gastos",
     "legendPending": "Costos grupales pendientes",
     "legendProjected": "Ahorro proyectado",
