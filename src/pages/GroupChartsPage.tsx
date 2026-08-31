@@ -13,6 +13,7 @@ import {
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
 import { useCategories } from '@/hooks/useCategories';
+import { useExpenseRefresh } from '@/contexts/ExpenseRefreshContext';
 import { CategoryBarList } from '@/components/charts/CategoryBarList';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
 import { getGroupTrend } from '@/api/shares';
@@ -33,10 +34,13 @@ export function GroupChartsPage() {
   const { data: balance } = useMonthlyBalance(groupId, year, month);
   const { data: members } = useGroupMembers(groupId);
   const { data: categories } = useCategories();
+  const { refreshSignal } = useExpenseRefresh();
 
+  // `balance` auto-refreshes via useMonthlyBalance; the trend has its own fetch,
+  // so refetch it too when an expense is created (refreshSignal bumps).
   useEffect(() => {
     getGroupTrend(groupId, 6).then(setTrend);
-  }, [groupId]);
+  }, [groupId, refreshSignal]);
 
   const memberName = (id: number | string) => {
     const found = members.find(m => m.id === Number(id));
