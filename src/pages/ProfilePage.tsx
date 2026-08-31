@@ -5,6 +5,7 @@ import { getCurrentUser, updateProfile, NotificationType } from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -13,25 +14,7 @@ import {
   SelectTrigger,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-/**
- * The backend stores Argentine numbers as 54XXXXXXXXXX (no leading 9 after country code).
- * We display them as +54 9 XX XXXX-XXXX so users can read and compare against their WhatsApp number.
- * On save we strip all non-digits to send back the raw number.
- */
-function formatPhoneForDisplay(raw: string): string {
-  if (!raw) return '';
-  const digits = raw.replace(/\D/g, '');
-  if (digits.startsWith('54') && digits.length >= 12) {
-    const local = digits.slice(2);
-    return `+54 9 ${local.slice(0, 2)} ${local.slice(2, 6)}-${local.slice(6)}`;
-  }
-  return raw;
-}
-
-function normalizePhoneForStorage(display: string): string {
-  return display.replace(/\D/g, '');
-}
+import { normalizeArPhone, localArPhone } from '@/utils/phone';
 
 function getInitials(name: string): string {
   if (!name) return '?';
@@ -60,7 +43,7 @@ export function ProfilePage() {
         const userData = await getCurrentUser();
         setName(userData.name);
         setEmail(userData.email);
-        setTelephone(formatPhoneForDisplay(userData.telephone ?? ''));
+        setTelephone(localArPhone(userData.telephone));
         setNotificationPreference(userData.notificationPreference);
       } catch {
         toast.error('Failed to load user data');
@@ -83,7 +66,7 @@ export function ProfilePage() {
       await updateProfile({
         name,
         email,
-        telephone: normalizePhoneForStorage(telephone),
+        telephone: normalizeArPhone(telephone),
         notification_preference: notificationPreference,
       });
       toast.success(t('toasts.profileUpdated'));
@@ -165,13 +148,10 @@ export function ProfilePage() {
                 <span className="text-destructive ml-1">*</span>
               )}
             </Label>
-            <Input
+            <PhoneInput
               id="telephone"
-              type="tel"
               value={telephone}
-              onChange={(e) => setTelephone(e.target.value)}
-              placeholder="+54 9 11 1234-5678"
-              className="text-sm"
+              onChange={setTelephone}
             />
             <p className="text-xs text-muted-foreground">{t('profile.phoneHelp')}</p>
             {notificationPreference === 'WHATSAPP' && !telephone && (

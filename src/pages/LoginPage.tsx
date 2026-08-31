@@ -5,10 +5,12 @@ import { login, register } from '@/api/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Phone } from 'lucide-react';
 import axios from 'axios';
+import { normalizeArPhone } from '@/utils/phone';
 
 interface LoginPageProps {
   onLoginSuccess: (token: string) => void;
@@ -60,7 +62,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     if (password !== confirmPassword) { setError(t('auth.passwordMismatch')); return; }
     setError(''); setIsLoading(true);
     try {
-      await register({ name, email, password, telephone: telephone.trim() || undefined });
+      await register({ name, email, password, telephone: normalizeArPhone(telephone) || undefined });
       const res = await login({ username: email, password });
       const expiration = new Date(Date.now() + 30 * 60_000).toISOString();
       localStorage.setItem('token', res.access_token);
@@ -172,8 +174,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   <Phone className="h-3.5 w-3.5" /> {t('auth.whatsappPhone')}
                   <span className="text-muted-foreground font-normal">{t('auth.optional')}</span>
                 </Label>
-                <Input id="phone" type="tel" placeholder="e.g. 541138718498"
-                  value={telephone} onChange={e => setTelephone(e.target.value)} />
+                <PhoneInput id="phone" value={telephone} onChange={setTelephone} />
                 <p className="text-xs text-muted-foreground">{t('auth.phoneHelp')}</p>
               </div>
               <div className="space-y-1.5">
