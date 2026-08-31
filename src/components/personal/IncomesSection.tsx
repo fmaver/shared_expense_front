@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { capitalize } from '@/utils/format';
 import { ViewAllLink } from './ViewAllLink';
+import { IncomeDetailDialog } from './IncomeDetailDialog';
 import {
   updateRecurringIncome,
   updateVariableIncome,
@@ -33,11 +35,14 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
   const { displayMode, setDisplayMode, blueRate, formatAmount } = useCurrency();
   const { personalActions } = useFabActions();
 
-  // Income edit state
+  // Income edit state (desktop inline editor)
   const [editingIncomeId, setEditingIncomeId] = useState<number | null>(null);
   const [editIncomeLabel, setEditIncomeLabel] = useState('');
   const [editIncomeAmount, setEditIncomeAmount] = useState('');
   const [savingEditIncome, setSavingEditIncome] = useState(false);
+
+  // Tap-to-open detail sheet (the mobile edit/delete entry point)
+  const [detailIncome, setDetailIncome] = useState<IncomeInstanceResponse | null>(null);
 
   // Confirmation dialog state — replaces window.confirm()
   const [confirm, setConfirm] = useState<{ title: string; description?: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void } | null>(null);
@@ -47,29 +52,29 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
   const visibleIncomes = limit ? sortedIncomes.slice(0, limit) : sortedIncomes;
   const hasMore = limit !== undefined && ledger.incomes.length > limit;
 
-  const handleSaveEditIncome = async (income: IncomeInstanceResponse) => {
-    if (!editIncomeLabel || !editIncomeAmount) return;
-    setSavingEditIncome(true);
+  // Shared save used by both the desktop inline editor and the detail sheet.
+  const saveIncome = async (income: IncomeInstanceResponse, label: string, amount: number): Promise<boolean> => {
+    if (!label || !Number.isFinite(amount)) return false;
     try {
       if (income.source === 'recurring' && income.recurringIncomeId) {
-        await updateRecurringIncome(income.recurringIncomeId, {
-          label: editIncomeLabel,
-          amount: parseFloat(editIncomeAmount),
-        }, year, month);
+        await updateRecurringIncome(income.recurringIncomeId, { label, amount }, year, month);
       } else {
-        await updateVariableIncome(income.id, {
-          label: editIncomeLabel,
-          amount: parseFloat(editIncomeAmount),
-        });
+        await updateVariableIncome(income.id, { label, amount });
       }
       toast.success(t('toasts.expenseUpdated'));
-      setEditingIncomeId(null);
       refetch();
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update');
-    } finally {
-      setSavingEditIncome(false);
+      return false;
     }
+  };
+
+  const handleSaveInlineEdit = async (income: IncomeInstanceResponse) => {
+    setSavingEditIncome(true);
+    const ok = await saveIncome(income, editIncomeLabel, parseFloat(editIncomeAmount));
+    setSavingEditIncome(false);
+    if (ok) setEditingIncomeId(null);
   };
 
   const handleDeleteIncome = (income: IncomeInstanceResponse) => {
@@ -132,12 +137,15 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
         <div className="space-y-1.5">
           {visibleIncomes.map(income => (
             <div key={income.id} className="group">
-              <div className="flex items-center justify-between py-1.5 text-sm gap-2">
+              <div
+                className="flex items-center justify-between py-1.5 text-sm gap-2 cursor-pointer rounded-md -mx-1 px-1 [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors touch-manipulation"
+                onClick={() => setDetailIncome(income)}
+              >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${income.source === 'recurring' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                     {income.source === 'recurring' ? t('personal.recurringBadge') : t('personal.variableBadge')}
                   </span>
-                  <span className="text-foreground truncate">{income.label}</span>
+                  <span className="text-foreground truncate">{capitalize(income.label)}</span>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {income.currency === 'USD' && (
@@ -145,7 +153,10 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
                   )}
                   <span className="font-semibold text-green-600 tabular-nums w-24 text-right">{formatAmount(income.amount, income.currency)}</span>
                 </div>
-                <div className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0">
+                <div
+                  className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"
+                  onClick={e => e.stopPropagation()}
+                >
                   <Button variant="ghost" size="icon" className="h-7 w-7"
                     onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
                     <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -168,7 +179,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
                   <div className="flex gap-1.5 justify-end">
                     <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingIncomeId(null)}>{t('common.cancel')}</Button>
                     <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
-                      disabled={savingEditIncome} onClick={() => handleSaveEditIncome(income)}>
+                      disabled={savingEditIncome} onClick={() => handleSaveInlineEdit(income)}>
                       {savingEditIncome ? '…' : t('common.save')}
                     </Button>
                   </div>
@@ -178,6 +189,20 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
           ))}
         </div>
       )}
+
+      {/* Tap-to-open detail sheet — the mobile edit/delete entry point */}
+      <IncomeDetailDialog
+        income={detailIncome}
+        open={detailIncome !== null}
+        onOpenChange={open => { if (!open) setDetailIncome(null); }}
+        formatAmount={formatAmount}
+        onSave={async (income, label, amount) => {
+          const ok = await saveIncome(income, label, amount);
+          if (ok) setDetailIncome(null);
+          return ok;
+        }}
+        onDelete={income => { setDetailIncome(null); handleDeleteIncome(income); }}
+      />
 
       {/* Confirm dialog (replaces window.confirm) */}
       {confirm && (

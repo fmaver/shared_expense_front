@@ -113,7 +113,7 @@ export function MirroredSharesSection({ ledger, year, month, categories, limit, 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground line-clamp-2">{share.description}</p>
-                      <p className="text-xs text-muted-foreground">{share.payerName} · {share.sourceGroupName}</p>
+                      <p className="text-xs text-muted-foreground">{share.payerName} · {share.sourceGroupName} · {share.date}</p>
                       <div className="flex sm:hidden items-center gap-1 mt-1">
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{share.category}</span>
                       </div>
