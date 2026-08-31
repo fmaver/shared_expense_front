@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -19,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { createInvitation } from '@/api/invitations';
+import { normalizeArPhone } from '@/utils/phone';
 import type { InvitationChannel } from '@/types/expense';
 
 interface InviteDialogProps {
@@ -54,7 +56,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
       await createInvitation(groupId, {
         name: name.trim(),
         channel,
-        contact: contact.trim(),
+        contact: channel === 'phone' ? normalizeArPhone(contact) : contact.trim(),
       });
       toast.success(t('toasts.invitationSent'));
       reset();
@@ -103,16 +105,18 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
             <Label htmlFor="inviteContact">
               {channel === 'email' ? t('members.emailAddress') : t('members.phoneNumber')}
             </Label>
-            <Input
-              id="inviteContact"
-              required
-              type={channel === 'email' ? 'email' : 'tel'}
-              placeholder={
-                channel === 'email' ? 'maria@example.com' : '541138718498'
-              }
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-            />
+            {channel === 'email' ? (
+              <Input
+                id="inviteContact"
+                required
+                type="email"
+                placeholder="maria@example.com"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+              />
+            ) : (
+              <PhoneInput id="inviteContact" value={contact} onChange={setContact} />
+            )}
             {channel === 'phone' && (
               <p className="text-xs text-muted-foreground">
                 {t('members.phoneHelp')}
