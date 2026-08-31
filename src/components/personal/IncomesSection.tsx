@@ -10,7 +10,9 @@ import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { capitalize } from '@/utils/format';
 import { ViewAllLink } from './ViewAllLink';
+import { ShowMoreButton } from './ShowMoreButton';
 import { IncomeDetailDialog } from './IncomeDetailDialog';
+import { useProgressiveReveal } from '@/hooks/useProgressiveReveal';
 import {
   updateRecurringIncome,
   updateVariableIncome,
@@ -49,8 +51,8 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
 
   // Incomes carry no date — instance ids increase with creation order, so id desc = latest first
   const sortedIncomes = [...ledger.incomes].sort((a, b) => b.id - a.id);
-  const visibleIncomes = limit ? sortedIncomes.slice(0, limit) : sortedIncomes;
-  const hasMore = limit !== undefined && ledger.incomes.length > limit;
+  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, sortedIncomes.length);
+  const visibleIncomes = sortedIncomes.slice(0, visibleCount);
 
   // Shared save used by both the desktop inline editor and the detail sheet.
   const saveIncome = async (income: IncomeInstanceResponse, label: string, amount: number): Promise<boolean> => {
@@ -187,6 +189,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
               )}
             </div>
           ))}
+          {hasMore && <ShowMoreButton remaining={remaining} onClick={showMore} />}
         </div>
       )}
 

@@ -5,6 +5,8 @@ import { TrendingDown, Clock, CheckCircle2, ExternalLink, Repeat } from 'lucide-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { ViewAllLink } from './ViewAllLink';
+import { ShowMoreButton } from './ShowMoreButton';
+import { useProgressiveReveal } from '@/hooks/useProgressiveReveal';
 import type { MirroredShareItem, PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
 
 interface MirroredSharesSectionProps {
@@ -25,8 +27,8 @@ export function MirroredSharesSection({ ledger, year, month, categories, limit, 
   const sortedShares = [...ledger.mirroredShares].sort(
     (a, b) => b.date.localeCompare(a.date) || b.sourceExpenseId - a.sourceExpenseId,
   );
-  const visibleShares = limit !== undefined ? sortedShares.slice(0, limit) : sortedShares;
-  const hasMore = limit !== undefined && ledger.mirroredShares.length > limit;
+  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, sortedShares.length);
+  const visibleShares = sortedShares.slice(0, visibleCount);
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -129,6 +131,11 @@ export function MirroredSharesSection({ ledger, year, month, categories, limit, 
               </div>
             );
           })}
+          {hasMore && (
+            <div className="px-4 pb-3">
+              <ShowMoreButton remaining={remaining} onClick={showMore} />
+            </div>
+          )}
         </div>
       )}
 

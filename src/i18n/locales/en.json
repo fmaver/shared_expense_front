@@ -418,6 +418,7 @@
     "overBudget": "Over budget",
     "projectedTick": "Projected",
     "viewAll": "View all ({{total}})",
+    "showMore": "Show more ({{count}})",
     "legendExpenses": "Expenses",
     "legendPending": "Pending group costs",
     "legendProjected": "Projected savings",

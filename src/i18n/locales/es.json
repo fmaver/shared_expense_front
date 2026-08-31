@@ -418,6 +418,7 @@
     "overBudget": "Excedido",
     "projectedTick": "Proyectado",
     "viewAll": "Ver todo ({{total}})",
+    "showMore": "Ver más ({{count}})",
     "legendExpenses": "Gastos",
     "legendPending": "Costos grupales pendientes",
     "legendProjected": "Ahorro proyectado",

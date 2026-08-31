@@ -15,6 +15,8 @@ import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { ViewAllLink } from './ViewAllLink';
+import { ShowMoreButton } from './ShowMoreButton';
+import { useProgressiveReveal } from '@/hooks/useProgressiveReveal';
 import {
   updateRecurringPersonalExpense,
   deleteRecurringPersonalExpense,
@@ -60,12 +62,10 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
   const sortedOneOffs = [...(ledger.personalExpenses ?? [])].sort(
     (a, b) => b.date.localeCompare(a.date) || b.id - a.id,
   );
-  const visibleRecurring = limit !== undefined ? recurring.slice(0, limit) : recurring;
-  const visibleOneOffs = limit !== undefined
-    ? sortedOneOffs.slice(0, Math.max(0, limit - recurring.length))
-    : sortedOneOffs;
   const totalCount = recurring.length + sortedOneOffs.length;
-  const hasMore = limit !== undefined && totalCount > limit;
+  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, totalCount);
+  const visibleRecurring = recurring.slice(0, visibleCount);
+  const visibleOneOffs = sortedOneOffs.slice(0, Math.max(0, visibleCount - recurring.length));
 
   const handleSaveEditRecurringExpense = async (instance: RecurringPersonalExpenseInstanceResponse) => {
     if (!editRecExpLabel || !editRecExpAmount) return;
@@ -275,6 +275,11 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
               }}
             />
           ))}
+          {hasMore && (
+            <div className="px-4">
+              <ShowMoreButton remaining={remaining} onClick={showMore} />
+            </div>
+          )}
         </div>
       )}
 
