@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { capitalize } from '@/utils/format';
 import { ViewAllLink } from './ViewAllLink';
 import { ShowMoreButton } from './ShowMoreButton';
@@ -41,6 +42,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
   const [editingIncomeId, setEditingIncomeId] = useState<number | null>(null);
   const [editIncomeLabel, setEditIncomeLabel] = useState('');
   const [editIncomeAmount, setEditIncomeAmount] = useState('');
+  const [editIncomeCurrency, setEditIncomeCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [savingEditIncome, setSavingEditIncome] = useState(false);
 
   // Tap-to-open detail sheet (the mobile edit/delete entry point)
@@ -55,13 +57,13 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
   const visibleIncomes = sortedIncomes.slice(0, visibleCount);
 
   // Shared save used by both the desktop inline editor and the detail sheet.
-  const saveIncome = async (income: IncomeInstanceResponse, label: string, amount: number): Promise<boolean> => {
+  const saveIncome = async (income: IncomeInstanceResponse, label: string, amount: number, currency: 'ARS' | 'USD'): Promise<boolean> => {
     if (!label || !Number.isFinite(amount)) return false;
     try {
       if (income.source === 'recurring' && income.recurringIncomeId) {
-        await updateRecurringIncome(income.recurringIncomeId, { label, amount }, year, month);
+        await updateRecurringIncome(income.recurringIncomeId, { label, amount, currency }, year, month);
       } else {
-        await updateVariableIncome(income.id, { label, amount });
+        await updateVariableIncome(income.id, { label, amount, currency });
       }
       toast.success(t('toasts.expenseUpdated'));
       refetch();
@@ -74,7 +76,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
 
   const handleSaveInlineEdit = async (income: IncomeInstanceResponse) => {
     setSavingEditIncome(true);
-    const ok = await saveIncome(income, editIncomeLabel, parseFloat(editIncomeAmount));
+    const ok = await saveIncome(income, editIncomeLabel, parseFloat(editIncomeAmount), editIncomeCurrency);
     setSavingEditIncome(false);
     if (ok) setEditingIncomeId(null);
   };
@@ -160,7 +162,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
                   onClick={e => e.stopPropagation()}
                 >
                   <Button variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); }}>
+                    onClick={() => { setEditingIncomeId(income.id); setEditIncomeLabel(income.label); setEditIncomeAmount(String(income.amount)); setEditIncomeCurrency(income.currency === 'USD' ? 'USD' : 'ARS'); }}>
                     <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7"
@@ -174,10 +176,13 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
                   <Input
                     value={editIncomeLabel}
                     onChange={e => setEditIncomeLabel(e.target.value)} />
-                  <Input
-                    type="number"
-                    value={editIncomeAmount}
-                    onChange={e => setEditIncomeAmount(e.target.value)} />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={editIncomeAmount}
+                      onChange={e => setEditIncomeAmount(e.target.value)} />
+                    <CurrencyToggle value={editIncomeCurrency} onChange={setEditIncomeCurrency} />
+                  </div>
                   <div className="flex gap-1.5 justify-end">
                     <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingIncomeId(null)}>{t('common.cancel')}</Button>
                     <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
@@ -199,8 +204,8 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
         open={detailIncome !== null}
         onOpenChange={open => { if (!open) setDetailIncome(null); }}
         formatAmount={formatAmount}
-        onSave={async (income, label, amount) => {
-          const ok = await saveIncome(income, label, amount);
+        onSave={async (income, label, amount, currency) => {
+          const ok = await saveIncome(income, label, amount, currency);
           if (ok) setDetailIncome(null);
           return ok;
         }}

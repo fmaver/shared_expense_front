@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { capitalize } from '@/utils/format';
 import type { IncomeInstanceResponse } from '@/types/expense';
 
@@ -13,7 +14,7 @@ interface IncomeDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   formatAmount: (amount: number, currency?: string) => string;
   /** Persist an edit; returns true on success so the dialog can leave edit mode. */
-  onSave: (income: IncomeInstanceResponse, label: string, amount: number) => Promise<boolean>;
+  onSave: (income: IncomeInstanceResponse, label: string, amount: number, currency: 'ARS' | 'USD') => Promise<boolean>;
   onDelete: (income: IncomeInstanceResponse) => void;
 }
 
@@ -34,6 +35,7 @@ export function IncomeDetailDialog({
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [saving, setSaving] = useState(false);
 
   // Reset to view mode with fresh values whenever a different income is opened.
@@ -42,6 +44,7 @@ export function IncomeDetailDialog({
       setEditing(false);
       setLabel(income.label);
       setAmount(String(income.amount));
+      setCurrency(income.currency === 'USD' ? 'USD' : 'ARS');
     }
   }, [income]);
 
@@ -52,7 +55,7 @@ export function IncomeDetailDialog({
   const handleSave = async () => {
     if (!label || !amount) return;
     setSaving(true);
-    const ok = await onSave(income, label, parseFloat(amount));
+    const ok = await onSave(income, label, parseFloat(amount), currency);
     setSaving(false);
     if (ok) setEditing(false);
   };
@@ -78,7 +81,10 @@ export function IncomeDetailDialog({
         {editing ? (
           <div className="space-y-2">
             <Input value={label} onChange={e => setLabel(e.target.value)} placeholder={t('personal.income')} />
-            <Input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} />
+            <div className="flex items-center gap-2">
+              <Input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} />
+              <CurrencyToggle value={currency} onChange={setCurrency} />
+            </div>
             <div className="flex gap-2 justify-end pt-1">
               <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
                 {t('common.cancel')}

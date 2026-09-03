@@ -230,6 +230,7 @@ export interface RecurringIncomeUpdate {
   label?: string;
   amount?: number;
   active?: boolean;
+  currency?: string;
 }
 
 export interface VariableIncomeCreate {
@@ -243,6 +244,7 @@ export interface VariableIncomeCreate {
 export interface VariableIncomeUpdate {
   label?: string;
   amount?: number;
+  currency?: string;
 }
 
 export interface RecurringPersonalExpenseCreate {
@@ -259,6 +261,7 @@ export interface RecurringPersonalExpenseUpdate {
   amount?: number;
   categoryName?: string;
   active?: boolean;
+  currency?: string;
 }
 
 export interface RecurringPersonalExpenseResponse {

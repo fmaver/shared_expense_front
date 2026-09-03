@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
@@ -51,6 +52,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
   const [editRecExpLabel, setEditRecExpLabel] = useState('');
   const [editRecExpAmount, setEditRecExpAmount] = useState('');
   const [editRecExpCategory, setEditRecExpCategory] = useState('');
+  const [editRecExpCurrency, setEditRecExpCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [savingEditRecExp, setSavingEditRecExp] = useState(false);
   const [selectedRecurringInstance, setSelectedRecurringInstance] = useState<RecurringPersonalExpenseInstanceResponse | null>(null);
 
@@ -75,6 +77,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
         label: editRecExpLabel,
         amount: parseFloat(editRecExpAmount),
         categoryName: editRecExpCategory || instance.categoryName,
+        currency: editRecExpCurrency,
       }, year, month);
       toast.success(t('toasts.expenseUpdated'));
       setEditingRecExpId(null);
@@ -206,7 +209,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
                   onClick={e => e.stopPropagation()}
                 >
                   <Button variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); }}>
+                    onClick={() => { setEditingRecExpId(instance.id); setEditRecExpLabel(instance.label); setEditRecExpAmount(String(instance.amount)); setEditRecExpCategory(instance.categoryName); setEditRecExpCurrency(instance.currency === 'USD' ? 'USD' : 'ARS'); }}>
                     <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7"
@@ -221,9 +224,12 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
                   <div className="p-2 bg-muted/40 rounded-md space-y-1.5">
                     <Input
                       value={editRecExpLabel} onChange={e => setEditRecExpLabel(e.target.value)} />
-                    <Input
-                      type="number"
-                      value={editRecExpAmount} onChange={e => setEditRecExpAmount(e.target.value)} />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={editRecExpAmount} onChange={e => setEditRecExpAmount(e.target.value)} />
+                      <CurrencyToggle value={editRecExpCurrency} onChange={setEditRecExpCurrency} />
+                    </div>
                     <Select value={editRecExpCategory} onValueChange={setEditRecExpCategory}>
                       <SelectTrigger className="w-full h-7 text-xs">
                         <span className="flex-1 text-left">
