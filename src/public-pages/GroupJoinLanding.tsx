@@ -113,9 +113,9 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
 
           {claimable.length > 0 && (
             <div className="mb-5 space-y-1.5">
-              <p className="text-sm font-medium text-foreground">¿Sos alguna de estas personas?</p>
+              <p className="text-sm font-medium text-foreground">Are you one of these people?</p>
               <p className="text-xs text-muted-foreground mb-2">
-                Elegí tu nombre para quedarte con los gastos que ya te asignaron.
+                Pick your name to keep the expenses already assigned to you.
               </p>
               {claimable.map(member => (
                 <button
@@ -146,7 +146,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
                     : 'border-border hover:bg-muted/50 text-muted-foreground'
                 }`}
               >
-                Soy otra persona
+                I'm someone else
               </button>
             </div>
           )}
