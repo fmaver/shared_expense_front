@@ -144,7 +144,14 @@ export function GroupMembersPage() {
                   <p className="text-sm font-medium text-foreground truncate">
                     {member.name}
                   </p>
-                  {member.isStub && (
+                  {/* A stub with no contact details was never invited — nothing is pending,
+                      they are simply tracked by name until they claim an account. */}
+                  {member.isStub && !member.email && !member.telephone && (
+                    <span className="inline-flex items-center text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full flex-shrink-0">
+                      {t('members.noAccount')}
+                    </span>
+                  )}
+                  {member.isStub && (member.email || member.telephone) && (
                     <span className="inline-flex items-center text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full flex-shrink-0">
                       {t('members.pending')}
                     </span>

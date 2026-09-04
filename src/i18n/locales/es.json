@@ -279,7 +279,13 @@
     "shareOnWhatsapp": "Compartir por WhatsApp",
     "rotateTitle": "¿Rotar link?",
     "rotateDesc": "El link actual dejará de funcionar inmediatamente. Se generará un nuevo link.",
-    "inviteFullName": "Nombre completo"
+    "inviteFullName": "Nombre completo",
+    "nameOnlyChannel": "Solo nombre (sin cuenta)",
+    "nameOnlyHelp": "Esta persona no recibirá notificaciones. Podrá reclamar su cuenta más adelante con el link del grupo.",
+    "addMember": "Agregar miembro",
+    "adding": "Agregando…",
+    "memberAdded": "Miembro agregado",
+    "noAccount": "sin cuenta"
   },
   "settings": {
     "title": "Configuración",

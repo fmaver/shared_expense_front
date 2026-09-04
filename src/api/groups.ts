@@ -88,6 +88,15 @@ export async function inviteMember(groupId: number, email: string): Promise<void
   }
 }
 
+export async function addNamedMember(groupId: number, name: string): Promise<GroupMember> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/members`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ name }),
+  });
+  return handleResponse<GroupMember>(response);
+}
+
 export async function leaveGroup(groupId: number): Promise<void> {
   const response = await fetch(
     `${config.apiBaseUrl}/api/v1/groups/${groupId}/members/leave`,
