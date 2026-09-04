@@ -447,8 +447,9 @@ export function AddExpenseDialog({
           )}
           </>)}
 
-          {/* Recurring toggle — only show when creating (not editing) */}
-          {!isEdit && !hidePayerAndSplit && (
+          {/* Recurring toggle — only when creating, and never in a one-time group:
+              "repeats every month" is meaningless where there are no months. */}
+          {!isEdit && !hidePayerAndSplit && !isOneTimeGroup && (
             <div className="pt-1">
               <button
                 type="button"

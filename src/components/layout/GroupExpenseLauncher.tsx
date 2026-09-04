@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGroups } from '@/hooks/useGroups';
+import { useGroups, useGroup } from '@/hooks/useGroups';
 import { useGroupMembers } from '@/hooks/useMembers';
 import { getCurrentUser } from '@/api/auth';
 import { useGroupExpenseCreate } from '@/hooks/useGroupExpenseCreate';
@@ -46,6 +46,9 @@ function GroupExpenseDialogs({
   const { requestExpenseRefresh } = useExpenseRefresh();
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
+  // The launcher renders its own dialog, so it needs the group type as much as the dashboard.
+  const { data: group } = useGroup(groupId);
+  const isOneTimeGroup = group?.groupType === 'one_time';
 
   useEffect(() => {
     getCurrentUser()
@@ -90,6 +93,7 @@ function GroupExpenseDialogs({
           members={members}
           currentMemberId={currentMemberId}
           groupId={groupId}
+          isOneTimeGroup={isOneTimeGroup}
         />
       )}
 
