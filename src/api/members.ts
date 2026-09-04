@@ -3,10 +3,14 @@ import type { Member } from '../types/expense';
 
 export async function getMembers(): Promise<Member[]> {
   try {
+    // This endpoint returns every member's name, email and telephone, so it must be
+    // authenticated. The token has to be sent here before the backend guard can land.
+    const token = localStorage.getItem('token');
     const response = await fetch(`${config.apiBaseUrl}/api/v1/members/`, {
       redirect: 'follow', // explicitly follow redirects
       headers: {
         'Accept': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
     });
     
