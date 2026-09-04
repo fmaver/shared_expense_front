@@ -28,6 +28,8 @@ interface AddExpenseDialogProps {
   groupId?: number;
   onSuccess?: () => void;
   isRecurringEdit?: boolean;
+  /** One-time groups reject credit server-side; hide the control so it is never offered. */
+  isOneTimeGroup?: boolean;
 }
 
 function buildInitial(
@@ -83,7 +85,7 @@ function buildInitial(
 }
 
 export function AddExpenseDialog({
-  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false, currentMemberId, groupId, onSuccess, isRecurringEdit = false,
+  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false, currentMemberId, groupId, onSuccess, isRecurringEdit = false, isOneTimeGroup = false,
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const { data: categories = [], isLoading: loadingCats } = useCategories();
@@ -285,7 +287,9 @@ export function AddExpenseDialog({
             )}
           </div>
 
-          {!isRecurring && !isLoanEdit && (
+          {/* A one-time group has no months to spread installments across, and the backend
+              rejects credit there — so the whole payment-type row goes away. */}
+          {!isRecurring && !isLoanEdit && !isOneTimeGroup && (
           <div className="grid grid-cols-2 gap-4">
             {/* Payment type */}
             <div className="space-y-1.5">

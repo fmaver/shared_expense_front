@@ -5,7 +5,7 @@ import { useGroups } from '@/hooks/useGroups';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRight, Plus, Users, User } from 'lucide-react';
+import { ChevronRight, PartyPopper, Plus, Users, User } from 'lucide-react';
 import type { Group } from '@/types/expense';
 
 export function GroupSelectorPage() {
@@ -58,7 +58,17 @@ export function GroupSelectorPage() {
             <button key={group.id} onClick={() => navigate(`/groups/${group.id}`)}
               className="w-full bg-card border border-border rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-brand/40 hover:bg-accent/50 transition-colors text-left">
               <div>
-                <p className="font-semibold text-foreground text-sm">{group.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-foreground text-sm">{group.name}</p>
+                  {/* One-time groups behave differently enough — no months, no credit — that the
+                      distinction has to be visible before you open one. */}
+                  {group.groupType === 'one_time' && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide bg-brand/10 text-brand px-1.5 py-0.5 rounded-full flex-shrink-0">
+                      <PartyPopper className="h-3 w-3" />
+                      {t('groups.badgeOneTime')}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {t('groups.memberCount', { count: group.members.length })}
                 </p>

@@ -99,8 +99,16 @@
       "nameLabel": "Group name",
       "namePlaceholder": "e.g. Casa, Viaje 2026",
       "creating": "Creating…",
-      "create": "Create group"
-    }
+      "create": "Create group",
+      "typeTitle": "What kind of group?",
+      "typeRegularName": "Ongoing",
+      "typeRegularDesc": "A shared household or anything continuous. Expenses belong to a month, credit installments are supported, and you settle up month by month.",
+      "typeOneTimeName": "One-time",
+      "typeOneTimeDesc": "A trip, a dinner, one occasion. Months are ignored — every expense counts toward a single balance you settle once. No credit installments.",
+      "typeContinue": "Continue",
+      "typeBack": "Back"
+    },
+    "badgeOneTime": "One-time"
   },
   "tabs": {
     "expenses": "Expenses",

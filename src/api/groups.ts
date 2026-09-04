@@ -1,5 +1,5 @@
 import { config } from '../config/env';
-import type { Group, GroupMember } from '../types/expense';
+import type { CreatableGroupType, Group, GroupMember } from '../types/expense';
 
 function authHeaders(): HeadersInit {
   const token = localStorage.getItem('token');
@@ -25,11 +25,14 @@ export async function getMyGroups(): Promise<Group[]> {
   return handleResponse<Group[]>(response);
 }
 
-export async function createGroup(name: string): Promise<Group> {
+export async function createGroup(
+  name: string,
+  groupType: CreatableGroupType = 'regular',
+): Promise<Group> {
   const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, groupType }),
   });
   return handleResponse<Group>(response);
 }
