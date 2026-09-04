@@ -57,9 +57,12 @@ interface BalancePanelProps {
   isUnsettling: boolean;
   expenses: ExpenseResponse[];
   onPayTransfer?: (transfer: DebtTransfer) => Promise<void>;
+  /** A one-time group has no months, so month-worded copy must not appear. */
+  isOneTime?: boolean;
 }
 
 export function BalancePanel({
+  isOneTime = false,
   balances, transfers, members, isSettled,
   onSettleRequest, isSettling,
   onUnsettle, isUnsettling,
@@ -86,7 +89,7 @@ export function BalancePanel({
           {isSettled && (
             <div className="flex items-center gap-1 text-xs text-settle font-medium mt-0.5">
               <CheckCircle2 className="h-3 w-3" />
-              <span>{t('balance.monthSettled')}</span>
+              <span>{isOneTime ? t('balance.settledOneTime') : t('balance.monthSettled')}</span>
             </div>
           )}
         </div>
@@ -107,7 +110,7 @@ export function BalancePanel({
             disabled={isUnsettling}
             className="h-7 px-3 text-xs rounded-full font-medium bg-orange-100 text-orange-600 hover:bg-orange-200 dark:bg-orange-950/50 dark:text-orange-400 dark:hover:bg-orange-950 disabled:opacity-50 transition-colors cursor-pointer"
           >
-            {isUnsettling ? t('balance.reopening') : t('balance.reopenMonth')}
+            {isUnsettling ? t('balance.reopening') : t(isOneTime ? 'balance.reopenOneTime' : 'balance.reopenMonth')}
           </button>
         )}
       </div>

@@ -103,6 +103,14 @@ export async function settleAll(groupId: number): Promise<AggregateBalanceRespon
   return handleResponse<AggregateBalanceResponse>(response);
 }
 
+export async function unsettleAll(groupId: number): Promise<AggregateBalanceResponse | null> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/unsettle-all`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  return handleResponse<AggregateBalanceResponse>(response);
+}
+
 export async function getGroupTrend(groupId: number, months = 6): Promise<MonthTrendPoint[]> {
   try {
     const token = localStorage.getItem('token');
