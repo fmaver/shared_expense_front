@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { resolveJoinToken, registerAndJoin } from '@/api/joinLinks';
 import type { GroupJoinResolveResponse } from '@/types/expense';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,17 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
   // Which existing name-only member the joiner says they are; undefined = a new person.
   const [claimMemberId, setClaimMemberId] = useState<number | undefined>(undefined);
 
+  // A logged-in visitor joins with their JWT — no registration form at all.
+  const isLoggedIn = !!localStorage.getItem('token');
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    // The claim choice rides in the URL rather than local state, so it survives the trip
+    // out to /login and back.
+    const claimFromUrl = searchParams.get('claim');
+    if (claimFromUrl) setClaimMemberId(Number(claimFromUrl));
+  }, [searchParams]);
+
   useEffect(() => {
     if (!token) return;
     resolveJoinToken(token)
@@ -41,12 +52,12 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
     if (!token) return;
     try {
       setIsSubmitting(true);
-      const result = await registerAndJoin(token, {
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        claimMemberId,
-      });
+      const result = await registerAndJoin(
+        token,
+        isLoggedIn
+          ? { claimMemberId }
+          : { name: name.trim(), email: email.trim(), password, claimMemberId },
+      );
       const expiration = new Date(Date.now() + 30 * 60_000).toISOString();
       localStorage.setItem('token', result.accessToken);
       localStorage.setItem('tokenExpiration', expiration);
@@ -98,6 +109,29 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
   }
 
   const claimable = info.claimableMembers ?? [];
+
+  if (info.alreadyMember) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          {brandHeader}
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm text-center">
+            <h2 className="text-lg font-bold text-foreground mb-1">You're already in</h2>
+            <p className="text-sm text-muted-foreground mb-5">
+              You are already a member of{' '}
+              <span className="font-semibold text-foreground">{info.groupName}</span>.
+            </p>
+            <Link
+              to="/groups"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90"
+            >
+              Go to my groups
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -151,6 +185,22 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
             </div>
           )}
 
+          {isLoggedIn ? (
+            <form onSubmit={handleJoin} className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                You're signed in — joining will use your existing account.
+                {claimable.length > 0 && ' Pick your name above to take over its expenses.'}
+              </p>
+              <Button
+                type="submit"
+                className="w-full bg-brand hover:bg-brand/90 text-white"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Joining…' : 'Join group'}
+              </Button>
+            </form>
+          ) : (
+          <>
           <form onSubmit={handleJoin} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="name">Full name</Label>
@@ -223,6 +273,22 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
               {isSubmitting ? 'Joining…' : 'Create Account & Join'}
             </Button>
           </form>
+
+          {/* Already have an account: log in and come back, carrying the claim choice in the
+              URL so the selection survives the round trip. */}
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Already have an account?{' '}
+            <Link
+              to={`/login?next=${encodeURIComponent(
+                `/join/${token}${claimMemberId ? `?claim=${claimMemberId}` : ''}`,
+              )}`}
+              className="font-medium text-brand hover:underline"
+            >
+              Log in
+            </Link>
+          </p>
+          </>
+          )}
         </div>
       </div>
     </div>

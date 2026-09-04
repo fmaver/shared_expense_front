@@ -35,17 +35,22 @@ export async function rotateJoinLink(groupId: number): Promise<GroupJoinLink> {
 }
 
 export async function resolveJoinToken(token: string): Promise<GroupJoinResolveResponse> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/join/resolve/${token}`);
+  // Public, but send the token when we have one: the backend then reports alreadyMember.
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/join/resolve/${token}`, {
+    headers: authHeaders(),
+  });
   return handleResponse<GroupJoinResolveResponse>(response);
 }
 
 export async function registerAndJoin(
   token: string,
-  data: { name: string; email: string; password: string; claimMemberId?: number },
+  data: { name?: string; email?: string; password?: string; claimMemberId?: number },
 ): Promise<{ accessToken: string; tokenType: string }> {
+  // With a token the backend joins the authenticated member and ignores the credentials,
+  // which is why every field here is optional.
   const response = await fetch(`${config.apiBaseUrl}/api/v1/join/${token}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify(data),
   });
   return handleResponse<{ accessToken: string; tokenType: string }>(response);
