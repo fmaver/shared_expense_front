@@ -16,12 +16,15 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { createInvitation } from '@/api/invitations';
+import { addNamedMember } from '@/api/groups';
 import { normalizeArPhone } from '@/utils/phone';
 import type { InvitationChannel } from '@/types/expense';
+
+/** 'name' adds a member with no contact details — nothing is sent to them. */
+type MemberChannel = InvitationChannel | 'name';
 
 interface InviteDialogProps {
   open: boolean;
@@ -32,10 +35,16 @@ interface InviteDialogProps {
 
 export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteDialogProps) {
   const { t } = useTranslation();
-  const [channel, setChannel] = useState<InvitationChannel>('email');
+  const [channel, setChannel] = useState<MemberChannel>('email');
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const channelLabels: Record<MemberChannel, string> = {
+    email: t('members.emailChannel'),
+    phone: t('members.whatsappChannel'),
+    name: t('members.nameOnlyChannel'),
+  };
 
   const reset = () => {
     setName('');
@@ -48,22 +57,29 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
     onOpenChange(isOpen);
   };
 
+  const isNameOnly = channel === 'name';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !contact.trim()) return;
+    if (!name.trim()) return;
+    if (!isNameOnly && !contact.trim()) return;
     setIsLoading(true);
     try {
-      await createInvitation(groupId, {
-        name: name.trim(),
-        channel,
-        contact: channel === 'phone' ? normalizeArPhone(contact) : contact.trim(),
-      });
-      toast.success(t('toasts.invitationSent'));
+      if (isNameOnly) {
+        await addNamedMember(groupId, name.trim());
+      } else {
+        await createInvitation(groupId, {
+          name: name.trim(),
+          channel,
+          contact: channel === 'phone' ? normalizeArPhone(contact) : contact.trim(),
+        });
+      }
+      toast.success(isNameOnly ? t('members.memberAdded') : t('toasts.invitationSent'));
       reset();
       onInvited();
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to send invitation');
+      toast.error(err instanceof Error ? err.message : 'Failed to add member');
     } finally {
       setIsLoading(false);
     }
@@ -90,17 +106,21 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
 
           <div className="space-y-1.5">
             <Label htmlFor="inviteChannel">{t('members.channel')}</Label>
-            <Select value={channel} onValueChange={(v) => setChannel(v as InvitationChannel)}>
+            <Select value={channel} onValueChange={(v) => setChannel(v as MemberChannel)}>
               <SelectTrigger id="inviteChannel" className="w-full">
-                <SelectValue />
+                <span className="flex-1 text-left">{channelLabels[channel]}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="email">{t('members.emailChannel')}</SelectItem>
                 <SelectItem value="phone">{t('members.whatsappChannel')}</SelectItem>
+                <SelectItem value="name">{t('members.nameOnlyChannel')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {isNameOnly ? (
+            <p className="text-xs text-muted-foreground">{t('members.nameOnlyHelp')}</p>
+          ) : (
           <div className="space-y-1.5">
             <Label htmlFor="inviteContact">
               {channel === 'email' ? t('members.emailAddress') : t('members.phoneNumber')}
@@ -123,6 +143,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
               </p>
             )}
           </div>
+          )}
 
           <DialogFooter>
             <Button
@@ -135,9 +156,11 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
             <Button
               type="submit"
               className="bg-brand hover:bg-brand/90 text-white"
-              disabled={isLoading || !name.trim() || !contact.trim()}
+              disabled={isLoading || !name.trim() || (!isNameOnly && !contact.trim())}
             >
-              {isLoading ? t('members.sending') : t('members.sendInvite')}
+              {isLoading
+                ? t(isNameOnly ? 'members.adding' : 'members.sending')
+                : t(isNameOnly ? 'members.addMember' : 'members.sendInvite')}
             </Button>
           </DialogFooter>
         </form>

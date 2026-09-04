@@ -279,7 +279,13 @@
     "shareOnWhatsapp": "Share on WhatsApp",
     "rotateTitle": "Rotate join link?",
     "rotateDesc": "The current link will stop working immediately. Anyone who tries to use it will get an error. A new link will be generated.",
-    "inviteFullName": "Full name"
+    "inviteFullName": "Full name",
+    "nameOnlyChannel": "Name only (no account)",
+    "nameOnlyHelp": "This person won't be notified. They can claim their account later using the group's join link.",
+    "addMember": "Add member",
+    "adding": "Adding…",
+    "memberAdded": "Member added",
+    "noAccount": "no account"
   },
   "settings": {
     "title": "Settings",
