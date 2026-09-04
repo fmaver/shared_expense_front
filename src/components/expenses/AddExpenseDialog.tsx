@@ -136,6 +136,10 @@ export function AddExpenseDialog({
       ...expense,
       splitStrategy,
       ...(isRecurring ? { paymentType: 'debit' as const, installments: 1 } : {}),
+      // A one-time group has no months, so an expense there is always a single debit
+      // payment. The controls are hidden, but state can survive a group switch inside the
+      // same mounted dialog — and the backend rejects credit here, so send what it accepts.
+      ...(isOneTimeGroup ? { paymentType: 'debit' as const, installments: 1 } : {}),
       // For loan edits, always preserve the original category and split strategy
       ...(isLoanEdit ? {
         category: { name: 'prestamo' },
