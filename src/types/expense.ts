@@ -140,6 +140,8 @@ export interface GroupJoinResolveResponse {
   inviterName?: string | null;
   /** Members tracked by name alone that the joiner may claim as themselves. */
   claimableMembers?: ClaimableMember[];
+  /** True when the authenticated caller already belongs to this group. */
+  alreadyMember?: boolean;
 }
 
 export type GroupStatus = 'active' | 'closed' | 'deleted';

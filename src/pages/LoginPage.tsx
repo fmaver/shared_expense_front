@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { login, register } from '@/api/auth';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,13 @@ interface LoginPageProps {
 
 export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Where to land after logging in. Only same-origin paths are honoured, or this becomes an
+  // open redirect: `https://evil.example` is rejected by the leading-slash check, and
+  // `//evil.example` by the second one — browsers read a protocol-relative URL as absolute.
+  const nextParam = searchParams.get('next');
+  const isSameOrigin = !!nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//');
+  const destination = isSameOrigin ? nextParam : '/groups';
   const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -47,7 +54,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       localStorage.setItem('tokenExpiration', expiration);
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.access_token}`;
       onLoginSuccess(res.access_token);
-      navigate('/groups');
+      navigate(destination);
     } catch {
       clearTimeout(slowTimer);
       setError(t('auth.invalidCredentials'));
@@ -69,7 +76,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       localStorage.setItem('tokenExpiration', expiration);
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.access_token}`;
       onLoginSuccess(res.access_token);
-      navigate('/groups');
+      navigate(destination);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setError(msg ?? t('auth.registrationFailed'));
