@@ -74,10 +74,14 @@ export function GroupMembersPage() {
     }
   }, [groupId]);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     loadMembers();
     loadInvitations();
   }, [loadMembers, loadInvitations]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const handleRevoke = async (inv: Invitation) => {
     const token = inv.shareUrl.split('/').pop()!;
@@ -226,7 +230,7 @@ export function GroupMembersPage() {
         open={showInvite}
         onOpenChange={setShowInvite}
         groupId={groupId}
-        onInvited={loadInvitations}
+        onMemberAdded={reload}
       />
 
       {/* Leave confirmation dialog */}

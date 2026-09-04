@@ -30,10 +30,11 @@ interface InviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   groupId: number;
-  onInvited: () => void;
+  /** Called after a member is added or invited — the caller should refresh its lists. */
+  onMemberAdded: () => void;
 }
 
-export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteDialogProps) {
+export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: InviteDialogProps) {
   const { t } = useTranslation();
   const [channel, setChannel] = useState<MemberChannel>('email');
   const [name, setName] = useState('');
@@ -76,7 +77,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onInvited }: InviteD
       }
       toast.success(isNameOnly ? t('members.memberAdded') : t('toasts.invitationSent'));
       reset();
-      onInvited();
+      onMemberAdded();
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to add member');
