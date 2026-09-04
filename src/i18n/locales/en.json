@@ -102,9 +102,9 @@
       "create": "Create group",
       "typeTitle": "What kind of group?",
       "typeRegularName": "Ongoing",
-      "typeRegularDesc": "A shared household or anything continuous. Expenses belong to a month, credit installments are supported, and you settle up month by month.",
+      "typeRegularDesc": "Ongoing, like a shared home. Installments, settled month by month.",
       "typeOneTimeName": "One-time",
-      "typeOneTimeDesc": "A trip, a dinner, one occasion. Months are ignored — every expense counts toward a single balance you settle once. No credit installments.",
+      "typeOneTimeDesc": "A trip or a dinner. One balance — no months, no installments.",
       "typeContinue": "Continue",
       "typeBack": "Back"
     },

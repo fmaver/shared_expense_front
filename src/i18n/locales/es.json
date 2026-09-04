@@ -102,9 +102,9 @@
       "create": "Crear grupo",
       "typeTitle": "¿Qué tipo de grupo?",
       "typeRegularName": "Continuo",
-      "typeRegularDesc": "Para una casa compartida o cualquier cosa que siga en el tiempo. Los gastos pertenecen a un mes, se pueden usar cuotas, y saldás mes a mes.",
+      "typeRegularDesc": "Algo que sigue en el tiempo, como una casa. Con cuotas y saldo mes a mes.",
       "typeOneTimeName": "Puntual",
-      "typeOneTimeDesc": "Un viaje, una cena, una ocasión. No importan los meses: todos los gastos suman a un único balance que saldás una sola vez. Sin cuotas.",
+      "typeOneTimeDesc": "Un viaje o una cena. Un solo balance, sin meses ni cuotas.",
       "typeContinue": "Continuar",
       "typeBack": "Volver"
     },
