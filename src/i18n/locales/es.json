@@ -166,7 +166,11 @@
     "settleConfirmDesc": "Se calculará quién le debe a quién y se registrarán las transferencias finales para llevar todos los balances a cero. Podés reabrir el mes si necesitás hacer cambios.",
     "payTitle": "Registrar pago",
     "tapToPay": "Toca para pagar",
-    "pay": "Pagar"
+    "pay": "Pagar",
+    "settleConfirmTitleOneTime": "¿Saldar este grupo?",
+    "settleConfirmDescOneTime": "Se calculará quién le debe a quién y se registrarán las transferencias finales para llevar todos los balances a cero. Podés reabrirlo si necesitás hacer cambios.",
+    "reopenOneTime": "Reabrir",
+    "settledOneTime": "Saldado"
   },
   "expenses": {
     "title": "Gastos",
@@ -344,7 +348,8 @@
     "failedDelete": "Error al eliminar gasto",
     "failedExport": "Error al exportar PDF",
     "recurringExpenseCreated": "Gasto recurrente creado",
-    "recurringExpenseDeleted": "Gasto recurrente eliminado"
+    "recurringExpenseDeleted": "Gasto recurrente eliminado",
+    "groupSettled": "Grupo saldado"
   },
   "common": {
     "cancel": "Cancelar",

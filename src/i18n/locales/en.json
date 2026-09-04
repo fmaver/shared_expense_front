@@ -166,7 +166,11 @@
     "settleConfirmDesc": "This will calculate who owes whom and record the final transfers to bring everyone's balance to zero. You can reopen the month later if you need to make changes.",
     "payTitle": "Record Payment",
     "tapToPay": "Tap to pay",
-    "pay": "Pay"
+    "pay": "Pay",
+    "settleConfirmTitleOneTime": "Settle this group?",
+    "settleConfirmDescOneTime": "We'll work out who owes whom and record the final transfers so every balance lands at zero. You can reopen it if you need to make changes.",
+    "reopenOneTime": "Reopen",
+    "settledOneTime": "Settled"
   },
   "expenses": {
     "title": "Expenses",
@@ -344,7 +348,8 @@
     "failedDelete": "Failed to delete expense",
     "failedExport": "Failed to export PDF",
     "recurringExpenseCreated": "Recurring expense created",
-    "recurringExpenseDeleted": "Recurring expense deleted"
+    "recurringExpenseDeleted": "Recurring expense deleted",
+    "groupSettled": "Group settled"
   },
   "common": {
     "cancel": "Cancel",

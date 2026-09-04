@@ -11,7 +11,7 @@ import {
   updateRecurringGroupExpense, deleteRecurringGroupExpense,
 } from '@/api/recurringExpenses';
 import {
-  settleMonthlyShare, settleAll, unsettleMonthlyShare, downloadMonthlyPdf,
+  settleMonthlyShare, settleAll, unsettleMonthlyShare, unsettleAll, downloadMonthlyPdf,
 } from '@/api/shares';
 import { getCurrentUser } from '@/api/auth';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -163,7 +163,7 @@ export function ExpensesDashboard() {
       const result = isOneTime ? await settleAll(groupId) : await settleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to settle');
       refetch();
-      toast.success(t('toasts.monthSettled'));
+      toast.success(t(isOneTime ? 'toasts.groupSettled' : 'toasts.monthSettled'));
       island.success();
     } catch {
       toast.error(t('toasts.failedSettle'));
@@ -177,7 +177,8 @@ export function ExpensesDashboard() {
     setIsUnsettling(true);
     island.loading();
     try {
-      const result = await unsettleMonthlyShare(groupId, year, month);
+      // An occasion is settled as one thing, so it reopens as one thing.
+      const result = isOneTime ? await unsettleAll(groupId) : await unsettleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to reopen');
       refetch();
       toast.success(t('toasts.monthReopened'));
@@ -236,6 +237,7 @@ export function ExpensesDashboard() {
 
       {monthlyData && (
         <BalancePanel
+          isOneTime={isOneTime}
           balances={monthlyData.balances}
           transfers={monthlyData.transfers ?? []}
           members={members}
@@ -406,11 +408,13 @@ export function ExpensesDashboard() {
         <DialogContent className="sm:max-w-sm" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>
-              {t('balance.settleConfirmTitle', { month: (t('months', { returnObjects: true }) as string[])[month - 1], year })}
+              {isOneTime
+                ? t('balance.settleConfirmTitleOneTime')
+                : t('balance.settleConfirmTitle', { month: (t('months', { returnObjects: true }) as string[])[month - 1], year })}
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            {t('balance.settleConfirmDesc')}
+            {isOneTime ? t('balance.settleConfirmDescOneTime') : t('balance.settleConfirmDesc')}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSettleConfirm(false)}>{t('common.cancel')}</Button>

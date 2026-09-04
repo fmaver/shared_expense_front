@@ -136,6 +136,10 @@ export function AddExpenseDialog({
       ...expense,
       splitStrategy,
       ...(isRecurring ? { paymentType: 'debit' as const, installments: 1 } : {}),
+      // A one-time group has no months, so an expense there is always a single debit
+      // payment. The controls are hidden, but state can survive a group switch inside the
+      // same mounted dialog — and the backend rejects credit here, so send what it accepts.
+      ...(isOneTimeGroup ? { paymentType: 'debit' as const, installments: 1 } : {}),
       // For loan edits, always preserve the original category and split strategy
       ...(isLoanEdit ? {
         category: { name: 'prestamo' },
@@ -447,8 +451,9 @@ export function AddExpenseDialog({
           )}
           </>)}
 
-          {/* Recurring toggle — only show when creating (not editing) */}
-          {!isEdit && !hidePayerAndSplit && (
+          {/* Recurring toggle — only when creating, and never in a one-time group:
+              "repeats every month" is meaningless where there are no months. */}
+          {!isEdit && !hidePayerAndSplit && !isOneTimeGroup && (
             <div className="pt-1">
               <button
                 type="button"

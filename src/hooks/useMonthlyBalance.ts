@@ -56,12 +56,16 @@ export function useMonthlyBalance(
   const { refreshSignal } = useExpenseRefresh();
   const fetchRef = useRef(fetchMonthlyBalance);
   fetchRef.current = fetchMonthlyBalance;
-  const isFirstSignal = useRef(true);
+
+  // Track the last signal value actually seen rather than "have I mounted yet". A boolean is
+  // mount-scoped, so if this view remounts between the signal being sent and the effect
+  // running, the real refresh is swallowed as though it were the initial one and the new
+  // expense never appears until you navigate away and back. Seeding the ref with the current
+  // value keeps the mount case fetch-free, without discarding a genuine bump.
+  const lastSeenSignal = useRef(refreshSignal);
   useEffect(() => {
-    if (isFirstSignal.current) {
-      isFirstSignal.current = false;
-      return;
-    }
+    if (lastSeenSignal.current === refreshSignal) return;
+    lastSeenSignal.current = refreshSignal;
     fetchRef.current();
   }, [refreshSignal]);
 
