@@ -5,7 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- interactive-widget: let the keyboard resize the layout viewport so `fixed bottom-0`
+         sheets stay above it. Honoured by Chrome/Android; Safari ignores it, which is what
+         useKeyboardInset() handles. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     <meta name="theme-color" content="#CCBBDD" />
     <title>Jirens — Shared Expenses</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
