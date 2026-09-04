@@ -26,6 +26,8 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
   const [telephone, setTelephone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Which existing name-only member the joiner says they are; undefined = a new person.
+  const [claimMemberId, setClaimMemberId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!token) return;
@@ -43,6 +45,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
         name: name.trim(),
         email: email.trim(),
         password,
+        claimMemberId,
       });
       const expiration = new Date(Date.now() + 30 * 60_000).toISOString();
       localStorage.setItem('token', result.accessToken);
@@ -94,6 +97,8 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
     );
   }
 
+  const claimable = info.claimableMembers ?? [];
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -105,6 +110,46 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
             <span className="font-semibold text-foreground">{info.groupName}</span>. Create your
             account to get started.
           </p>
+
+          {claimable.length > 0 && (
+            <div className="mb-5 space-y-1.5">
+              <p className="text-sm font-medium text-foreground">¿Sos alguna de estas personas?</p>
+              <p className="text-xs text-muted-foreground mb-2">
+                Elegí tu nombre para quedarte con los gastos que ya te asignaron.
+              </p>
+              {claimable.map(member => (
+                <button
+                  key={member.memberId}
+                  type="button"
+                  onClick={() => {
+                    setClaimMemberId(member.memberId);
+                    setName(member.name);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors ${
+                    claimMemberId === member.memberId
+                      ? 'border-brand bg-brand/10 text-foreground font-medium'
+                      : 'border-border hover:bg-muted/50 text-foreground'
+                  }`}
+                >
+                  {member.name}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setClaimMemberId(undefined);
+                  setName('');
+                }}
+                className={`w-full text-left px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors ${
+                  claimMemberId === undefined
+                    ? 'border-brand bg-brand/10 text-foreground font-medium'
+                    : 'border-border hover:bg-muted/50 text-muted-foreground'
+                }`}
+              >
+                Soy otra persona
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleJoin} className="space-y-4">
             <div className="space-y-1.5">

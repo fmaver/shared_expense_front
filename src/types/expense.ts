@@ -87,6 +87,11 @@ export interface MonthlyBalanceResponse {
   transfers: DebtTransfer[];
 }
 
+export interface ClaimableMember {
+  memberId: number;
+  name: string;
+}
+
 export interface GroupMember {
   memberId: number;
   name: string;
@@ -133,6 +138,8 @@ export interface GroupJoinLink {
 export interface GroupJoinResolveResponse {
   groupName: string;
   inviterName?: string | null;
+  /** Members tracked by name alone that the joiner may claim as themselves. */
+  claimableMembers?: ClaimableMember[];
 }
 
 export type GroupStatus = 'active' | 'closed' | 'deleted';

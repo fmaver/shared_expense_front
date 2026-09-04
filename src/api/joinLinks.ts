@@ -41,7 +41,7 @@ export async function resolveJoinToken(token: string): Promise<GroupJoinResolveR
 
 export async function registerAndJoin(
   token: string,
-  data: { name: string; email: string; password: string },
+  data: { name: string; email: string; password: string; claimMemberId?: number },
 ): Promise<{ accessToken: string; tokenType: string }> {
   const response = await fetch(`${config.apiBaseUrl}/api/v1/join/${token}`, {
     method: 'POST',
