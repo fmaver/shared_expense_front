@@ -99,8 +99,16 @@
       "nameLabel": "Nombre del grupo",
       "namePlaceholder": "ej. Casa, Viaje 2026",
       "creating": "Creando…",
-      "create": "Crear grupo"
-    }
+      "create": "Crear grupo",
+      "typeTitle": "¿Qué tipo de grupo?",
+      "typeRegularName": "Continuo",
+      "typeRegularDesc": "Algo que sigue en el tiempo, como una casa. Con cuotas y saldo mes a mes.",
+      "typeOneTimeName": "Puntual",
+      "typeOneTimeDesc": "Un viaje o una cena. Un solo balance, sin meses ni cuotas.",
+      "typeContinue": "Continuar",
+      "typeBack": "Volver"
+    },
+    "badgeOneTime": "Puntual"
   },
   "tabs": {
     "expenses": "Gastos",

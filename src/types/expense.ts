@@ -144,8 +144,20 @@ export interface GroupJoinResolveResponse {
   alreadyMember?: boolean;
 }
 
+/** A whole group's balance with months collapsed — used by one-time groups. */
+export interface AggregateBalanceResponse {
+  groupId: number;
+  expenses: ExpenseResponse[];
+  balances: Record<string, number>;
+  isSettled: boolean;
+  transfers: DebtTransfer[];
+}
+
 export type GroupStatus = 'active' | 'closed' | 'deleted';
-export type GroupType = 'regular' | 'personal';
+export type GroupType = 'regular' | 'personal' | 'one_time';
+
+/** The types a user can actually create — 'personal' is made server-side only. */
+export type CreatableGroupType = 'regular' | 'one_time';
 
 export interface Group {
   id: number;

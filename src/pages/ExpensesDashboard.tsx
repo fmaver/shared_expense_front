@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
+import { useGroup } from '@/hooks/useGroups';
 import {
   checkSimilarExpenses, createExpense, updateExpense, deleteExpense,
 } from '@/api/expenses';
@@ -10,7 +11,7 @@ import {
   updateRecurringGroupExpense, deleteRecurringGroupExpense,
 } from '@/api/recurringExpenses';
 import {
-  settleMonthlyShare, unsettleMonthlyShare, downloadMonthlyPdf,
+  settleMonthlyShare, settleAll, unsettleMonthlyShare, downloadMonthlyPdf,
 } from '@/api/shares';
 import { getCurrentUser } from '@/api/auth';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -64,10 +65,14 @@ export function ExpensesDashboard() {
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
   const [recurringEditTarget, setRecurringEditTarget] = useState<ExpenseResponse | null>(null);
 
+  const { data: group } = useGroup(groupId);
+  // One-time groups collapse every month into a single balance and forbid credit.
+  const isOneTime = group?.groupType === 'one_time';
+
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
     data: monthlyData, isLoading: loadingExpenses, refetch,
-  } = useMonthlyBalance(groupId, year, month);
+  } = useMonthlyBalance(groupId, year, month, isOneTime);
 
   const expenses = monthlyData?.expenses ?? [];
   const isSettled = monthlyData?.isSettled ?? false;
@@ -154,7 +159,8 @@ export function ExpensesDashboard() {
     setIsSettling(true);
     island.loading();
     try {
-      const result = await settleMonthlyShare(groupId, year, month);
+      // A one-time group is settled in one step: there are no months to close individually.
+      const result = isOneTime ? await settleAll(groupId) : await settleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to settle');
       refetch();
       toast.success(t('toasts.monthSettled'));
@@ -223,7 +229,10 @@ export function ExpensesDashboard() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto">
-      <MonthPicker year={year} month={month} onNavigate={(y, m) => { setYear(y); setMonth(m); }} />
+      {/* A one-time group ignores months entirely, so there is nothing to navigate. */}
+      {!isOneTime && (
+        <MonthPicker year={year} month={month} onNavigate={(y, m) => { setYear(y); setMonth(m); }} />
+      )}
 
       {monthlyData && (
         <BalancePanel
@@ -307,6 +316,7 @@ export function ExpensesDashboard() {
       </div>
 
       <AddExpenseDialog
+        isOneTimeGroup={isOneTime}
         open={showAdd}
         onOpenChange={v => {
           setShowAdd(v);

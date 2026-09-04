@@ -1,5 +1,5 @@
 import { config } from '../config/env';
-import type { MonthlyBalanceResponse } from '../types/expense';
+import type { AggregateBalanceResponse, MonthlyBalanceResponse } from '../types/expense';
 
 export interface MonthTrendPoint {
   year: number;
@@ -85,6 +85,22 @@ export async function unsettleMonthlyShare(groupId: number, year: number, month:
     console.error('Error unsettling monthly share:', error);
     return null;
   }
+}
+
+export async function getAggregateBalance(groupId: number): Promise<AggregateBalanceResponse | null> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/all`, {
+    headers: authHeaders(),
+  });
+  if (response.status === 404) return null;
+  return handleResponse<AggregateBalanceResponse>(response);
+}
+
+export async function settleAll(groupId: number): Promise<AggregateBalanceResponse | null> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/settle-all`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  return handleResponse<AggregateBalanceResponse>(response);
 }
 
 export async function getGroupTrend(groupId: number, months = 6): Promise<MonthTrendPoint[]> {
