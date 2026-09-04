@@ -4,6 +4,7 @@ import axios from 'axios';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { AppShell } from './components/layout/AppShell';
+import { useKeyboardInset } from './hooks/useKeyboardInset';
 import { GroupSelectorPage } from './pages/GroupSelectorPage';
 import { GroupLayout } from './pages/GroupLayout';
 import { ExpensesDashboard } from './pages/ExpensesDashboard';
@@ -24,6 +25,9 @@ import { ExpenseRefreshProvider } from './contexts/ExpenseRefreshContext';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+
+  // Publishes --keyboard-inset so bottom sheets can sit above the on-screen keyboard.
+  useKeyboardInset();
 
   useEffect(() => {
     const token = localStorage.getItem('token');

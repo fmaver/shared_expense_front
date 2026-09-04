@@ -159,7 +159,8 @@ function DialogContent({
           // Base
           "fixed z-50 w-full bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",
           // Mobile: bottom sheet (animation comes from index.css keyframes)
-          "bottom-0 inset-x-0 rounded-t-2xl rounded-b-none max-h-[88vh] overflow-y-auto grid gap-4 px-4 pb-4 pt-0",
+          "bottom-[var(--keyboard-inset,0px)] inset-x-0 rounded-t-2xl rounded-b-none overflow-y-auto grid gap-4 px-4 pb-4 pt-0",
+          "max-h-[calc((100dvh_-_var(--keyboard-inset,0px))_*_0.88)]",
           // Desktop: centered dialog with tailwindcss-animate zoom
           "lg:bottom-auto lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
           "lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
