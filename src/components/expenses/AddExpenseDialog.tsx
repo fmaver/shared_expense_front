@@ -94,6 +94,7 @@ export function AddExpenseDialog({
   const [error, setError] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [submittingRecurring, setSubmittingRecurring] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Re-init when dialog opens with a different expense
   React.useEffect(() => {
@@ -117,6 +118,13 @@ export function AddExpenseDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    // The category select is not a native input, so `required` cannot catch this. Without
+    // the check the form posts category {name: ''}, which the backend rejects.
+    if (!expense.category?.name) {
+      setError(t('expenseForm.categoryRequired'));
+      return;
+    }
     if (expense.splitStrategy.type === 'exact' && Math.abs(exactRemaining) > 0.01) {
       setError(t('expenseForm.exactError'));
       return;
@@ -180,7 +188,16 @@ export function AddExpenseDialog({
       return;
     }
 
-    onSubmit(finalExpense);
+    // Awaited and caught: onSubmit rejects when the backend refuses the expense, and an
+    // unhandled rejection is invisible — the button simply appeared to do nothing.
+    try {
+      setSubmitting(true);
+      await onSubmit(finalExpense);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('expenseForm.submitFailed'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const disabled = isSettled;
@@ -480,7 +497,7 @@ export function AddExpenseDialog({
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
           <Button form="expense-form" type="submit" className="bg-brand hover:bg-brand/90 text-white"
-            disabled={disabled || submittingRecurring}>
+            disabled={disabled || submittingRecurring || submitting}>
             {isEdit ? t('expenseForm.update') : t('expenseForm.addExpense')}
           </Button>
         </DialogFooter>

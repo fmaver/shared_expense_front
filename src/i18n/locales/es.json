@@ -252,7 +252,9 @@
     "selectPlaceholder": "Seleccioná…",
     "exactError": "Los montos exactos deben sumar el total.",
     "repeatEveryMonth": "Repite cada mes",
-    "recurringEditNote": "Los cambios se aplicarán a este mes y a todas las ocurrencias futuras."
+    "recurringEditNote": "Los cambios se aplicarán a este mes y a todas las ocurrencias futuras.",
+    "categoryRequired": "Elegí una categoría",
+    "submitFailed": "No se pudo guardar el gasto"
   },
   "transfer": {
     "title": "Transferencia de dinero",
