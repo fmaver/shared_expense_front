@@ -11,7 +11,7 @@ import {
   updateRecurringGroupExpense, deleteRecurringGroupExpense,
 } from '@/api/recurringExpenses';
 import {
-  settleMonthlyShare, settleAll, unsettleMonthlyShare, unsettleAll, downloadMonthlyPdf,
+  settleMonthlyShare, settleAll, unsettleMonthlyShare, unsettleAll, downloadMonthlyPdf, downloadGroupPdf,
 } from '@/api/shares';
 import { getCurrentUser } from '@/api/auth';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -193,7 +193,12 @@ export function ExpensesDashboard() {
 
   const handleExportPDF = async () => {
     try {
-      await downloadMonthlyPdf(groupId, year, month);
+      // An occasion exports whole; only an ongoing group exports a single month.
+      if (isOneTime) {
+        await downloadGroupPdf(groupId, group?.name ?? 'grupo');
+      } else {
+        await downloadMonthlyPdf(groupId, year, month);
+      }
     } catch {
       toast.error(t('toasts.failedExport'));
     }

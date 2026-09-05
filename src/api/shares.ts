@@ -87,6 +87,25 @@ export async function unsettleMonthlyShare(groupId: number, year: number, month:
   }
 }
 
+/** A one-time group has no month, so its report covers the whole occasion. */
+export async function downloadGroupPdf(groupId: number, groupName: string): Promise<void> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/all/pdf`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to download PDF');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `balance_${groupName.toLowerCase().replace(/\s+/g, '_')}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export async function getAggregateBalance(groupId: number): Promise<AggregateBalanceResponse | null> {
   const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/all`, {
     headers: authHeaders(),
