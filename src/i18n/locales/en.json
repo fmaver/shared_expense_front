@@ -252,7 +252,9 @@
     "selectPlaceholder": "Select…",
     "exactError": "Exact amounts must add up to the total.",
     "repeatEveryMonth": "Repeat every month",
-    "recurringEditNote": "Changes will apply to this month and all future occurrences."
+    "recurringEditNote": "Changes will apply to this month and all future occurrences.",
+    "categoryRequired": "Pick a category",
+    "submitFailed": "Could not save the expense"
   },
   "transfer": {
     "title": "Money transfer",
