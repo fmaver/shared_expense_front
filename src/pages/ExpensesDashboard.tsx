@@ -65,6 +65,11 @@ export function ExpensesDashboard() {
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
   const [recurringEditTarget, setRecurringEditTarget] = useState<ExpenseResponse | null>(null);
 
+  // A push notification links to one expense: /groups/7?year=2026&month=5&expense=42.
+  // The month is already read from the same params, so the row is on screen by the time this
+  // matches — it only has to say which one to open.
+  const deepLinkedExpenseId = Number(searchParams.get('expense')) || null;
+
   const { data: group, isLoading: loadingGroup } = useGroup(groupId);
   // Three states, not two: until the group loads its type is *unknown*, and treating that as
   // "ongoing" is what made a puntual group request /shares/{year}/{month} and settle a single
@@ -313,6 +318,7 @@ export function ExpensesDashboard() {
             <div className="divide-y divide-border">
               {sortedExpenses.map(e => (
                 <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
+                  autoOpenDetail={e.id === deepLinkedExpenseId}
                   highlight={e.id === highlightId}
                   groupId={groupId}
                   viewedYear={year}
