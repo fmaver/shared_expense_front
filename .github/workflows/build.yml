@@ -41,6 +41,10 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+      # `vite build` does not type-check and `tsc --noEmit` inspects nothing here, so without
+      # this a call to an undefined symbol ships and throws at runtime. Blocks new errors only.
+      - name: Typecheck (no new errors)
+        run: npm run typecheck:ratchet
 
   build:
     runs-on: ubuntu-latest
