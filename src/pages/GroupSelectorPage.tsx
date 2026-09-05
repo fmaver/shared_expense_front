@@ -5,7 +5,7 @@ import { useGroups } from '@/hooks/useGroups';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRight, PartyPopper, Plus, Users, User } from 'lucide-react';
+import { Archive, ChevronRight, PartyPopper, Plus, Users, User } from 'lucide-react';
 import type { Group } from '@/types/expense';
 
 export function GroupSelectorPage() {
@@ -78,6 +78,20 @@ export function GroupSelectorPage() {
           ))}
         </div>
       )}
+
+      {/* Archived groups live behind their own screen so the main list stays about what is
+          active. Per member, so this count is yours alone. */}
+      <button
+        type="button"
+        onClick={() => navigate('/groups/archived')}
+        className="mt-6 w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card text-left hover:bg-accent/50 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <Archive className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">{t('groups.archived')}</span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </button>
 
       <CreateGroupDialog open={showCreate} onOpenChange={setShowCreate}
         onCreated={(g: Group) => navigate(`/groups/${g.id}`)} />

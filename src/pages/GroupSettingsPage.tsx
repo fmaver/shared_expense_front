@@ -12,9 +12,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { updateGroupName, leaveGroup } from '@/api/groups';
+import { updateGroupName, leaveGroup, archiveGroup } from '@/api/groups';
 import { toast } from 'sonner';
-import { LogOut } from 'lucide-react';
+import { Archive, LogOut } from 'lucide-react';
 
 export function GroupSettingsPage() {
   const { t } = useTranslation();
@@ -27,6 +27,7 @@ export function GroupSettingsPage() {
   const [isRenaming, setIsRenaming] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const handleRename = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +42,20 @@ export function GroupSettingsPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to rename group');
     } finally {
       setIsRenaming(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    setIsArchiving(true);
+    try {
+      await archiveGroup(groupId);
+      toast.success(t('groups.archivedToast'));
+      navigate('/groups');
+    } catch (err) {
+      // The backend rejects this while the member still owes or is owed, and its message
+      // says so — surface it rather than a generic failure.
+      toast.error(err instanceof Error ? err.message : t('groups.archiveBlocked'));
+      setIsArchiving(false);
     }
   };
 
@@ -100,6 +115,23 @@ export function GroupSettingsPage() {
             {isRenaming ? t('settings.saving') : t('settings.save')}
           </Button>
         </form>
+      </div>
+
+      {/* Archive — reversible, so it sits above the danger zone rather than inside it. */}
+      <div className="pt-2">
+        <div className="border-t border-border pt-6">
+          <h2 className="font-semibold text-foreground text-sm mb-1">{t('groups.archive')}</h2>
+          <p className="text-xs text-muted-foreground mb-3">{t('groups.archiveHint')}</p>
+          <Button
+            variant="outline"
+            className="w-full cursor-pointer"
+            disabled={isArchiving}
+            onClick={handleArchive}
+          >
+            <Archive className="h-4 w-4 mr-1.5" />
+            {t('groups.archive')}
+          </Button>
+        </div>
       </div>
 
       {/* Danger zone */}
