@@ -38,6 +38,8 @@ interface ExpenseRowProps {
   groupId?: number;
   viewedYear?: number;
   viewedMonth?: number;
+  /** Open this row's detail on mount — used when a push notification deep-links to it. */
+  autoOpenDetail?: boolean;
   onRecurringDelete?: (templateId: number) => void;
   onRecurringEdit?: (expense: ExpenseResponse) => void;
 }
@@ -46,7 +48,7 @@ function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false, hideActions = false, onRecurringDelete, onRecurringEdit }: ExpenseRowProps) {
+export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false, hideActions = false, autoOpenDetail = false, onRecurringDelete, onRecurringEdit }: ExpenseRowProps) {
   const canEdit = expense.installmentNo === 1;
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
@@ -56,6 +58,12 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
   const rowRef = useRef<HTMLDivElement>(null);
   const [isFlashing, setIsFlashing] = useState(highlight);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // A push notification links straight to one expense; opening its detail is the difference
+  // between arriving at the thing and arriving near it.
+  useEffect(() => {
+    if (autoOpenDetail) setDetailOpen(true);
+  }, [autoOpenDetail]);
 
   useEffect(() => {
     if (!highlight) return;
