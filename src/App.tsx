@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AppShell } from './components/layout/AppShell';
 import { useKeyboardInset } from './hooks/useKeyboardInset';
 import { GroupSelectorPage } from './pages/GroupSelectorPage';
+import { ArchivedGroupsPage } from './pages/ArchivedGroupsPage';
 import { GroupLayout } from './pages/GroupLayout';
 import { ExpensesDashboard } from './pages/ExpensesDashboard';
 import { GroupMembersPage } from './pages/GroupMembersPage';
@@ -87,6 +88,7 @@ function App() {
         ) : (
           <Route element={<AppShell onLogout={handleLogout} />}>
             <Route path="/groups" element={<GroupSelectorPage />} />
+              <Route path="/groups/archived" element={<ArchivedGroupsPage />} />
             <Route path="/groups/:groupId" element={<GroupLayout />}>
               <Route index element={<ExpensesDashboard />} />
               <Route path="members" element={<GroupMembersPage />} />

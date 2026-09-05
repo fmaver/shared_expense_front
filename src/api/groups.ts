@@ -18,11 +18,35 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return result.data as T;
 }
 
-export async function getMyGroups(): Promise<Group[]> {
-  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/`, {
+export async function getMyGroups(archived = false): Promise<Group[]> {
+  const suffix = archived ? '?archived=true' : '';
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${suffix}`, {
     headers: authHeaders(),
   });
   return handleResponse<Group[]>(response);
+}
+
+/** Archiving is per member: this hides the group for you only. */
+export async function archiveGroup(groupId: number): Promise<void> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/archive`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(typeof result.detail === 'string' ? result.detail : 'Failed to archive group');
+  }
+}
+
+export async function unarchiveGroup(groupId: number): Promise<void> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/unarchive`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(typeof result.detail === 'string' ? result.detail : 'Failed to unarchive group');
+  }
 }
 
 export async function createGroup(

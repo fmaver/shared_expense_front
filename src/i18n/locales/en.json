@@ -108,7 +108,16 @@
       "typeContinue": "Continue",
       "typeBack": "Back"
     },
-    "badgeOneTime": "One-time"
+    "badgeOneTime": "One-time",
+    "archive": "Archive",
+    "archived": "Archived",
+    "archivedTitle": "Archived groups",
+    "unarchive": "Unarchive",
+    "archiveHint": "Hides it from your list. Others keep using it normally.",
+    "archiveBlocked": "Settle your balance before archiving.",
+    "noArchived": "You have no archived groups.",
+    "archivedToast": "Group archived",
+    "unarchivedToast": "Group restored"
   },
   "tabs": {
     "expenses": "Expenses",

@@ -1,29 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getMyGroups, getGroup } from '../api/groups';
 import type { Group } from '../types/expense';
 
-export function useGroups() {
+export function useGroups(archived = false) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Group[]>([]);
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const result = await getMyGroups();
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch groups');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetch();
-  }, []);
+  const fetchGroups = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setData(await getMyGroups(archived));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch groups');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [archived]);
 
-  return { data, isLoading, error };
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  return { data, isLoading, error, refetch: fetchGroups };
 }
 
 export function useGroup(groupId: number) {
