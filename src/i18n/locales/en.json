@@ -293,7 +293,7 @@
     "inviteTitle": "Add member",
     "channel": "How to add them",
     "emailChannel": "Invite by email",
-    "whatsappChannel": "Invite by WhatsApp",
+    "whatsappChannel": "Invite by phone",
     "emailAddress": "Email address",
     "phoneNumber": "WhatsApp number",
     "phoneHelp": "Don't include the 9. For example: 11 3456 7890.",
@@ -313,7 +313,8 @@
     "addMember": "Add member",
     "adding": "Adding…",
     "memberAdded": "Member added",
-    "noAccount": "no account"
+    "noAccount": "no account",
+    "channelHelp": "They get a notification if they have the app installed, otherwise email — and WhatsApp only if we have no other way to reach them."
   },
   "settings": {
     "title": "Settings",
