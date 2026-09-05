@@ -15,12 +15,19 @@ export function useMonthlyBalance(
   year: number,
   month: number,
   isOneTime = false,
+  /**
+   * Whether the group type is known yet. `isOneTime` is derived from an async fetch, so
+   * before it resolves it reads false — indistinguishable from a genuine ongoing group.
+   * Fetching then would hit the monthly endpoint for a group that has no months.
+   */
+  enabled = true,
 ) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MonthlyBalanceResponse | null>(null);
 
   const fetchMonthlyBalance = useCallback(async () => {
+    if (!enabled) return;
     try {
       setIsLoading(true);
       setError(null);
@@ -44,7 +51,7 @@ export function useMonthlyBalance(
     } finally {
       setIsLoading(false);
     }
-  }, [groupId, year, month, isOneTime]);
+  }, [groupId, year, month, isOneTime, enabled]);
 
   useEffect(() => {
     fetchMonthlyBalance();
