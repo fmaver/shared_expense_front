@@ -1,6 +1,23 @@
 import { config } from '../config/env';
 import type { AggregateBalanceResponse, MonthlyBalanceResponse } from '../types/expense';
 
+function authHeaders(): HeadersInit {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  const result = await response.json();
+  if (!response.ok) {
+    const detail = result.detail;
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+  }
+  return result.data as T;
+}
+
 export interface MonthTrendPoint {
   year: number;
   month: number;
