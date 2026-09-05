@@ -51,6 +51,17 @@ export function ExpensesDashboard() {
     const m = searchParams.get('month');
     return m ? parseInt(m, 10) : new Date().getMonth() + 1;
   });
+  // The initialisers above run once, on mount. A push notification tapped while the app is
+  // already open changes the URL without remounting this page, so without this the month
+  // stayed wherever the user had left it — which is why settlement notifications appeared to
+  // do nothing: the month is the only thing their link carries.
+  useEffect(() => {
+    const y = searchParams.get('year');
+    const m = searchParams.get('month');
+    if (y) setYear(parseInt(y, 10));
+    if (m) setMonth(parseInt(m, 10));
+  }, [searchParams]);
+
   const highlightId = searchParams.get('highlight') ? parseInt(searchParams.get('highlight')!, 10) : null;
   const [showAdd, setShowAdd] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
