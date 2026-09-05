@@ -12,6 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { useCategories } from '@/hooks/useCategories';
+import { parseExpenseImage } from '@/api/expenses';
+import { ImagePlus } from 'lucide-react';
 import { formatDate } from '@/utils/format';
 import { createRecurringGroupExpense } from '@/api/recurringExpenses';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '@/types/expense';
@@ -95,6 +97,8 @@ export function AddExpenseDialog({
   const [isRecurring, setIsRecurring] = useState(false);
   const [submittingRecurring, setSubmittingRecurring] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanNote, setScanNote] = useState<string | null>(null);
 
   // Re-init when dialog opens with a different expense
   React.useEffect(() => {
@@ -115,6 +119,50 @@ export function AddExpenseDialog({
   const exactRemaining = Number(expense.amount ?? 0) - exactTotal;
 
   const set = (patch: Partial<ExpenseCreate>) => setExpense(prev => ({ ...prev, ...patch }));
+
+  /**
+   * Read an image and prefill the form from it.
+   *
+   * The values come from an LLM, so they land in the form for the user to check — nothing is
+   * saved here. A low-confidence read says so rather than pretending to be certain.
+   */
+  const scanImage = async (file: File) => {
+    if (groupId == null || scanning) return;
+    setScanning(true);
+    setScanNote(null);
+    setError('');
+    try {
+      const draft = await parseExpenseImage(groupId, file);
+      set({
+        ...(draft.amount != null ? { amount: draft.amount } : {}),
+        description: draft.description,
+        category: { name: draft.category },
+        date: draft.date,
+        paymentType: draft.paymentType,
+        installments: draft.installments,
+        currency: draft.currency,
+      });
+      setScanNote(
+        draft.confidence === 'low'
+          ? t('expenseForm.scanLowConfidence')
+          : t('expenseForm.scanFilled'),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('expenseForm.submitFailed'));
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  // Pasting a screenshot is the closest thing iOS has to sharing into the app: iOS Safari
+  // does not implement the Web Share Target API, so a share sheet cannot reach us.
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const image = Array.from(e.clipboardData.files).find(f => f.type.startsWith('image/'));
+    if (image) {
+      e.preventDefault();
+      scanImage(image);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,7 +265,34 @@ export function AddExpenseDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto pb-3">
-        <form id="expense-form" onSubmit={handleSubmit} className="space-y-4 py-1">
+        <form id="expense-form" onSubmit={handleSubmit} onPaste={handlePaste} className="space-y-4 py-1">
+          {/* Scan a receipt or payment screenshot. Only when creating: an edit already has
+              its values, and re-reading an image would silently overwrite them. */}
+          {!isEdit && !isLoanEdit && groupId != null && (
+            <div className="rounded-xl border border-dashed border-border p-3">
+              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                <ImagePlus className="h-4 w-4 text-brand" />
+                <span className="font-medium">
+                  {scanning ? t('expenseForm.scanning') : t('expenseForm.scanImage')}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={scanning || disabled}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    // Clear the input so picking the same photo twice still fires onChange.
+                    e.target.value = '';
+                    if (file) scanImage(file);
+                  }}
+                />
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">{t('expenseForm.scanHint')}</p>
+              {scanNote && <p className="mt-1 text-xs text-brand">{scanNote}</p>}
+            </div>
+          )}
+
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
               {error}

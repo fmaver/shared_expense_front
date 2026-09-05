@@ -171,3 +171,36 @@ export async function recalculateMonthlyBalance(groupId: number, year: number, m
     return { success: false, error: 'An unexpected error occurred' };
   }
 }
+
+
+/** An expense read off an image by the LLM — a suggestion the user confirms, never saved yet. */
+export interface ExpenseDraft {
+  amount: number | null;
+  description: string;
+  category: string;
+  date: string;
+  paymentType: 'debit' | 'credit';
+  installments: number;
+  currency: string;
+  confidence: 'high' | 'low';
+}
+
+export async function parseExpenseImage(groupId: number, file: File): Promise<ExpenseDraft> {
+  const token = localStorage.getItem('token');
+  const body = new FormData();
+  body.append('file', file);
+  const response = await fetch(
+    `${config.apiBaseUrl}/api/v1/groups/${groupId}/expenses/parse-image`,
+    {
+      method: 'POST',
+      // No Content-Type header on purpose: the browser must set the multipart boundary.
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body,
+    },
+  );
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof result.detail === 'string' ? result.detail : 'Failed to read the image');
+  }
+  return result.data as ExpenseDraft;
+}
