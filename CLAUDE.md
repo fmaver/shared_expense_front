@@ -22,7 +22,17 @@ npm install
 npm run dev       # dev server on :5173
 npm run build     # production build
 npm run lint      # ESLint
+npm run typecheck # tsc -b — the ONLY command that actually checks types
+npm run typecheck:ratchet   # fails if the error count grows (what CI runs)
 ```
+
+> **`npm run build` does not check types**, and neither does `tsc --noEmit`. `build` is
+> `vite build`, which transpiles with esbuild, and `tsconfig.json` is references-only with
+> `"files": []`, so `tsc --noEmit` inspects nothing and exits 0. Use **`tsc -b`**.
+> This gap let `src/api/shares.ts` call an undefined `authHeaders()` — a runtime `ReferenceError`
+> that emptied the expense list while both gates reported green. The repo carries pre-existing
+> errors (see `.typecheck-baseline`), so CI ratchets: new errors fail, and the baseline may only
+> go down.
 
 Backend URL: set `VITE_API_URL` in `.env` (defaults to `http://localhost:8000`).
 
