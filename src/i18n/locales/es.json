@@ -263,7 +263,12 @@
     "repeatEveryMonth": "Repite cada mes",
     "recurringEditNote": "Los cambios se aplicarán a este mes y a todas las ocurrencias futuras.",
     "categoryRequired": "Elegí una categoría",
-    "submitFailed": "No se pudo guardar el gasto"
+    "submitFailed": "No se pudo guardar el gasto",
+    "scanImage": "Escanear foto",
+    "scanning": "Leyendo la imagen…",
+    "scanHint": "Subí o pegá un ticket o captura de pago.",
+    "scanLowConfidence": "Revisá estos valores — la imagen costó leerla.",
+    "scanFilled": "Campos completados desde la imagen. Revisá antes de guardar."
   },
   "transfer": {
     "title": "Transferencia de dinero",

@@ -263,7 +263,12 @@
     "repeatEveryMonth": "Repeat every month",
     "recurringEditNote": "Changes will apply to this month and all future occurrences.",
     "categoryRequired": "Pick a category",
-    "submitFailed": "Could not save the expense"
+    "submitFailed": "Could not save the expense",
+    "scanImage": "Scan a photo",
+    "scanning": "Reading the image…",
+    "scanHint": "Upload or paste a receipt or payment screenshot.",
+    "scanLowConfidence": "Check these values — the image was hard to read.",
+    "scanFilled": "Fields filled from the image. Review before saving."
   },
   "transfer": {
     "title": "Money transfer",
