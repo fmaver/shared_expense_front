@@ -342,7 +342,17 @@
     "newPassword": "Nueva contraseña",
     "confirmNewPassword": "Confirmar nueva contraseña",
     "changePasswordBtn": "Cambiar contraseña",
-    "changingPassword": "Cambiando…"
+    "changingPassword": "Cambiando…",
+    "pushTitle": "Notificaciones push",
+    "pushEnable": "Activar",
+    "pushDisable": "Desactivar",
+    "pushOn": "Activadas — este dispositivo recibe las notificaciones en vez del mail.",
+    "pushWorking": "Procesando…",
+    "pushInstallIOS": "En iPhone las notificaciones solo funcionan con la app agregada a la pantalla de inicio. Abrí el menú de compartir, elegí “Agregar a inicio” y volvé acá.",
+    "pushDenied": "Bloqueaste las notificaciones de esta app. Volvé a habilitarlas desde los ajustes del dispositivo.",
+    "pushUnsupported": "Este navegador no puede recibir notificaciones push.",
+    "pushNotConfigured": "Push todavía no está configurado en el servidor. Vas a seguir recibiendo mails.",
+    "pushFallbackNote": "Sin push seguís recibiendo las notificaciones por mail, así que no te perdés nada."
   },
   "toasts": {
     "expenseAdded": "Gasto agregado",
