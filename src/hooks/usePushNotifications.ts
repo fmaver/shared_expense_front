@@ -69,6 +69,13 @@ export function usePushNotifications() {
       }
 
       const registration = await navigator.serviceWorker.getRegistration();
+      // Ask for a fresh sw.js on every launch. The worker is only ever registered from
+      // subscribe(), so an already-installed app would otherwise keep running the version it
+      // was installed with until the browser happened to check on its own — a fix to the
+      // worker would ship and never reach the people who already turned notifications on.
+      registration?.update().catch(() => {
+        /* offline, or the worker is unchanged — neither is worth surfacing */
+      });
       const existing = await registration?.pushManager.getSubscription();
       if (!cancelled) setStatus(existing ? 'subscribed' : 'available');
     };
