@@ -117,6 +117,11 @@ export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: Inv
                 <SelectItem value="name">{t('members.nameOnlyChannel')}</SelectItem>
               </SelectContent>
             </Select>
+            {/* The channel names where to look the person up, not how they hear about it:
+                delivery is push, then email, then WhatsApp, depending on what they have. */}
+            {!isNameOnly && (
+              <p className="text-xs text-muted-foreground">{t('members.channelHelp')}</p>
+            )}
           </div>
 
           {isNameOnly ? (

@@ -293,7 +293,7 @@
     "inviteTitle": "Agregar miembro",
     "channel": "Cómo agregarlo",
     "emailChannel": "Invitar por email",
-    "whatsappChannel": "Invitar por WhatsApp",
+    "whatsappChannel": "Invitar por teléfono",
     "emailAddress": "Dirección de email",
     "phoneNumber": "Número de WhatsApp",
     "phoneHelp": "No incluyas el 9. Por ejemplo: 11 3456 7890.",
@@ -313,7 +313,8 @@
     "addMember": "Agregar miembro",
     "adding": "Agregando…",
     "memberAdded": "Miembro agregado",
-    "noAccount": "sin cuenta"
+    "noAccount": "sin cuenta",
+    "channelHelp": "Le llega por notificación si tiene la app instalada, si no por email, y por WhatsApp solo si no tenemos otra forma de contactarla."
   },
   "settings": {
     "title": "Configuración",
