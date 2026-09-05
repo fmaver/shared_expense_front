@@ -65,14 +65,17 @@ export function ExpensesDashboard() {
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
   const [recurringEditTarget, setRecurringEditTarget] = useState<ExpenseResponse | null>(null);
 
-  const { data: group } = useGroup(groupId);
-  // One-time groups collapse every month into a single balance and forbid credit.
+  const { data: group, isLoading: loadingGroup } = useGroup(groupId);
+  // Three states, not two: until the group loads its type is *unknown*, and treating that as
+  // "ongoing" is what made a puntual group request /shares/{year}/{month} and settle a single
+  // month. Nothing month-shaped may run before this is known.
+  const groupTypeKnown = !loadingGroup && group !== undefined;
   const isOneTime = group?.groupType === 'one_time';
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
     data: monthlyData, isLoading: loadingExpenses, refetch,
-  } = useMonthlyBalance(groupId, year, month, isOneTime);
+  } = useMonthlyBalance(groupId, year, month, isOneTime, groupTypeKnown);
 
   const expenses = monthlyData?.expenses ?? [];
   const isSettled = monthlyData?.isSettled ?? false;
@@ -156,6 +159,8 @@ export function ExpensesDashboard() {
   };
 
   const handleSettle = async () => {
+    // Refuse rather than guess: settling the wrong thing is not recoverable from the UI.
+    if (!groupTypeKnown) return;
     setIsSettling(true);
     island.loading();
     try {
@@ -178,6 +183,7 @@ export function ExpensesDashboard() {
     island.loading();
     try {
       // An occasion is settled as one thing, so it reopens as one thing.
+      if (!groupTypeKnown) return;
       const result = isOneTime ? await unsettleAll(groupId) : await unsettleMonthlyShare(groupId, year, month);
       if (!result) throw new Error('Failed to reopen');
       refetch();
