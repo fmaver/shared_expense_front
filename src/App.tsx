@@ -22,8 +22,11 @@ import { IslandProvider } from './contexts/IslandContext';
 import { FabActionsProvider } from './contexts/FabActionsContext';
 import { ScrollProvider } from './contexts/ScrollContext';
 import { ExpenseRefreshProvider } from './contexts/ExpenseRefreshContext';
+import { usePushNavigation } from '@/hooks/usePushNavigation';
 
 function App() {
+  usePushNavigation();
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
