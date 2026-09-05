@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { normalizeArPhone, localArPhone } from '@/utils/phone';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { Bell } from 'lucide-react';
 
 function getInitials(name: string): string {
   if (!name) return '?';
@@ -35,6 +37,12 @@ export function ProfilePage() {
   const [email, setEmail] = useState('');
   const [telephone, setTelephone] = useState('');
   const [notificationPreference, setNotificationPreference] = useState<NotificationType>('NONE');
+  const {
+    status: pushStatus,
+    isBusy: pushBusy,
+    subscribe: subscribePush,
+    unsubscribe: unsubscribePush,
+  } = usePushNotifications();
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -183,6 +191,56 @@ export function ProfilePage() {
                 <SelectItem value="WHATSAPP">{t('profile.notifWhatsapp')}</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Push replaces the channel above on this device; email keeps covering everyone
+              who has not installed the app, which is why nobody loses notifications. */}
+          <div className="space-y-2 pt-2 border-t border-border">
+            <Label className="text-sm font-medium">{t('profile.pushTitle')}</Label>
+
+            {pushStatus === 'subscribed' && (
+              <>
+                <p className="text-xs text-muted-foreground">{t('profile.pushOn')}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  disabled={pushBusy}
+                  onClick={unsubscribePush}
+                >
+                  {pushBusy ? t('profile.pushWorking') : t('profile.pushDisable')}
+                </Button>
+              </>
+            )}
+
+            {pushStatus === 'available' && (
+              <>
+                <p className="text-xs text-muted-foreground">{t('profile.pushFallbackNote')}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full cursor-pointer"
+                  disabled={pushBusy}
+                  onClick={subscribePush}
+                >
+                  <Bell className="h-4 w-4 mr-1.5" />
+                  {pushBusy ? t('profile.pushWorking') : t('profile.pushEnable')}
+                </Button>
+              </>
+            )}
+
+            {pushStatus === 'needs-install' && (
+              <p className="text-xs text-muted-foreground">{t('profile.pushInstallIOS')}</p>
+            )}
+            {pushStatus === 'denied' && (
+              <p className="text-xs text-muted-foreground">{t('profile.pushDenied')}</p>
+            )}
+            {pushStatus === 'not-configured' && (
+              <p className="text-xs text-muted-foreground">{t('profile.pushNotConfigured')}</p>
+            )}
+            {pushStatus === 'unsupported' && (
+              <p className="text-xs text-muted-foreground">{t('profile.pushUnsupported')}</p>
+            )}
           </div>
         </div>
 

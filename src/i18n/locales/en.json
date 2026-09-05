@@ -342,7 +342,17 @@
     "newPassword": "New password",
     "confirmNewPassword": "Confirm new password",
     "changePasswordBtn": "Change password",
-    "changingPassword": "Changing…"
+    "changingPassword": "Changing…",
+    "pushTitle": "Push notifications",
+    "pushEnable": "Turn on",
+    "pushDisable": "Turn off",
+    "pushOn": "On — this device will be notified instead of by email.",
+    "pushWorking": "Working…",
+    "pushInstallIOS": "On iPhone, notifications only work once the app is on your Home Screen. Open the share menu, choose “Add to Home Screen”, then come back here.",
+    "pushDenied": "You blocked notifications for this app. Re-enable them in your device settings.",
+    "pushUnsupported": "This browser can’t receive push notifications.",
+    "pushNotConfigured": "Push isn’t set up on the server yet. You’ll keep getting email.",
+    "pushFallbackNote": "Without push you’ll still be notified by email, so you won’t miss anything."
   },
   "toasts": {
     "expenseAdded": "Expense added",
