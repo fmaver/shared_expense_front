@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { NavLink, Link, useLocation, useMatch } from 'react-router-dom';
+import { NavLink, Link, useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
-import { Home, Users, User, Plus, ArrowLeftRight, ChevronLeft, Receipt, PieChart, Settings, TrendingUp, TrendingDown, CalendarClock, Repeat } from 'lucide-react';
+import { Home, Users, User, Plus, ArrowLeftRight, ChevronLeft, Receipt, PieChart, Settings, TrendingUp, TrendingDown, CalendarClock, CalendarDays, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { GroupExpenseLauncher, type LauncherMode } from './GroupExpenseLauncher';
@@ -26,6 +26,7 @@ interface TabItem {
 export function FloatingTabBar() {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const { personalActions } = useFabActions();
   const { tabBarCollapsed } = useScroll();
 
@@ -117,6 +118,14 @@ export function FloatingTabBar() {
           label: t('personal.recurringExpense'),
           desc: t('personal.recurringExpenseDesc'),
           onClick: () => { closeDial(); personalActions?.addRecurringExpense(); },
+        },
+        {
+          // Los vencimientos se cargan desde donde se carga todo lo demás en mobile: el
+          // botón +. La sección del dashboard sirve para verlos, no para encontrarlos.
+          icon: CalendarDays,
+          label: t('dueDates.add'),
+          desc: t('dueDates.addDesc'),
+          onClick: () => { closeDial(); navigate('/personal/due-dates'); },
         },
       ]
     : [

@@ -515,6 +515,7 @@
     "cadence6": "Every 6 months",
     "cadence12": "Yearly",
     "nDaysBefore_one": "1 day",
-    "nDaysBefore_other": "{{count}} days"
+    "nDaysBefore_other": "{{count}} days",
+    "addDesc": "Utilities, rent, streaming"
   }
 }
