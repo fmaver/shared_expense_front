@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
+import { getPersonalGroup } from '@/api/personal';
 import { useCategories } from '@/hooks/useCategories';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { MonthPicker } from '@/components/expenses/MonthPicker';
@@ -9,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/utils/format';
 import { PersonalCharts } from '@/components/personal/PersonalCharts';
 import { BudgetBar } from '@/components/personal/BudgetBar';
+import { DueDatesSection } from '@/components/personal/DueDatesSection';
 import { IncomesSection } from '@/components/personal/IncomesSection';
 import { PersonalExpensesSection } from '@/components/personal/PersonalExpensesSection';
 import { MirroredSharesSection } from '@/components/personal/MirroredSharesSection';
@@ -27,6 +29,15 @@ export function PersonalDashboard() {
   }, [notifyScroll]);
   const { year, month, setYearMonth } = useMonthSearchParams();
   const { data: ledger, isLoading, refetch } = usePersonalLedger(year, month);
+  const [personalGroupId, setPersonalGroupId] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPersonalGroup()
+      .then(group => { if (!cancelled) setPersonalGroupId(group.id); })
+      .catch(() => { /* la sección de vencimientos simplemente no se muestra */ });
+    return () => { cancelled = true; };
+  }, []);
   const { data: categories } = useCategories();
 
   // Chart interactivity
@@ -282,6 +293,7 @@ export function PersonalDashboard() {
               limit={RECENT_LIMIT}
               viewAllTo={`/personal/shares?year=${year}&month=${month}`}
             />
+            {personalGroupId !== null && <DueDatesSection groupId={personalGroupId} />}
           </div>
         </div>
       )}

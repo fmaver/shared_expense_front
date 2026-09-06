@@ -71,8 +71,7 @@ export function FloatingTabBar() {
         { to: `${groupBase}/settings`, icon: Settings, label: t('tabs.settings') },
       ]
     : [
-        { to: '/personal', icon: Home, label: t('mobileNav.personal'), end: true },
-        { to: '/personal/due-dates', icon: CalendarClock, label: t('tabs.dueDates') },
+        { to: '/personal', icon: Home, label: t('mobileNav.personal') },
         { to: '/groups', icon: Users, label: t('mobileNav.groups') },
         { to: '/profile', icon: User, label: t('mobileNav.profile') },
       ];

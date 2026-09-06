@@ -506,6 +506,9 @@
     "dueToday": "Vence hoy, {{date}}",
     "dueTomorrow": "Vence mañana, {{date}}",
     "dueIn": "Vence el {{date}} · en {{days}} días",
-    "save": "Guardar"
+    "save": "Guardar",
+    "personalTitle": "Vencimientos",
+    "manage": "Gestionar",
+    "nextDue": "Próximo vencimiento"
   }
 }

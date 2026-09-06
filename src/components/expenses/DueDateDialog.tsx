@@ -15,6 +15,18 @@ interface DueDateDialogProps {
 }
 
 const CADENCES = [1, 2, 3, 6, 12];
+
+/** `YYYY-MM-DD` parseado como fecha local: `new Date("2026-10-09")` la interpreta en UTC. */
+function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function toInputValue(date: Date): string {
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
 const ADVANCES = [0, 1, 3, 5, 7];
 
 /**
@@ -26,10 +38,12 @@ const ADVANCES = [0, 1, 3, 5, 7];
  */
 export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDateDialogProps) {
   const { t } = useTranslation();
-  const today = new Date();
 
   const [label, setLabel] = useState('');
-  const [dayOfMonth, setDayOfMonth] = useState(today.getDate());
+  // Se pide la próxima fecha concreta, no "el día del mes": es como la gente lee la boleta
+  // ("vence el 9 de octubre"), le da el date picker nativo del sistema, y de ahí salen tanto
+  // el día como el mes desde el que cuenta el ciclo.
+  const [nextDue, setNextDue] = useState(() => toInputValue(new Date()));
   const [everyNMonths, setEveryNMonths] = useState(1);
   const [notifyDaysBefore, setNotifyDaysBefore] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +51,7 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
 
   const reset = () => {
     setLabel('');
-    setDayOfMonth(new Date().getDate());
+    setNextDue(toInputValue(new Date()));
     setEveryNMonths(1);
     setNotifyDaysBefore(3);
     setError('');
@@ -54,14 +68,15 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
     setIsLoading(true);
     setError('');
     try {
+      const due = parseLocalDate(nextDue);
       const created = await createDueDate(groupId, {
         label: label.trim(),
-        dayOfMonth,
+        dayOfMonth: due.getDate(),
         everyNMonths,
-        // El ciclo cuenta desde el mes en curso: "cada 2 meses" cargado hoy significa este
-        // mes y no uno arbitrario del pasado.
-        anchorYear: today.getFullYear(),
-        anchorMonth: today.getMonth() + 1,
+        // El ciclo cuenta desde el mes de esa primera fecha, así que "cada 2 meses" cae en
+        // los meses que el usuario espera y no en los alternos.
+        anchorYear: due.getFullYear(),
+        anchorMonth: due.getMonth() + 1,
         notifyDaysBefore,
       });
       reset();
@@ -101,21 +116,15 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>{t('dueDates.dayOfMonth')}</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => setDayOfMonth(day)}
-                  className={chip(day === dayOfMonth)}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
-            {dayOfMonth > 28 && (
+          <div className="space-y-1.5">
+            <Label htmlFor="dueDateNext">{t('dueDates.nextDue')}</Label>
+            <Input
+              id="dueDateNext"
+              type="date"
+              value={nextDue}
+              onChange={(e) => e.target.value && setNextDue(e.target.value)}
+            />
+            {parseLocalDate(nextDue).getDate() > 28 && (
               <p className="text-xs text-muted-foreground">{t('dueDates.shortMonthNote')}</p>
             )}
           </div>
