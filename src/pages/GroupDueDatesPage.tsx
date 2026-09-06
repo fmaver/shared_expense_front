@@ -139,11 +139,11 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
                     <p className="font-medium text-foreground truncate">{d.label}</p>
                     <p className="text-sm text-muted-foreground">{formatNext(d)}</p>
                     <p className="text-xs text-muted-foreground/80 mt-0.5">
-                      {d.everyNMonths === 1 ? t('dueDates.monthly') : t('dueDates.everyN', { n: d.everyNMonths })}
+                      {t(`dueDates.cadence${d.everyNMonths}`)}
                       {' · '}
                       {d.notifyDaysBefore === 0
                         ? t('dueDates.sameDay')
-                        : t('dueDates.nDaysBefore', { n: d.notifyDaysBefore })}
+                        : t('dueDates.nDaysBefore', { count: d.notifyDaysBefore })}
                     </p>
                   </div>
                   <button
