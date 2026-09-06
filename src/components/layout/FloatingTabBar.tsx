@@ -67,6 +67,7 @@ export function FloatingTabBar() {
         { to: groupBase, icon: Receipt, label: t('tabs.expenses'), end: true },
         { to: `${groupBase}/members`, icon: Users, label: t('tabs.members') },
         { to: `${groupBase}/charts`, icon: PieChart, label: t('tabs.charts') },
+        { to: `${groupBase}/due-dates`, icon: CalendarClock, label: t('tabs.dueDates') },
         { to: `${groupBase}/settings`, icon: Settings, label: t('tabs.settings') },
       ]
     : [
