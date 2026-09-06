@@ -144,3 +144,10 @@
     animation: none;
   }
 }
+
+/* iOS centra el valor de un input[type=date] y `text-align` en el input no lo alcanza:
+   WebKit lo dibuja en un pseudo-elemento propio. Sin esto el campo de fecha queda
+   desalineado del resto de los campos del formulario. */
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+}

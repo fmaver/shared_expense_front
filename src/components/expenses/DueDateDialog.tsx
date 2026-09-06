@@ -121,7 +121,6 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
             <Input
               id="dueDateNext"
               type="date"
-              className="text-left"
               value={nextDue}
               onChange={(e) => e.target.value && setNextDue(e.target.value)}
             />
