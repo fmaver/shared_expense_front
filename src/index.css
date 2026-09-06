@@ -145,9 +145,20 @@
   }
 }
 
-/* iOS centra el valor de un input[type=date] y `text-align` en el input no lo alcanza:
-   WebKit lo dibuja en un pseudo-elemento propio. Sin esto el campo de fecha queda
-   desalineado del resto de los campos del formulario. */
+/* WebKit trata a input[type=date] como un control nativo con ancho intrínseco propio, que
+   ignora el `w-full` del contenedor y desborda hacia la derecha. Ese desborde hace que la
+   página entera sea más ancha que el viewport y aparezca corrida, que es distinto del
+   auto-zoom de iOS (los inputs ya usan 16px, así que ese no aplica). Quitarle la apariencia
+   nativa lo devuelve al box model normal.
+
+   El valor, además, se dibuja en un pseudo-elemento propio: `text-align` en el input no lo
+   alcanza, por eso la regla aparte. */
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+  max-width: 100%;
+}
+
 input[type='date']::-webkit-date-and-time-value {
   text-align: left;
 }
