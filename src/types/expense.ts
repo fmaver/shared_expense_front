@@ -311,3 +311,25 @@ export interface RecurringPersonalExpenseInstanceResponse {
   currency?: string;
   categoryName: string;
 }
+
+export interface DueDate {
+  id: number;
+  groupId: number;
+  label: string;
+  categoryName: string;
+  dayOfMonth: number;
+  everyNMonths: number;
+  anchorYear: number;
+  anchorMonth: number;
+  notifyDaysBefore: number;
+  active: boolean;
+}
+
+export interface DueDateInput {
+  label: string;
+  dayOfMonth: number;
+  everyNMonths: number;
+  anchorYear: number;
+  anchorMonth: number;
+  notifyDaysBefore: number;
+}
