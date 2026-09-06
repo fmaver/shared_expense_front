@@ -121,6 +121,7 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
             <Input
               id="dueDateNext"
               type="date"
+              className="text-left"
               value={nextDue}
               onChange={(e) => e.target.value && setNextDue(e.target.value)}
             />
@@ -139,7 +140,7 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
                   onClick={() => setEveryNMonths(n)}
                   className={chip(n === everyNMonths)}
                 >
-                  {n === 1 ? t('dueDates.monthly') : t('dueDates.everyN', { n })}
+                  {t(`dueDates.cadence${n}`)}
                 </button>
               ))}
             </div>
@@ -155,7 +156,7 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
                   onClick={() => setNotifyDaysBefore(n)}
                   className={chip(n === notifyDaysBefore)}
                 >
-                  {n === 0 ? t('dueDates.sameDay') : t('dueDates.nDaysBefore', { n })}
+                  {n === 0 ? t('dueDates.sameDay') : t('dueDates.nDaysBefore', { count: n })}
                 </button>
               ))}
             </div>
