@@ -23,6 +23,7 @@ import { FabActionsProvider } from './contexts/FabActionsContext';
 import { ScrollProvider } from './contexts/ScrollContext';
 import { ExpenseRefreshProvider } from './contexts/ExpenseRefreshContext';
 import { usePushNavigation } from '@/hooks/usePushNavigation';
+import GroupDueDatesPage from '@/pages/GroupDueDatesPage';
 
 function App() {
   usePushNavigation();
@@ -97,6 +98,7 @@ function App() {
               <Route path="members" element={<GroupMembersPage />} />
               <Route path="settings" element={<GroupSettingsPage />} />
               <Route path="charts" element={<GroupChartsPage />} />
+        <Route path="due-dates" element={<GroupDueDatesPage />} />
             </Route>
             <Route path="/personal" element={<PersonalDashboard />} />
             <Route path="/personal/incomes" element={<PersonalSectionPage section="incomes" />} />

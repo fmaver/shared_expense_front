@@ -123,7 +123,8 @@
     "expenses": "Expenses",
     "members": "Members",
     "settings": "Settings",
-    "charts": "Charts"
+    "charts": "Charts",
+    "dueDates": "Due dates"
   },
   "mobileNav": {
     "personal": "Personal",
@@ -484,5 +485,19 @@
     "recurringExpense": "Recurring expense",
     "oneOffExpenseDesc": "A single expense for this month",
     "recurringExpenseDesc": "Repeats automatically every month"
+  },
+  "dueDates": {
+    "title": "Due dates",
+    "empty": "You haven't added any due dates yet.",
+    "add": "Add due date",
+    "label": "Name",
+    "dayOfMonth": "Day of month",
+    "everyNMonths": "Every N months",
+    "notifyDaysBefore": "Notify me",
+    "daysBefore": "days in advance",
+    "sameDay": "On the day",
+    "monthly": "Every month",
+    "everyN": "Every {{n}} months",
+    "delete": "Delete"
   }
 }

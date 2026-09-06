@@ -123,7 +123,8 @@
     "expenses": "Gastos",
     "members": "Miembros",
     "settings": "Configuración",
-    "charts": "Gráficos"
+    "charts": "Gráficos",
+    "dueDates": "Vencimientos"
   },
   "mobileNav": {
     "personal": "Personal",
@@ -484,5 +485,19 @@
     "recurringExpense": "Gasto recurrente",
     "oneOffExpenseDesc": "Un gasto único de este mes",
     "recurringExpenseDesc": "Se repite automáticamente cada mes"
+  },
+  "dueDates": {
+    "title": "Vencimientos",
+    "empty": "Todavía no cargaste ningún vencimiento.",
+    "add": "Agregar vencimiento",
+    "label": "Nombre",
+    "dayOfMonth": "Día del mes",
+    "everyNMonths": "Cada cuántos meses",
+    "notifyDaysBefore": "Avisarme con",
+    "daysBefore": "días de anticipación",
+    "sameDay": "El mismo día",
+    "monthly": "Todos los meses",
+    "everyN": "Cada {{n}} meses",
+    "delete": "Borrar"
   }
 }
