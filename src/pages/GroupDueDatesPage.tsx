@@ -1,25 +1,55 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { createDueDate, deleteDueDate, getDueDates } from '@/api/dueDates';
+import { CalendarClock, Plus, Trash2 } from 'lucide-react';
+import { deleteDueDate, getDueDates } from '@/api/dueDates';
 import type { DueDate } from '@/types/expense';
 import { useScroll } from '@/contexts/ScrollContext';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DueDateDialog } from '@/components/expenses/DueDateDialog';
 
-const TODAY = new Date();
+/**
+ * La misma regla que calcula las fechas en el backend, para poder mostrar el próximo
+ * vencimiento sin pedirlo. Es la información que la persona quiere ver — "vence el 9 de
+ * octubre" — en vez de los parámetros con los que se cargó.
+ */
+function nextOccurrence(d: DueDate, from: Date): Date {
+  const anchor = d.anchorYear * 12 + d.anchorMonth;
+  let year = from.getFullYear();
+  let month = from.getMonth() + 1;
 
-export default function GroupDueDatesPage() {
+  for (let i = 0; i < 14 + d.everyNMonths; i += 1) {
+    const offset = year * 12 + month - anchor;
+    if (offset >= 0 && offset % d.everyNMonths === 0) {
+      const lastDay = new Date(year, month, 0).getDate();
+      const candidate = new Date(year, month - 1, Math.min(d.dayOfMonth, lastDay));
+      if (candidate >= new Date(from.getFullYear(), from.getMonth(), from.getDate())) return candidate;
+    }
+    month += 1;
+    if (month === 13) {
+      year += 1;
+      month = 1;
+    }
+  }
+  return from;
+}
+
+interface GroupDueDatesPageProps {
+  /** El grupo personal no se navega como `/groups/:id`, así que se puede pasar explícito. */
+  groupId?: number;
+}
+
+export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDueDatesPageProps = {}) {
   const { groupId: gp } = useParams<{ groupId: string }>();
-  const groupId = parseInt(gp!, 10);
-  const { t } = useTranslation();
+  const groupId = explicitGroupId ?? parseInt(gp!, 10);
+  const { t, i18n } = useTranslation();
   const { notifyScroll } = useScroll();
 
   const [dueDates, setDueDates] = useState<DueDate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [label, setLabel] = useState('');
-  const [dayOfMonth, setDayOfMonth] = useState(1);
-  const [everyNMonths, setEveryNMonths] = useState(1);
-  const [notifyDaysBefore, setNotifyDaysBefore] = useState(3);
+  const [adding, setAdding] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,128 +66,111 @@ export default function GroupDueDatesPage() {
     load();
   }, [load]);
 
-  const handleAdd = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!label.trim()) return;
-    try {
-      await createDueDate(groupId, {
-        label: label.trim(),
-        dayOfMonth,
-        everyNMonths,
-        // El ancla es el mes en curso: "cada 2 meses" cuenta desde ahora, que es lo que
-        // alguien espera al cargarlo hoy.
-        anchorYear: TODAY.getFullYear(),
-        anchorMonth: TODAY.getMonth() + 1,
-        notifyDaysBefore,
-      });
-      setLabel('');
-      await load();
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
-  };
-
   const handleDelete = async (id: number) => {
+    const previous = dueDates;
+    setDueDates((current) => current.filter((d) => d.id !== id));
     try {
       await deleteDueDate(groupId, id);
-      await load();
     } catch (error) {
+      setDueDates(previous);
       toast.error((error as Error).message);
     }
   };
 
-  const cadence = (d: DueDate) =>
-    d.everyNMonths === 1 ? t('dueDates.monthly') : t('dueDates.everyN', { n: d.everyNMonths });
+  const today = useMemo(() => new Date(), []);
 
-  const advance = (d: DueDate) =>
-    d.notifyDaysBefore === 0
-      ? t('dueDates.sameDay')
-      : `${d.notifyDaysBefore} ${t('dueDates.daysBefore')}`;
+  // Ordenados por lo que vence antes: en una lista de vencimientos, el orden de carga no le
+  // importa a nadie.
+  const sorted = useMemo(
+    () =>
+      [...dueDates].sort(
+        (a, b) => nextOccurrence(a, today).getTime() - nextOccurrence(b, today).getTime(),
+      ),
+    [dueDates, today],
+  );
+
+  const formatNext = (d: DueDate) => {
+    const next = nextOccurrence(d, today);
+    const days = Math.round((next.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000);
+    const date = next.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-AR', {
+      day: 'numeric',
+      month: 'long',
+    });
+    if (days === 0) return t('dueDates.dueToday', { date });
+    if (days === 1) return t('dueDates.dueTomorrow', { date });
+    return t('dueDates.dueIn', { date, days });
+  };
 
   return (
     <div className="flex flex-col flex-1">
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0 p-4 space-y-4"
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
         onScroll={(e) => notifyScroll((e.target as HTMLDivElement).scrollTop)}
       >
-        <form onSubmit={handleAdd} className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <input
-            className="w-full rounded-md border border-border bg-background px-3 py-2"
-            placeholder={t('dueDates.label')}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            maxLength={255}
-          />
-          <div className="grid grid-cols-3 gap-2">
-            <label className="text-xs text-muted-foreground">
-              {t('dueDates.dayOfMonth')}
-              <input
-                type="number"
-                min={1}
-                max={31}
-                value={dayOfMonth}
-                onChange={(e) => setDayOfMonth(parseInt(e.target.value, 10) || 1)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              {t('dueDates.everyNMonths')}
-              <input
-                type="number"
-                min={1}
-                max={12}
-                value={everyNMonths}
-                onChange={(e) => setEveryNMonths(parseInt(e.target.value, 10) || 1)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              {t('dueDates.notifyDaysBefore')}
-              <input
-                type="number"
-                min={0}
-                max={30}
-                value={notifyDaysBefore}
-                onChange={(e) => setNotifyDaysBefore(parseInt(e.target.value, 10) || 0)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1"
-              />
-            </label>
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary px-3 py-2 text-primary-foreground cursor-pointer"
-          >
-            {t('dueDates.add')}
-          </button>
-        </form>
-
-        {loading ? null : dueDates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('dueDates.empty')}</p>
-        ) : (
-          <ul className="space-y-2">
-            {dueDates.map((d) => (
-              <li
-                key={d.id}
-                className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
-              >
-                <div>
-                  <p className="font-medium text-foreground">{d.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t('dueDates.dayOfMonth')} {d.dayOfMonth} · {cadence(d)} · {advance(d)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(d.id)}
-                  className="text-xs text-destructive cursor-pointer"
+        <div className="p-4 space-y-3 max-w-2xl mx-auto w-full">
+          {loading ? (
+            <>
+              <Skeleton className="h-16 w-full rounded-xl" />
+              <Skeleton className="h-16 w-full rounded-xl" />
+            </>
+          ) : sorted.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-16 px-6">
+              <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-4">
+                <CalendarClock className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <p className="font-medium text-foreground">{t('dueDates.emptyTitle')}</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xs">{t('dueDates.empty')}</p>
+              <Button onClick={() => setAdding(true)} className="mt-5">
+                <Plus className="h-4 w-4 mr-1.5" />
+                {t('dueDates.add')}
+              </Button>
+            </div>
+          ) : (
+            <>
+              {sorted.map((d) => (
+                <div
+                  key={d.id}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3.5"
                 >
-                  {t('dueDates.delete')}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  <div className="h-10 w-10 shrink-0 rounded-full bg-brand/10 flex items-center justify-center">
+                    <CalendarClock className="h-5 w-5 text-brand" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-foreground truncate">{d.label}</p>
+                    <p className="text-sm text-muted-foreground">{formatNext(d)}</p>
+                    <p className="text-xs text-muted-foreground/80 mt-0.5">
+                      {d.everyNMonths === 1 ? t('dueDates.monthly') : t('dueDates.everyN', { n: d.everyNMonths })}
+                      {' · '}
+                      {d.notifyDaysBefore === 0
+                        ? t('dueDates.sameDay')
+                        : t('dueDates.nDaysBefore', { n: d.notifyDaysBefore })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(d.id)}
+                    aria-label={t('dueDates.delete')}
+                    className="p-2 text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              <Button variant="outline" onClick={() => setAdding(true)} className="w-full">
+                <Plus className="h-4 w-4 mr-1.5" />
+                {t('dueDates.add')}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+
+      <DueDateDialog
+        groupId={groupId}
+        open={adding}
+        onOpenChange={setAdding}
+        onCreated={(created) => setDueDates((current) => [...current, created])}
+      />
     </div>
   );
 }

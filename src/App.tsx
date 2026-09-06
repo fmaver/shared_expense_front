@@ -24,6 +24,7 @@ import { ScrollProvider } from './contexts/ScrollContext';
 import { ExpenseRefreshProvider } from './contexts/ExpenseRefreshContext';
 import { usePushNavigation } from '@/hooks/usePushNavigation';
 import GroupDueDatesPage from '@/pages/GroupDueDatesPage';
+import PersonalDueDatesPage from '@/pages/PersonalDueDatesPage';
 
 function App() {
   usePushNavigation();
@@ -104,6 +105,7 @@ function App() {
             <Route path="/personal/incomes" element={<PersonalSectionPage section="incomes" />} />
             <Route path="/personal/expenses" element={<PersonalSectionPage section="expenses" />} />
             <Route path="/personal/shares" element={<PersonalSectionPage section="shares" />} />
+            <Route path="/personal/due-dates" element={<PersonalDueDatesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<Navigate to="/groups" replace />} />
           </Route>

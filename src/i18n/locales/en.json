@@ -488,7 +488,7 @@
   },
   "dueDates": {
     "title": "Due dates",
-    "empty": "You haven't added any due dates yet.",
+    "empty": "Add one and we'll remind you before it's due, every month.",
     "add": "Add due date",
     "label": "Name",
     "dayOfMonth": "Day of month",
@@ -498,6 +498,14 @@
     "sameDay": "On the day",
     "monthly": "Every month",
     "everyN": "Every {{n}} months",
-    "delete": "Delete"
+    "delete": "Delete",
+    "labelPlaceholder": "Electricity, Netflix, rent…",
+    "emptyTitle": "No due dates",
+    "shortMonthNote": "In shorter months it moves to the last day.",
+    "nDaysBefore": "{{n}} days before",
+    "dueToday": "Due today, {{date}}",
+    "dueTomorrow": "Due tomorrow, {{date}}",
+    "dueIn": "Due {{date}} · in {{days}} days",
+    "save": "Save"
   }
 }

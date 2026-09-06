@@ -488,7 +488,7 @@
   },
   "dueDates": {
     "title": "Vencimientos",
-    "empty": "Todavía no cargaste ningún vencimiento.",
+    "empty": "Cargá uno y te avisamos antes de que venza, todos los meses.",
     "add": "Agregar vencimiento",
     "label": "Nombre",
     "dayOfMonth": "Día del mes",
@@ -498,6 +498,14 @@
     "sameDay": "El mismo día",
     "monthly": "Todos los meses",
     "everyN": "Cada {{n}} meses",
-    "delete": "Borrar"
+    "delete": "Borrar",
+    "labelPlaceholder": "Luz, Netflix, alquiler…",
+    "emptyTitle": "Sin vencimientos",
+    "shortMonthNote": "En los meses más cortos se corre al último día.",
+    "nDaysBefore": "{{n}} días antes",
+    "dueToday": "Vence hoy, {{date}}",
+    "dueTomorrow": "Vence mañana, {{date}}",
+    "dueIn": "Vence el {{date}} · en {{days}} días",
+    "save": "Guardar"
   }
 }
