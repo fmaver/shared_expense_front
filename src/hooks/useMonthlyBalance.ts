@@ -22,36 +22,43 @@ export function useMonthlyBalance(
    */
   enabled = true,
 ) {
-  const [isLoading, setIsLoading] = useState(true);
+  // What was asked for. A response is only ever shown under the exact group and month it was
+  // fetched for: switching group or month leaves the previous request in flight, and if it
+  // lands second it would otherwise paint another group's expenses and balances over this one.
+  const key = `${groupId}:${year}:${month}:${isOneTime}`;
+  const [result, setResult] = useState<{ key: string; value: MonthlyBalanceResponse | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<MonthlyBalanceResponse | null>(null);
+  // Requests are numbered so a slow one that resolves after a newer one can be dropped.
+  const latestRequest = useRef(0);
 
   const fetchMonthlyBalance = useCallback(async () => {
     if (!enabled) return;
+    const requestId = latestRequest.current + 1;
+    latestRequest.current = requestId;
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
+      let value: MonthlyBalanceResponse | null;
       if (isOneTime) {
         const aggregate = await getAggregateBalance(groupId);
-        setData(
-          aggregate && {
-            year,
-            month,
-            expenses: aggregate.expenses,
-            balances: aggregate.balances,
-            isSettled: aggregate.isSettled,
-            transfers: aggregate.transfers,
-          },
-        );
+        value = aggregate && {
+          year,
+          month,
+          expenses: aggregate.expenses,
+          balances: aggregate.balances,
+          isSettled: aggregate.isSettled,
+          transfers: aggregate.transfers,
+        };
       } else {
-        setData(await getMonthlyBalance(groupId, year, month));
+        value = await getMonthlyBalance(groupId, year, month);
       }
+      if (requestId !== latestRequest.current) return;
+      setResult({ key, value });
     } catch (err) {
+      if (requestId !== latestRequest.current) return;
       setError(err instanceof Error ? err.message : 'Failed to fetch monthly balance');
-    } finally {
-      setIsLoading(false);
+      setResult({ key, value: null });
     }
-  }, [groupId, year, month, isOneTime, enabled]);
+  }, [groupId, year, month, isOneTime, enabled, key]);
 
   useEffect(() => {
     fetchMonthlyBalance();
@@ -76,5 +83,11 @@ export function useMonthlyBalance(
     fetchRef.current();
   }, [refreshSignal]);
 
-  return { data, isLoading, error, refetch: fetchMonthlyBalance };
+  const fresh = result && result.key === key ? result : null;
+  return {
+    data: fresh ? fresh.value : null,
+    isLoading: fresh === null,
+    error,
+    refetch: fetchMonthlyBalance,
+  };
 }

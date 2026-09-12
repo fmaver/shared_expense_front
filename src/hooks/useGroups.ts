@@ -26,26 +26,38 @@ export function useGroups(archived = false) {
   return { data, isLoading, error, refetch: fetchGroups };
 }
 
+/**
+ * One group by id.
+ *
+ * Like the roster in `useGroupMembers`, the group is kept next to the id it was fetched for
+ * and never served for a different one. A response for the group the user just left used to
+ * be able to land last and leave the wrong name in the header — and, worse, the wrong
+ * `groupType`, which decides whether the view settles a month or the whole group.
+ */
 export function useGroup(groupId: number) {
-  const [isLoading, setIsLoading] = useState(true);
+  const [result, setResult] = useState<{ groupId: number; group: Group | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Group | null>(null);
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const result = await getGroup(groupId);
-        setData(result);
-      } catch (err) {
+    if (!groupId) return undefined;
+    let active = true;
+    setError(null);
+
+    getGroup(groupId)
+      .then(group => {
+        if (active) setResult({ groupId, group });
+      })
+      .catch(err => {
+        if (!active) return;
         setError(err instanceof Error ? err.message : 'Failed to fetch group');
-      } finally {
-        setIsLoading(false);
-      }
+        setResult({ groupId, group: null });
+      });
+
+    return () => {
+      active = false;
     };
-    if (groupId) fetch();
   }, [groupId]);
 
-  return { data, isLoading, error };
+  const fresh = result && result.groupId === groupId ? result : null;
+  return { data: fresh ? fresh.group : null, isLoading: fresh === null, error };
 }
