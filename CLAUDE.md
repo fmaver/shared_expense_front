@@ -77,6 +77,7 @@ src/
 ├── components/
 │   ├── expenses/
 │   │   ├── AddExpenseDialog.tsx    # create/edit expense — all split types, currency selector
+│   │   ├── DueDateDialog.tsx       # alta de vencimiento — fecha concreta + chips de periodicidad
 │   │   ├── BalancePanel.tsx        # monthly balances + "who pays whom" transfers
 │   │   ├── ExpenseDetailDialog.tsx # tap-to-expand detail popup
 │   │   ├── ExpenseListHeader.tsx   # filter/sort bar; currency filter + ARS/original toggle
@@ -109,6 +110,8 @@ src/
 ├── pages/
 │   ├── ExpensesDashboard.tsx   # main group view — month picker + expense list + balance panel
 │   ├── GroupChartsPage.tsx     # recharts: category donut, payer bar, payment-type bar, 6-month trend
+│   ├── GroupDueDatesPage.tsx   # vencimientos; acepta groupId por prop para el grupo personal
+│   ├── PersonalDueDatesPage.tsx # resuelve el grupo personal y reusa la pantalla anterior
 │   ├── GroupLayout.tsx         # group shell — tabs: Expenses | Members | Charts | Settings
 │   ├── GroupMembersPage.tsx
 │   ├── GroupSelectorPage.tsx
@@ -146,6 +149,8 @@ Routes defined in `src/App.tsx` via `react-router-dom`:
 | `/groups/:groupId/members` | `GroupMembersPage` | required |
 | `/groups/:groupId/settings` | `GroupSettingsPage` | required |
 | `/groups/:groupId/charts` | `GroupChartsPage` | required |
+| `/groups/:groupId/due-dates` | `GroupDueDatesPage` | required |
+| `/personal/due-dates` | `PersonalDueDatesPage` | required |
 
 ---
 
@@ -301,6 +306,8 @@ The drag-to-dismiss logic lives in the `useDragToDismiss` hook inside `dialog.ts
 - **No SelectValue**: for Radix Select, render the selected value in a `<span>` inside the trigger instead of `<SelectValue>`.
 - **CSS tokens**: always use Tailwind CSS-variable tokens (`bg-card`, `text-foreground`, `border-border`, etc.) — they switch automatically for dark mode.
 - **Mobile breakpoint**: all mobile-specific code uses `lg:hidden` / `max-lg:` / `lg:` Tailwind prefixes. Never detect mobile in JavaScript.
+- **La PWA mobile es la superficie primaria.** Hay **dos navegaciones separadas** y una ruta nueva tiene que ir en las dos: la barra de pestañas de `GroupLayout.tsx` es `hidden lg:flex` — **solo desktop** — y el celular navega con `FloatingTabBar.tsx`. Agregar una ruta sin tocar `FloatingTabBar` la deja inalcanzable desde el teléfono. Y lo que se **carga** en mobile se carga desde el botón `+` (el speed-dial de `FloatingTabBar`), no desde un enlace enterrado en una pantalla.
+- **`input[type="date"]` en iOS**: `text-align` no llega al valor (WebKit lo dibuja en un pseudo-elemento) y el control tiene ancho intrínseco propio que desborda el contenedor y corre la página entera. Las reglas están en `src/index.css`; no las saques.
 
 ---
 
