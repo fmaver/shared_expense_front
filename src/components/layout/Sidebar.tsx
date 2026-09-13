@@ -1,28 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { NavLink, useMatch, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useGroups } from '@/hooks/useGroups';
+import {
+  CalendarClock, ChevronLeft, LogOut, Moon, PieChart, Plus, Receipt, Settings, Sun, User, Users,
+} from 'lucide-react';
+import { useGroups, useGroup } from '@/hooks/useGroups';
 import { useTheme } from '@/hooks/useTheme';
-import { getCurrentUser } from '@/api/auth';
-import { Separator } from '@/components/ui/separator';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { useSettlementState } from '@/contexts/SettlementContext';
+import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
+import { JirensMark } from '@/components/brand/JirensMark';
+import { formatCurrency } from '@/utils/format';
+import { avatarBg, initials } from '@/utils/avatar';
 import { cn } from '@/lib/utils';
-import { Moon, Sun, Plus, LogOut, User } from 'lucide-react';
+
 interface SidebarProps {
   onLogout: () => void;
   onNavigate?: () => void;
   onNewGroup?: () => void;
 }
 
-function getInitials(name: string): string {
-  if (!name) return '?';
-  return name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-}
-
+/**
+ * El sidebar de desktop.
+ *
+ * Cambia con el lugar: afuera de un grupo son los tres destinos y la lista de grupos; adentro,
+ * las cinco secciones de ese grupo más tu posición y el botón de saldar (§6.3). Es el mismo
+ * material que el encabezado de grupo en mobile, con más aire — nada se abre tapando nada.
+ */
 export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
   const navigate = useNavigate();
-  const { data: groups = [] } = useGroups();
-  const { theme, toggle } = useTheme();
   const { t, i18n } = useTranslation();
+  const { data: groups = [] } = useGroups();
+  const { resolved: theme, toggle } = useTheme();
+  const currentMember = useCurrentMember();
+  const { yourBalance } = useSettlementState();
+  const { year, month } = useMonthSearchParams();
+
+  const groupMatchExact = useMatch('/groups/:groupId');
+  const groupMatchSub = useMatch('/groups/:groupId/*');
+  const groupMatch = groupMatchExact ?? groupMatchSub;
+  const rawId = groupMatch?.params?.groupId;
+  const groupId = rawId && /^\d+$/.test(rawId) ? parseInt(rawId, 10) : null;
+  const inGroup = groupId !== null;
+  const { data: group } = useGroup(groupId ?? 0);
+
+  const monthQuery = `?year=${year}&month=${month}`;
+
   const currentLang = i18n.language.startsWith('es') ? 'es' : 'en';
   const toggleLang = () => {
     const next = currentLang === 'en' ? 'es' : 'en';
@@ -30,102 +53,172 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
     localStorage.setItem('language', next);
   };
 
-  const [displayName, setDisplayName] = useState('');
-  useEffect(() => {
-    getCurrentUser().then(u => setDisplayName(u.name)).catch(() => {});
-  }, []);
-  const initials = getInitials(displayName);
+  const groupTabs = useMemo(() => ([
+    { label: t('tabs.expenses'), to: `/groups/${groupId}${monthQuery}`, icon: Receipt, end: true },
+    { label: t('tabs.members'),  to: `/groups/${groupId}/members${monthQuery}`, icon: Users },
+    { label: t('tabs.charts'),   to: `/groups/${groupId}/charts${monthQuery}`, icon: PieChart },
+    { label: t('tabs.dueDates'), to: `/groups/${groupId}/due-dates`, icon: CalendarClock },
+    { label: t('tabs.settings'), to: `/groups/${groupId}/settings${monthQuery}`, icon: Settings },
+  ]), [groupId, monthQuery, t]);
 
-  const go = (to: string) => { navigate(to); onNavigate?.(); };
+  const globalTabs = [
+    { label: t('mobileNav.personal'), to: '/personal', icon: User, end: true },
+    { label: t('mobileNav.groups'),   to: '/groups',   icon: Users, end: true },
+    { label: t('nav.numbers'),        to: '/personal/charts', icon: PieChart },
+  ];
+
+  const link = ({ isActive }: { isActive: boolean }) => cn(
+    'flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-[13px] transition-colors',
+    isActive
+      ? 'bg-white/[0.09] font-bold text-paper'
+      : 'font-medium text-muted-on-dark hover:bg-white/[0.05] hover:text-paper',
+  );
 
   return (
-    <div className="flex flex-col w-full h-screen bg-card dark:bg-sidebar border-r border-border">
-      {/* Brand */}
-      <div className="px-4 pt-5 pb-4">
-        <button onClick={() => go('/groups')} className="flex items-center gap-2.5 w-full text-left">
-          <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center text-white font-black text-base flex-shrink-0">✦</div>
-          <div>
-            <div className="font-extrabold text-base tracking-tight text-foreground leading-none">Jirens</div>
-            <div className="text-[9px] font-medium uppercase tracking-widest text-muted-foreground mt-0.5">Shared Expenses</div>
-          </div>
-        </button>
+    <div className="flex h-screen w-full flex-col bg-ink">
+      {/* ── Marca ───────────────────────────────────────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => { navigate('/groups'); onNavigate?.(); }}
+        className="flex cursor-pointer items-center gap-2.5 px-4 pb-4 pt-5 text-left"
+      >
+        <JirensMark className="text-paper" size={30} />
+        <span className="font-display text-[19px] leading-none text-paper">Jirens</span>
+      </button>
+
+      <div className="flex-1 overflow-y-auto px-3 pb-3">
+        {inGroup ? (
+          <>
+            <Link
+              to="/groups"
+              onClick={onNavigate}
+              className="mb-2 inline-flex items-center gap-0.5 px-1 text-[11.5px] font-semibold text-muted-on-dark-2 transition-colors hover:text-paper"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              {t('mobileNav.groups')}
+            </Link>
+            <p className="mb-3 truncate px-1 font-display text-[22px] leading-none text-paper">
+              {group?.name}
+            </p>
+
+            <nav className="space-y-0.5">
+              {groupTabs.map(tab => (
+                <NavLink key={tab.to} to={tab.to} end={tab.end} onClick={onNavigate} className={link}>
+                  <tab.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{tab.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+
+            {/* Tu posición en el grupo, con la salida a saldar */}
+            {yourBalance != null && (
+              <div className="mt-4 rounded-card bg-white/[0.06] p-3.5">
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-on-dark-2">
+                  {t('settle.yourPosition')}
+                </p>
+                <p
+                  className={cn(
+                    'mt-1 font-display text-[22px] leading-none tabular-nums',
+                    Math.abs(yourBalance) <= 0.01
+                      ? 'text-paper'
+                      : yourBalance > 0 ? 'text-positive-on-dark' : 'text-negative-on-dark',
+                  )}
+                >
+                  {Math.abs(yourBalance) <= 0.01
+                    ? t('settle.allSquare')
+                    : `${yourBalance > 0 ? '+' : ''}${formatCurrency(yourBalance)}`}
+                </p>
+                <Link
+                  to={`/groups/${groupId}/members${monthQuery}`}
+                  onClick={onNavigate}
+                  className="mt-2.5 flex h-9 items-center justify-center rounded-pill bg-brand-soft text-[12px] font-bold text-ink transition-opacity hover:opacity-90"
+                >
+                  {t('nav.settleUp')}
+                </Link>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <nav className="space-y-0.5">
+              {globalTabs.map(tab => (
+                <NavLink key={tab.to} to={tab.to} end={tab.end} onClick={onNavigate} className={link}>
+                  <tab.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{tab.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+
+            <p className="mb-2 mt-5 px-3 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-on-dark-2">
+              {t('mobileNav.groups')}
+            </p>
+            <nav className="space-y-0.5">
+              {groups.map(g => (
+                <NavLink key={g.id} to={`/groups/${g.id}`} onClick={onNavigate} className={link}>
+                  <span className={cn(
+                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] text-[10px] font-bold text-white',
+                    avatarBg(g.id),
+                  )}>
+                    {initials(g.name)}
+                  </span>
+                  <span className="truncate">{g.name}</span>
+                </NavLink>
+              ))}
+            </nav>
+            <button
+              type="button"
+              onClick={() => { onNewGroup?.(); onNavigate?.(); }}
+              className="mt-1 flex w-full cursor-pointer items-center gap-2.5 rounded-[12px] px-3 py-2 text-[13px] font-medium text-brand-soft transition-colors hover:bg-white/[0.05]"
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              {t('groups.newGroup')}
+            </button>
+          </>
+        )}
       </div>
 
-      <Separator />
-
-      {/* Personal + Groups */}
-      <div className="flex-1 overflow-y-auto px-2 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 mb-2">{t('personal.title')}</p>
-        <nav className="space-y-0.5 mb-3">
-          <NavLink to="/personal" onClick={onNavigate}
-            className={({ isActive }) => cn(
-              'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
-              isActive
-                ? 'bg-primary/10 text-foreground font-semibold'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-            )}>
-            <User className="h-4 w-4 flex-shrink-0" />
-            <span className="truncate">{t('nav.personal')}</span>
-          </NavLink>
-        </nav>
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 mb-2">{t('nav.groups')}</p>
-        <nav className="space-y-0.5">
-          {groups.map(group => (
-            <NavLink key={group.id} to={`/groups/${group.id}`} onClick={onNavigate}
-              className={({ isActive }) => cn(
-                'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
-                isActive
-                  ? 'bg-primary/10 text-foreground font-semibold'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              )}>
-              <span className="truncate">{group.name}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <button onClick={() => { onNewGroup?.(); onNavigate?.(); }}
-          className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-primary hover:bg-accent w-full mt-1">
-          <Plus className="h-3.5 w-3.5" /> {t('groups.newGroup')}
-        </button>
-      </div>
-
-      <Separator />
-
-      {/* Footer */}
-      <div className="px-3 py-3 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-        <button onClick={() => go('/profile')}
-          className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
-          <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {initials}
-          </div>
-          <span className="text-sm text-muted-foreground truncate">{displayName || t('nav.profile')}</span>
-        </button>
-        <div className="flex items-center gap-1 flex-shrink-0">
+      {/* ── Pie: perfil, idioma, tema, salir ────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-2 border-t border-white/[0.08] px-3 py-3">
+        <Link
+          to="/profile"
+          onClick={onNavigate}
+          className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-80"
+        >
+          <span className={cn(
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white',
+            avatarBg(currentMember?.id ?? 1),
+          )}>
+            {initials(currentMember?.name ?? '?')}
+          </span>
+          <span className="truncate text-[12.5px] font-medium text-muted-on-dark">
+            {currentMember?.name ?? t('nav.profile')}
+          </span>
+        </Link>
+        <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             onClick={toggleLang}
-            className="h-7 px-2 rounded-full text-[11px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Switch language"
+            aria-label={t('nav.toggleTheme')}
+            className="h-7 cursor-pointer rounded-full px-2 text-[11px] font-bold text-muted-on-dark transition-colors hover:bg-white/10 hover:text-paper"
           >
             {t('language')}
           </button>
           <button
             type="button"
             onClick={toggle}
-            className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
             aria-label={t('nav.toggleTheme')}
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-on-dark transition-colors hover:bg-white/10 hover:text-paper"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <button
             type="button"
             onClick={onLogout}
-            className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
             aria-label={t('nav.logout')}
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-on-dark transition-colors hover:bg-white/10 hover:text-paper"
           >
             <LogOut className="h-4 w-4" />
           </button>
-        </div>
         </div>
       </div>
     </div>

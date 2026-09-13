@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from './Sidebar';
 import { useTheme } from '@/hooks/useTheme';
+import { JirensMark } from '@/components/brand/JirensMark';
 import { Menu, Moon, Sun } from 'lucide-react';
 
 interface TopBarProps {
@@ -12,7 +13,7 @@ interface TopBarProps {
 
 export function TopBar({ onLogout, onNewGroup }: TopBarProps) {
   const [open, setOpen] = useState(false);
-  const { theme, toggle } = useTheme();
+  const { resolved: theme, toggle } = useTheme();
 
   return (
     <header className="lg:hidden h-12 bg-card dark:bg-sidebar border-b border-border flex items-center justify-between px-3 flex-shrink-0">
@@ -28,7 +29,7 @@ export function TopBar({ onLogout, onNewGroup }: TopBarProps) {
       </Sheet>
 
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 bg-brand rounded-md flex items-center justify-center text-white font-black text-xs">✦</div>
+        <JirensMark className="text-foreground" size={24} />
         <span className="font-extrabold text-sm tracking-tight text-foreground">Jirens</span>
       </div>
 

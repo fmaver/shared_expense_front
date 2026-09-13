@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { NavLink, Link, useLocation, useMatch } from 'react-router-dom';
+import { NavLink, useLocation, useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
-import { Home, Users, User, Plus, ArrowLeftRight, ChevronLeft, Receipt, PieChart, Settings, TrendingUp, TrendingDown, CalendarClock, Repeat } from 'lucide-react';
+import {
+  ArrowLeftRight, CalendarClock, PieChart, Plus, Repeat, TrendingDown, TrendingUp, User, Users,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
+import { useSettlementState } from '@/contexts/SettlementContext';
 import { GroupExpenseLauncher, type LauncherMode } from './GroupExpenseLauncher';
 
 interface LauncherState {
@@ -19,7 +22,6 @@ interface TabItem {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  /** Match the route exactly (index tab of the group). */
   end?: boolean;
 }
 
@@ -28,6 +30,7 @@ export function FloatingTabBar() {
   const location = useLocation();
   const { personalActions } = useFabActions();
   const { tabBarCollapsed } = useScroll();
+  const { isSettled: viewedMonthSettled } = useSettlementState();
 
   // Detect group context from route
   const groupMatchExact = useMatch('/groups/:groupId');
@@ -37,14 +40,12 @@ export function FloatingTabBar() {
   const groupId = parsedGroupId !== null && Number.isFinite(parsedGroupId) && parsedGroupId > 0 ? parsedGroupId : null;
   const inGroup = groupId !== null;
 
-  // Speed-dial open/closed
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
   const closeDial = useCallback(() => setSpeedDialOpen(false), []);
 
   // Close a dial left open across navigation
   useEffect(() => { setSpeedDialOpen(false); }, [location.pathname]);
 
-  // Launcher state
   const [launcher, setLauncher] = useState<LauncherState>(CLOSED);
   const closeLauncher = useCallback(() => setLauncher(CLOSED), []);
 
@@ -53,28 +54,18 @@ export function FloatingTabBar() {
     setLauncher({ open: true, mode, presetGroupId });
   }, []);
 
-  const handleFabPress = useCallback(() => {
-    setSpeedDialOpen(prev => !prev);
-  }, []);
-
-  // On /personal (and its sub-pages) the first action is personal add
   const isPersonal = location.pathname === '/personal' || location.pathname.startsWith('/personal/');
 
-  // Tab set swaps with the route: global sections, or the current group's pages
-  const groupBase = `/groups/${groupId}`;
-  const tabs: TabItem[] = inGroup
-    ? [
-        { to: groupBase, icon: Receipt, label: t('tabs.expenses'), end: true },
-        { to: `${groupBase}/members`, icon: Users, label: t('tabs.members') },
-        { to: `${groupBase}/charts`, icon: PieChart, label: t('tabs.charts') },
-        { to: `${groupBase}/due-dates`, icon: CalendarClock, label: t('tabs.dueDates') },
-        { to: `${groupBase}/settings`, icon: Settings, label: t('tabs.settings') },
-      ]
-    : [
-        { to: '/personal', icon: Home, label: t('mobileNav.personal') },
-        { to: '/groups', icon: Users, label: t('mobileNav.groups') },
-        { to: '/profile', icon: User, label: t('mobileNav.profile') },
-      ];
+  /*
+    Tres destinos, y ninguno es el perfil: la barra es para lo que se mira seguido, y al perfil
+    se llega por el avatar del header. Adentro de un grupo la pastilla no se dibuja — el grupo
+    tiene su propio encabezado con sus pestañas, y "‹ Grupos" es la salida (§6.3).
+  */
+  const tabs: TabItem[] = [
+    { to: '/personal', icon: User, label: t('mobileNav.personal'), end: true },
+    { to: '/groups', icon: Users, label: t('mobileNav.groups') },
+    { to: '/personal/charts', icon: PieChart, label: t('mobileNav.numbers') },
+  ];
 
   const menuItems = inGroup
     ? [
@@ -93,7 +84,6 @@ export function FloatingTabBar() {
       ]
     : isPersonal
     ? [
-        // Personal-group entries — registered by PersonalAddLauncher on the personal pages
         {
           icon: TrendingUp,
           label: t('personal.variableTitle'),
@@ -134,32 +124,24 @@ export function FloatingTabBar() {
         },
       ];
 
-  // Expanded item width: the 5-element group set (back + 4 tabs) uses w-10 so the
-  // pill clears the FAB (right-5 + w-14 = 4.75rem) even at 320px wide screens.
-  const expandedItemWidth = inGroup ? 'w-10' : 'w-14';
-
   return (
     <>
       {/* Dismiss overlay for speed-dial */}
       {speedDialOpen && (
-        <div
-          className="fixed inset-0 z-30 lg:hidden"
-          onClick={closeDial}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 z-30 lg:hidden" onClick={closeDial} aria-hidden="true" />
       )}
 
-      {/* Action menu — Slack-style liquid-glass panel scaling in from the FAB */}
+      {/* Action menu — panel escalando desde el FAB */}
       <div
         className={cn(
-          'fixed right-5 z-40 lg:hidden w-80 max-w-[calc(100vw-2.5rem)]',
+          'fixed right-5 z-40 w-80 max-w-[calc(100vw-2.5rem)] lg:hidden',
           'liquid-glass rounded-2xl p-2',
           'origin-bottom-right transition-all duration-200 ease-out',
           speedDialOpen
-            ? 'opacity-100 scale-100 translate-y-0'
-            : 'opacity-0 scale-95 translate-y-2 pointer-events-none',
+            ? 'translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none translate-y-2 scale-95 opacity-0',
         )}
-        style={{ bottom: `calc(9.5rem + env(safe-area-inset-bottom))` }}
+        style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
       >
         {menuItems.map(item => {
           const Icon = item.icon;
@@ -168,136 +150,106 @@ export function FloatingTabBar() {
               key={item.label}
               type="button"
               onClick={item.onClick}
-              className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-white/20 dark:hover:bg-white/10 active:bg-white/25 dark:active:bg-white/15 transition-colors cursor-pointer text-left"
+              className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-white/20 active:bg-white/25 dark:hover:bg-white/10 dark:active:bg-white/15"
             >
-              <span className="w-10 h-10 rounded-lg bg-brand/15 text-brand flex items-center justify-center shrink-0">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand">
                 <Icon className="h-5 w-5" />
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-foreground">{item.label}</span>
-                {item.desc && <span className="block text-xs text-muted-foreground truncate">{item.desc}</span>}
+                {item.desc && <span className="block truncate text-xs text-muted-1">{item.desc}</span>}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Main FAB — liquid-glass circle floating above the tab-bar line */}
-      <button
-        type="button"
-        onClick={handleFabPress}
+      {/*
+        Pastilla y FAB en una sola fila centrada: el "+" va al lado, no encima (§6.1).
+        Al scrollear la pastilla se encoge al tab activo y el FAB no se mueve.
+      */}
+      <div
         className={cn(
-          'fixed right-5 z-40 lg:hidden',
-          'liquid-glass w-14 h-14 rounded-full text-brand',
-          'flex items-center justify-center cursor-pointer',
-          'hover:bg-white/20 dark:hover:bg-white/10 active:scale-95 transition-all duration-150',
+          'fixed inset-x-0 z-40 flex items-center gap-2.5 lg:hidden',
+          // Con pastilla, el conjunto va centrado; adentro de un grupo no hay pastilla y el
+          // "+" solo se va al borde, que es donde el pulgar lo espera.
+          inGroup ? 'justify-end pr-5' : 'justify-center',
         )}
-        style={{ bottom: `calc(5.25rem + env(safe-area-inset-bottom))` }}
-        aria-label={t('fab.options')}
+        style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
-        <Plus
-          className={cn(
-            'h-6 w-6 transition-transform duration-200',
-            speedDialOpen && 'rotate-45',
-          )}
-        />
-      </button>
-
-      {/* Floating Tab Bar — collapses to active tab + slides to bottom-left on scroll.
-          Expand sequence: tabs widen first (220ms), then nav slides to centre (200ms delay=220ms).
-          This keeps the `50%` in calc(50vw - 50%) stable when the translate starts, preventing
-          the overshoot/rebound caused by a moving target mid-animation.
-          Collapse: translate + tab-shrink happen simultaneously (feels snappy).
-          Inside a group the pill swaps to back-chevron + group tabs; the FAB
-          floats above the bar line so both modes centre on the viewport. */}
-      <nav
-        className="fixed z-40 lg:hidden"
-        style={{
-          bottom: `calc(1rem + env(safe-area-inset-bottom))`,
-          left: 0,
-          transform: tabBarCollapsed
-            ? 'translateX(1rem)'
-            : 'translateX(calc(50vw - 50%))',
-          transition: tabBarCollapsed
-            ? 'transform 200ms ease-in'
-            : 'transform 200ms ease-out 220ms',
-        }}
-      >
-        <div
-          className="liquid-glass relative flex items-center rounded-full overflow-hidden"
-          style={{
-            padding: tabBarCollapsed ? '4px' : '8px',
-            transition: tabBarCollapsed
-              ? 'padding 200ms ease-in'
-              : 'padding 200ms ease-out 220ms',
-          }}
-        >
-          {/* Top specular highlight — simulates light catching the top edge of thick glass */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] z-10 rounded-full"
+        {!inGroup && (
+          <nav
+            className="liquid-glass relative flex items-center overflow-hidden rounded-full"
             style={{
-              background: 'linear-gradient(90deg, transparent 4%, rgba(255,255,255,0.60) 28%, rgba(255,255,255,0.90) 50%, rgba(255,255,255,0.60) 72%, transparent 96%)',
-            }}
-          />
-          {/* Keyed wrapper remounts on mode swap and plays the tabset-in fade */}
-          <div
-            key={inGroup ? 'group' : 'global'}
-            className="flex items-center animate-tabset-in"
-            style={{
-              gap: tabBarCollapsed ? '0px' : '4px',
-              transition: tabBarCollapsed
-                ? 'gap 200ms ease-in'
-                : 'gap 220ms ease-out',
+              padding: tabBarCollapsed ? '4px' : '8px',
+              transition: 'padding 220ms ease-out',
             }}
           >
-            {inGroup && (
-              <Link
-                to="/groups"
-                aria-label={t('mobileNav.backToGroups')}
-                style={{
-                  transition: tabBarCollapsed
-                    ? 'width 200ms ease-in, opacity 180ms ease-in'
-                    : 'width 220ms ease-out, opacity 200ms ease-out',
-                }}
-                className={cn(
-                  'flex items-center justify-center h-10 rounded-full overflow-hidden',
-                  'text-muted-foreground hover:text-foreground hover:bg-white/20 dark:hover:bg-white/10',
-                  tabBarCollapsed ? 'w-0 opacity-0 pointer-events-none' : `${expandedItemWidth} opacity-100`,
-                )}
-              >
-                <ChevronLeft className="h-5 w-5 shrink-0" />
-              </Link>
+            {/* Reflejo especular del borde superior del vidrio */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[1.5px] rounded-full"
+              style={{
+                background: 'linear-gradient(90deg, transparent 4%, rgba(255,255,255,0.60) 28%, rgba(255,255,255,0.90) 50%, rgba(255,255,255,0.60) 72%, transparent 96%)',
+              }}
+            />
+            <div
+              className="flex items-center"
+              style={{ gap: tabBarCollapsed ? '0px' : '4px', transition: 'gap 220ms ease-out' }}
+            >
+              {tabs.map(({ to, icon: Icon, label, end }) => {
+                const isActive = end ? location.pathname === to : location.pathname.startsWith(to);
+                return (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    aria-label={label}
+                    style={{ transition: 'width 220ms ease-out, opacity 200ms ease-out' }}
+                    className={cn(
+                      'relative flex h-10 items-center justify-center overflow-hidden rounded-full',
+                      isActive
+                        ? 'bg-white/30 text-brand dark:bg-white/15'
+                        : 'text-muted-1 hover:bg-white/20 hover:text-foreground dark:hover:bg-white/10',
+                      tabBarCollapsed
+                        ? isActive ? 'w-10 opacity-100' : 'pointer-events-none w-0 opacity-0'
+                        : 'w-14 opacity-100',
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                  </NavLink>
+                );
+              })}
+            </div>
+          </nav>
+        )}
+
+        {/*
+          En un mes cerrado el "+" se apaga: no está prohibido cargar, pero lo que cargues cae
+          en el mes que estás viendo, y ese ya está saldado. La nota lo dice en palabras en vez
+          de deshabilitar el botón sin explicación (principio 4).
+        */}
+        <div className="relative shrink-0">
+          {viewedMonthSettled && inGroup && (
+            <span className="liquid-glass absolute bottom-[3.75rem] right-0 w-44 rounded-2xl px-3 py-2 text-[10.5px] font-semibold leading-[1.4] text-muted-1">
+              {t('settle.fabNote')}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setSpeedDialOpen(prev => !prev)}
+            aria-label={t('fab.options')}
+            className={cn(
+              'flex h-14 w-14 items-center justify-center rounded-full',
+              'cursor-pointer transition-transform duration-150 active:scale-95',
+              viewedMonthSettled && inGroup
+                ? 'bg-surface-sunken text-muted-3'
+                : 'bg-brand text-white shadow-fab',
             )}
-            {tabs.map(({ to, icon: Icon, label, end }) => {
-              const isActive = end ? location.pathname === to : location.pathname.startsWith(to);
-              return (
-                <NavLink
-                  key={to}
-                  to={to}
-                  style={{
-                    transition: tabBarCollapsed
-                      ? 'width 200ms ease-in, opacity 180ms ease-in'
-                      : 'width 220ms ease-out, opacity 200ms ease-out',
-                  }}
-                  className={cn(
-                    'relative flex flex-col items-center justify-center h-10 rounded-full overflow-hidden',
-                    isActive
-                      ? 'text-brand bg-white/30 dark:bg-white/15'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-white/20 dark:hover:bg-white/10',
-                    tabBarCollapsed
-                      ? isActive ? 'w-10 opacity-100' : 'w-0 opacity-0 pointer-events-none'
-                      : `${expandedItemWidth} opacity-100`,
-                  )}
-                  aria-label={label}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                </NavLink>
-              );
-            })}
-          </div>
+          >
+            <Plus className={cn('h-6 w-6 transition-transform duration-200', speedDialOpen && 'rotate-45')} />
+          </button>
         </div>
-      </nav>
+      </div>
 
       {/* Group expense launcher (dialogs) */}
       <GroupExpenseLauncher

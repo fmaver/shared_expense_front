@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { JirensMark } from '@/components/brand/JirensMark';
 import { DynamicIsland } from './DynamicIsland';
 import { AccountMenu } from './AccountMenu';
 import { useScroll } from '@/contexts/ScrollContext';
@@ -28,10 +29,8 @@ export function MobileHeader({ onLogout, state, groupName }: MobileHeaderProps) 
     >
       {/* Left: brand mark — flex-1 so it mirrors the right side width */}
       <div className="flex-1 flex items-center gap-2">
-        <div className="w-6 h-6 bg-brand rounded-md flex items-center justify-center text-white font-black text-xs">
-          ✦
-        </div>
-        <span className="font-extrabold text-sm tracking-tight text-foreground">Jirens</span>
+        <JirensMark className="text-foreground" size={24} />
+        <span className="font-display text-[15px] leading-none text-foreground">Jirens</span>
       </div>
 
       {/* Center: Dynamic Island — truly centered because both sides are flex-1 */}

@@ -7,7 +7,6 @@ import { useGroupExpenseCreate } from '@/hooks/useGroupExpenseCreate';
 import { useIsland } from '@/contexts/IslandContext';
 import { useExpenseRefresh } from '@/contexts/ExpenseRefreshContext';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
-import { TransferDialog } from '@/components/expenses/TransferDialog';
 import {
   Dialog,
   DialogContent,
@@ -85,7 +84,8 @@ function GroupExpenseDialogs({
 
   return (
     <>
-      {mode === 'expense' && (
+      {/* Un préstamo es la misma hoja abierta en su pestaña: una sola implementación. */}
+      {(mode === 'expense' || mode === 'transfer') && (
         <AddExpenseDialog
           open={open}
           onOpenChange={v => { if (!v) onClose(); }}
@@ -94,18 +94,10 @@ function GroupExpenseDialogs({
           currentMemberId={currentMemberId}
           groupId={groupId}
           isOneTimeGroup={isOneTimeGroup}
+          initialMode={mode === 'transfer' ? 'loan' : 'expense'}
         />
       )}
 
-      {mode === 'transfer' && (
-        <TransferDialog
-          open={open}
-          onOpenChange={v => { if (!v) onClose(); }}
-          onSubmit={create}
-          members={members}
-          currentMemberId={currentMemberId}
-        />
-      )}
 
       {/* Duplicate-confirm dialog — mirrors ExpensesDashboard lines 276-299 */}
       <Dialog

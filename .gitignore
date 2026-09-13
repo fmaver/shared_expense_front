@@ -32,3 +32,6 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Bundle de diseño: referencia, no código. Queda afuera del repo por peso (~300KB).
+design_handoff_jirens_redesign/

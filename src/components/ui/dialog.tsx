@@ -140,19 +140,58 @@ function DialogOverlay({
   )
 }
 
+/**
+ * Cómo se presenta el contenido en desktop.
+ *
+ * `dialog` es el modal centrado de siempre. `panel` es el panel al costado que pide el
+ * principio 5 del rediseño ("nada se abre tapando la pantalla"): el detalle de un gasto se
+ * lee al lado de la lista, no encima. En mobile las dos son la misma hoja que sube.
+ */
+type DialogVariant = "dialog" | "panel"
+
+const DESKTOP_VARIANT: Record<DialogVariant, string> = {
+  dialog: [
+    "lg:bottom-auto lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
+    "lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
+    "lg:duration-150 lg:[animation-timing-function:ease-out]",
+    "lg:data-open:animate-in lg:data-open:fade-in-0 lg:data-open:zoom-in-95",
+    "lg:data-closed:animate-out lg:data-closed:fade-out-0 lg:data-closed:zoom-out-95",
+  ].join(" "),
+  panel: [
+    // Pegado al borde derecho, de alto completo: la lista queda visible al costado.
+    // `inset-x-auto` va primero a propósito: tailwind-merge descarta las clases anteriores
+    // que pisa, así que puesto al final se comía al `right-0` y el panel salía a la izquierda.
+    "lg:inset-x-auto lg:inset-y-0 lg:left-auto lg:right-0",
+    "lg:translate-x-0 lg:translate-y-0",
+    "lg:h-full lg:w-[420px] lg:max-w-[92vw] lg:max-h-none",
+    "lg:rounded-none lg:rounded-l-sheet lg:overflow-y-auto lg:shadow-panel",
+    // Sin esto las dos filas del grid se reparten el alto y el encabezado queda estirado.
+    "lg:grid-rows-[auto_1fr]",
+    "lg:duration-200 lg:[animation-timing-function:cubic-bezier(0.32,0.72,0,1)]",
+    "lg:data-open:animate-in lg:data-open:fade-in-0 lg:data-open:slide-in-from-right-8",
+    "lg:data-closed:animate-out lg:data-closed:fade-out-0 lg:data-closed:slide-out-to-right-8",
+  ].join(" "),
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  variant = "dialog",
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  variant?: DialogVariant
 }) {
   const { closeBtnRef, dragHandleRef } = useDragToDismiss();
 
   return (
     <DialogPortal>
-      <DialogOverlay />
+      {/* En desktop el panel convive con la lista, así que no la oscurece: el backdrop sigue
+          ahí para capturar el click de cierre, pero invisible. */}
+      <DialogOverlay
+        className={variant === "panel" ? "lg:bg-transparent lg:backdrop-blur-none" : undefined}
+      />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
@@ -161,12 +200,7 @@ function DialogContent({
           // Mobile: bottom sheet (animation comes from index.css keyframes)
           "bottom-[var(--keyboard-inset,0px)] inset-x-0 rounded-t-2xl rounded-b-none overflow-y-auto grid gap-4 px-4 pb-4 pt-0",
           "max-h-[calc((100dvh_-_var(--keyboard-inset,0px))_*_0.88)]",
-          // Desktop: centered dialog with tailwindcss-animate zoom
-          "lg:bottom-auto lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2",
-          "lg:rounded-xl lg:max-h-none lg:overflow-visible lg:p-4",
-          "lg:duration-150 lg:[animation-timing-function:ease-out]",
-          "lg:data-open:animate-in lg:data-open:fade-in-0 lg:data-open:zoom-in-95",
-          "lg:data-closed:animate-out lg:data-closed:fade-out-0 lg:data-closed:zoom-out-95",
+          DESKTOP_VARIANT[variant],
           className
         )}
         {...props}

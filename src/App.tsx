@@ -15,6 +15,7 @@ import { GroupChartsPage } from './pages/GroupChartsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PersonalDashboard } from './pages/PersonalDashboard';
 import { PersonalSectionPage } from './pages/PersonalSectionPage';
+import { PersonalChartsPage } from './pages/PersonalChartsPage';
 import { InvitationLanding } from './public-pages/InvitationLanding';
 import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 import { CurrencyProvider } from './contexts/CurrencyContext';
@@ -22,6 +23,7 @@ import { IslandProvider } from './contexts/IslandContext';
 import { FabActionsProvider } from './contexts/FabActionsContext';
 import { ScrollProvider } from './contexts/ScrollContext';
 import { ExpenseRefreshProvider } from './contexts/ExpenseRefreshContext';
+import { SettlementProvider } from './contexts/SettlementContext';
 import { usePushNavigation } from '@/hooks/usePushNavigation';
 import GroupDueDatesPage from '@/pages/GroupDueDatesPage';
 import PersonalDueDatesPage from '@/pages/PersonalDueDatesPage';
@@ -80,6 +82,7 @@ function App() {
         <ScrollProvider>
         <FabActionsProvider>
         <ExpenseRefreshProvider>
+        <SettlementProvider>
       <Routes>
         {/* Public */}
         <Route path="/" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LandingPage />} />
@@ -102,15 +105,17 @@ function App() {
         <Route path="due-dates" element={<GroupDueDatesPage />} />
             </Route>
             <Route path="/personal" element={<PersonalDashboard />} />
+            <Route path="/personal/charts" element={<PersonalChartsPage />} />
             <Route path="/personal/incomes" element={<PersonalSectionPage section="incomes" />} />
             <Route path="/personal/expenses" element={<PersonalSectionPage section="expenses" />} />
             <Route path="/personal/shares" element={<PersonalSectionPage section="shares" />} />
             <Route path="/personal/due-dates" element={<PersonalDueDatesPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<ProfilePage onLogout={handleLogout} />} />
             <Route path="*" element={<Navigate to="/groups" replace />} />
           </Route>
         )}
       </Routes>
+        </SettlementProvider>
         </ExpenseRefreshProvider>
         </FabActionsProvider>
         </ScrollProvider>

@@ -1,22 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { ChevronLeft, ImagePlus, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { CurrencyToggle } from '@/components/ui/CurrencyToggle';
 import { useCategories } from '@/hooks/useCategories';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { parseExpenseImage } from '@/api/expenses';
-import { ImagePlus } from 'lucide-react';
-import { formatDate } from '@/utils/format';
 import { createRecurringGroupExpense } from '@/api/recurringExpenses';
+import {
+  formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
+} from '@/utils/format';
+import { avatarBg, initials } from '@/utils/avatar';
+import { AmountKeypad } from './AmountKeypad';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '@/types/expense';
+
+/** Qué se está cargando. Un préstamo es un gasto con otra categoría y otro reparto. */
+type Mode = 'expense' | 'loan';
+/** Qué selector está abierto encima de la hoja. */
+type Picker = null | 'payer' | 'split' | 'date' | 'payment' | 'loanTarget';
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -32,6 +35,21 @@ interface AddExpenseDialogProps {
   isRecurringEdit?: boolean;
   /** One-time groups reject credit server-side; hide the control so it is never offered. */
   isOneTimeGroup?: boolean;
+  /** Con qué pestaña abre. `loan` es el viejo "Transferencia": un pago entre dos personas. */
+  initialMode?: Mode;
+}
+
+interface FormState {
+  amountText: string;
+  description: string;
+  date: string;
+  category: string;
+  payerId: number;
+  paymentType: 'debit' | 'credit';
+  installments: number;
+  currency: string;
+  splitStrategy: SplitStrategy;
+  loanTargetId: number | null;
 }
 
 function buildInitial(
@@ -39,18 +57,22 @@ function buildInitial(
   members: Member[],
   firstCategory: string,
   currentMemberId?: number | null,
-): ExpenseCreate {
+): FormState {
+  const defaultPayerId = (currentMemberId && members.some(m => m.id === currentMemberId))
+    ? currentMemberId
+    : (members[0]?.id ?? 0);
+
   if (initialExpense) {
-    const description = initialExpense.description.replace(/\s*\(\d+\/\d+\)\s*$/, '');
-    const amount =
-      initialExpense.paymentType === 'credit' && initialExpense.installments > 1
-        ? initialExpense.amount * initialExpense.installments
-        : initialExpense.amount;
+    // Una cuota muestra su parte; el formulario edita el gasto entero, así que se re-multiplica.
+    const amount = initialExpense.paymentType === 'credit' && initialExpense.installments > 1
+      ? initialExpense.amount * initialExpense.installments
+      : initialExpense.amount;
     return {
-      description,
-      amount,
+      amountText: formatKeypadAmount(amount),
+      // El "(3/6)" del título lo agrega el backend al expandir las cuotas; no se re-edita.
+      description: initialExpense.description.replace(/\s*\(\d+\/\d+\)\s*$/, ''),
       date: initialExpense.date,
-      category: { name: initialExpense.category },
+      category: initialExpense.category,
       payerId: initialExpense.payerId,
       paymentType: initialExpense.paymentType,
       installments: initialExpense.installments,
@@ -58,74 +80,88 @@ function buildInitial(
       splitStrategy: {
         type: initialExpense.splitStrategy.type,
         ...(initialExpense.splitStrategy.type === 'percentage'
-          ? { percentages: initialExpense.splitStrategy.percentages }
-          : {}),
+          ? { percentages: initialExpense.splitStrategy.percentages } : {}),
         ...(initialExpense.splitStrategy.type === 'exact'
-          ? { amounts: initialExpense.splitStrategy.amounts }
-          : {}),
+          ? { amounts: initialExpense.splitStrategy.amounts } : {}),
         ...(initialExpense.splitStrategy.participantIds != null
-          ? { participantIds: initialExpense.splitStrategy.participantIds }
-          : {}),
+          ? { participantIds: initialExpense.splitStrategy.participantIds } : {}),
       },
+      loanTargetId: null,
     };
   }
-  // Default payer: current logged-in member (if they're in this group), otherwise first member
-  const defaultPayerId = (currentMemberId && members.some(m => m.id === currentMemberId))
-    ? currentMemberId
-    : (members[0]?.id ?? 0);
+
   return {
+    amountText: '',
     description: '',
-    amount: '' as unknown as number,
     date: formatDate(new Date()),
-    category: { name: firstCategory },
+    category: firstCategory,
     payerId: defaultPayerId,
     paymentType: 'debit',
     installments: 1,
     currency: 'ARS',
-    splitStrategy: { type: 'equal', percentages: {} },
+    splitStrategy: { type: 'equal' },
+    loanTargetId: null,
   };
 }
 
 export function AddExpenseDialog({
-  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false, hidePayerAndSplit = false, currentMemberId, groupId, onSuccess, isRecurringEdit = false, isOneTimeGroup = false,
+  open, onOpenChange, onSubmit, members, initialExpense, isSettled = false,
+  hidePayerAndSplit = false, currentMemberId, groupId, onSuccess,
+  isRecurringEdit = false, isOneTimeGroup = false, initialMode = 'expense',
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
-  const { data: categories = [], isLoading: loadingCats } = useCategories();
-  const [expense, setExpense] = useState<ExpenseCreate>(() =>
+  const { data: categories = [] } = useCategories();
+  const { blueRate } = useCurrency();
+
+  const isEdit = !!initialExpense;
+  const isLoanEdit = isEdit && initialExpense?.category === 'prestamo';
+  const disabled = isSettled;
+
+  const [form, setForm] = useState<FormState>(() =>
     buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
-  const [error, setError] = useState('');
+  const [mode, setMode] = useState<Mode>(isLoanEdit ? 'loan' : initialMode);
+  const [picker, setPicker] = useState<Picker>(null);
   const [isRecurring, setIsRecurring] = useState(false);
-  const [submittingRecurring, setSubmittingRecurring] = useState(false);
+  const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanNote, setScanNote] = useState<string | null>(null);
 
-  // Re-init when dialog opens with a different expense
-  React.useEffect(() => {
-    if (open) {
-      setExpense(buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
-      setError('');
-      setIsRecurring(false);
-    }
+  useEffect(() => {
+    if (!open) return;
+    setForm(buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
+    setMode(initialExpense?.category === 'prestamo' ? 'loan' : initialMode);
+    setPicker(null);
+    setIsRecurring(false);
+    setError('');
+    setScanNote(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const exactTotal = useMemo(() => {
-    if (expense.splitStrategy.type !== 'exact') return 0;
-    return Object.values(expense.splitStrategy.amounts ?? {}).reduce(
-      (s, v) => s + (v == null ? 0 : (v as number)), 0);
-  }, [expense.splitStrategy]);
+  /*
+    Las categorías llegan por red. Si la hoja se abre antes de que lleguen, el estado inicial
+    queda sin categoría y el guardado se traba en una validación que el usuario no ve venir:
+    los chips no muestran ninguna elegida y el botón parece no hacer nada. En cuanto llegan,
+    se elige la primera.
+  */
+  useEffect(() => {
+    if (open && mode === 'expense' && !form.category && categories.length > 0) {
+      setForm(prev => ({ ...prev, category: categories[0].name }));
+    }
+  }, [open, mode, form.category, categories]);
 
-  const exactRemaining = Number(expense.amount ?? 0) - exactTotal;
+  const set = (patch: Partial<FormState>) => setForm(prev => ({ ...prev, ...patch }));
 
-  const set = (patch: Partial<ExpenseCreate>) => setExpense(prev => ({ ...prev, ...patch }));
+  const amount = parseKeypadAmount(form.amountText);
+  const months = t('months', { returnObjects: true }) as string[];
+  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
+  const memberName = (id: number | null) => members.find(m => m.id === id)?.name ?? '';
 
-  /**
-   * Read an image and prefill the form from it.
-   *
-   * The values come from an LLM, so they land in the form for the user to check — nothing is
-   * saved here. A low-confidence read says so rather than pretending to be certain.
-   */
+  const exactTotal = useMemo(() => Object.values(form.splitStrategy.amounts ?? {})
+    .reduce<number>((s, v) => s + (v ?? 0), 0), [form.splitStrategy]);
+  const exactRemaining = amount - exactTotal;
+
+  /* ── Escaneo de ticket ────────────────────────────────────────────────────────────── */
   const scanImage = async (file: File) => {
     if (groupId == null || scanning) return;
     setScanning(true);
@@ -134,19 +170,17 @@ export function AddExpenseDialog({
     try {
       const draft = await parseExpenseImage(groupId, file);
       set({
-        ...(draft.amount != null ? { amount: draft.amount } : {}),
+        ...(draft.amount != null ? { amountText: formatKeypadAmount(draft.amount) } : {}),
         description: draft.description,
-        category: { name: draft.category },
+        category: draft.category,
         date: draft.date,
         paymentType: draft.paymentType,
         installments: draft.installments,
         currency: draft.currency,
       });
-      setScanNote(
-        draft.confidence === 'low'
-          ? t('expenseForm.scanLowConfidence')
-          : t('expenseForm.scanFilled'),
-      );
+      setScanNote(draft.confidence === 'low'
+        ? t('expenseForm.scanLowConfidence')
+        : t('expenseForm.scanFilled'));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.submitFailed'));
     } finally {
@@ -154,93 +188,93 @@ export function AddExpenseDialog({
     }
   };
 
-  // Pasting a screenshot is the closest thing iOS has to sharing into the app: iOS Safari
-  // does not implement the Web Share Target API, so a share sheet cannot reach us.
+  // Pegar una captura es lo más cercano a compartir hacia la app que hay en iOS: Safari no
+  // implementa Web Share Target, así que la hoja de compartir no puede llegar hasta acá.
   const handlePaste = (e: React.ClipboardEvent) => {
     const image = Array.from(e.clipboardData.files).find(f => f.type.startsWith('image/'));
-    if (image) {
-      e.preventDefault();
-      scanImage(image);
-    }
+    if (image) { e.preventDefault(); scanImage(image); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /* ── Guardar ──────────────────────────────────────────────────────────────────────── */
+  const handleSubmit = async () => {
     setError('');
-    // The category select is not a native input, so `required` cannot catch this. Without
-    // the check the form posts category {name: ''}, which the backend rejects.
-    if (!expense.category?.name) {
-      setError(t('expenseForm.categoryRequired'));
-      return;
+    if (amount <= 0) { setError(t('expenseForm.amountRequired')); return; }
+    if (!form.description.trim()) { setError(t('expenseForm.descriptionRequired')); return; }
+
+    if (mode === 'loan') {
+      if (form.loanTargetId == null) { setError(t('expenseForm.chooseLoanTarget')); return; }
+    } else {
+      if (!form.category) { setError(t('expenseForm.categoryRequired')); return; }
+      if (form.splitStrategy.type === 'exact' && Math.abs(exactRemaining) > 0.01) {
+        setError(t('expenseForm.exactError')); return;
+      }
     }
-    if (expense.splitStrategy.type === 'exact' && Math.abs(exactRemaining) > 0.01) {
-      setError(t('expenseForm.exactError'));
-      return;
-    }
-    const { type, percentages, amounts, participantIds } = expense.splitStrategy;
-    const splitStrategy: SplitStrategy = { type };
-    if (type === 'percentage') {
-      splitStrategy.percentages = Object.fromEntries(
-        Object.entries(percentages ?? {}).map(([k, v]) => [k, v == null ? 0 : v]));
-    } else if (type === 'exact') {
-      splitStrategy.amounts = Object.fromEntries(
-        Object.entries(amounts ?? {}).map(([k, v]) => [k, v == null ? 0 : v]));
-    } else if (participantIds != null) {
-      splitStrategy.participantIds = participantIds;
-    }
-    const finalExpense = {
-      ...expense,
+
+    // Un préstamo es un gasto de categoría `prestamo` que carga el monto entero sobre quien
+    // lo recibe: el backend mueve el saldo con la misma cuenta que cualquier otro gasto.
+    const splitStrategy: SplitStrategy = mode === 'loan'
+      ? { type: 'exact', amounts: { [String(form.loanTargetId)]: amount } }
+      : (() => {
+          const { type, percentages, amounts, participantIds } = form.splitStrategy;
+          const out: SplitStrategy = { type };
+          if (type === 'percentage') {
+            out.percentages = Object.fromEntries(
+              Object.entries(percentages ?? {}).map(([k, v]) => [k, v ?? 0]));
+          } else if (type === 'exact') {
+            out.amounts = Object.fromEntries(
+              Object.entries(amounts ?? {}).map(([k, v]) => [k, v ?? 0]));
+          } else if (participantIds != null) {
+            out.participantIds = participantIds;
+          }
+          return out;
+        })();
+
+    const payload: ExpenseCreate = {
+      description: form.description.trim(),
+      amount,
+      date: form.date,
+      category: { name: mode === 'loan' ? 'prestamo' : form.category },
+      payerId: form.payerId,
+      paymentType: mode === 'loan' ? 'debit' : form.paymentType,
+      installments: mode === 'loan' ? 1 : form.installments,
+      currency: mode === 'loan' ? 'ARS' : form.currency,
       splitStrategy,
-      ...(isRecurring ? { paymentType: 'debit' as const, installments: 1 } : {}),
-      // A one-time group has no months, so an expense there is always a single debit
-      // payment. The controls are hidden, but state can survive a group switch inside the
-      // same mounted dialog — and the backend rejects credit here, so send what it accepts.
-      ...(isOneTimeGroup ? { paymentType: 'debit' as const, installments: 1 } : {}),
-      // For loan edits, always preserve the original category and split strategy
-      ...(isLoanEdit ? {
-        category: { name: 'prestamo' },
-        splitStrategy: initialExpense!.splitStrategy,
-        paymentType: 'debit' as const,
-        installments: 1,
-        currency: 'ARS',
-      } : {}),
+      // Un recurrente y un grupo de evento no llevan cuotas: no hay meses donde repartirlas.
+      ...(isRecurring || isOneTimeGroup
+        ? { paymentType: 'debit' as const, installments: 1 } : {}),
     };
 
+    // Alta recurrente: no es un gasto, es una plantilla que el backend repite cada mes.
     if (isRecurring && !isEdit && groupId != null) {
-      setSubmittingRecurring(true);
+      setSubmitting(true);
       try {
-        const [yearStr, monthStr] = expense.date.split('-');
-        const startYear = parseInt(yearStr, 10);
-        const startMonth = parseInt(monthStr, 10);
+        const [yearStr, monthStr] = form.date.split('-');
         const { error: apiError } = await createRecurringGroupExpense(groupId, {
-          description: finalExpense.description,
-          amount: finalExpense.amount,
-          category: finalExpense.category.name,
-          payerId: finalExpense.payerId,
-          paymentType: finalExpense.paymentType,
-          splitStrategy: finalExpense.splitStrategy,
-          startYear,
-          startMonth,
-          currency: finalExpense.currency,
+          description: payload.description,
+          amount: payload.amount,
+          category: payload.category.name,
+          payerId: payload.payerId,
+          paymentType: payload.paymentType,
+          splitStrategy: payload.splitStrategy,
+          startYear: parseInt(yearStr, 10),
+          startMonth: parseInt(monthStr, 10),
+          currency: payload.currency,
         });
-        if (apiError) {
-          setError(apiError);
-          return;
-        }
+        if (apiError) { setError(apiError); return; }
         toast.success(t('toasts.recurringExpenseCreated'));
         onSuccess?.();
         onOpenChange(false);
       } finally {
-        setSubmittingRecurring(false);
+        setSubmitting(false);
       }
       return;
     }
 
-    // Awaited and caught: onSubmit rejects when the backend refuses the expense, and an
-    // unhandled rejection is invisible — the button simply appeared to do nothing.
+    // Se espera y se atrapa: `onSubmit` rechaza cuando el backend no acepta el gasto, y un
+    // rechazo sin atrapar es invisible — el botón parecía no hacer nada.
     try {
       setSubmitting(true);
-      await onSubmit(finalExpense);
+      await onSubmit(payload);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.submitFailed'));
     } finally {
@@ -248,33 +282,77 @@ export function AddExpenseDialog({
     }
   };
 
-  const disabled = isSettled;
-  const isEdit = !!initialExpense;
-  const isLoanEdit = isEdit && initialExpense?.category === 'prestamo';
+  /* ── Etiquetas de las pastillas ───────────────────────────────────────────────────── */
+  const dateLabel = (() => {
+    const today = formatDate(new Date());
+    const yesterday = formatDate(new Date(Date.now() - 86400e3));
+    if (form.date === today) return t('expenseForm.pillToday');
+    if (form.date === yesterday) return t('expenseForm.pillYesterday');
+    return formatDayMonth(form.date, monthsShort);
+  })();
+
+  const splitLabel = (() => {
+    if (form.splitStrategy.type === 'percentage') return t('expenseForm.pillPercentage');
+    if (form.splitStrategy.type === 'exact') return t('expenseForm.pillExact');
+    const count = form.splitStrategy.participantIds?.length ?? members.length;
+    return t('expenseForm.pillEqual', { count });
+  })();
+
+  const payerLabel = form.payerId === currentMemberId
+    ? t('expenseForm.pillPaidByYou')
+    : t('expenseForm.pillPaidBy', { name: memberName(form.payerId) });
+
+  const paymentLabel = form.paymentType === 'credit' && form.installments > 1
+    ? t('expenseForm.pillInstallments', { count: form.installments })
+    : t('expenseForm.debit');
+
+  const nextMonthName = (() => {
+    // El mes siguiente al del gasto; `% 12` envuelve diciembre a enero.
+    const month = Number(form.date.split('-')[1]);
+    return months[month % 12];
+  })();
+
+  const showContext = !hidePayerAndSplit;
+  const showPayment = showContext && mode === 'expense' && !isOneTimeGroup && !isRecurring;
+  const canPickMode = !isEdit && !hidePayerAndSplit && members.length > 1;
+
+  const Pill = ({ label, onClick }: { label: string; onClick: () => void }) => (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'h-9 shrink-0 rounded-pill border border-line-strong bg-surface px-3',
+        'text-[12px] font-bold text-foreground transition-colors',
+        disabled ? 'cursor-default opacity-50' : 'cursor-pointer hover:bg-surface-sunken',
+      )}
+    >
+      {label} <span className="text-muted-2">▾</span>
+    </button>
+  );
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen)}>
-      <DialogContent className="sm:max-w-lg flex flex-col gap-0 overflow-hidden max-h-[90vh]" showCloseButton={false}>
-        <DialogHeader className="px-0 pb-2">
-          <DialogTitle>{isEdit ? t('expenseForm.editExpense') : t('expenseForm.addExpense')}</DialogTitle>
-          {isRecurringEdit && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('expenseForm.recurringEditNote')}
-            </p>
-          )}
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto pb-3">
-        <form id="expense-form" onSubmit={handleSubmit} onPaste={handlePaste} className="space-y-4 py-1">
-          {/* Scan a receipt or payment screenshot. Only when creating: an edit already has
-              its values, and re-reading an image would silently overwrite them. */}
-          {!isEdit && !isLoanEdit && groupId != null && (
-            <div className="rounded-xl border border-dashed border-border p-3">
-              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                <ImagePlus className="h-4 w-4 text-brand" />
-                <span className="font-medium">
-                  {scanning ? t('expenseForm.scanning') : t('expenseForm.scanImage')}
-                </span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="gap-0 overflow-hidden p-0 rounded-t-sheet"
+        showCloseButton={false}
+        onPaste={handlePaste}
+      >
+        {/* ── Barra superior ───────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between gap-2 px-5 pb-2 pt-1">
+          <DialogTitle className="text-[13px] font-bold text-foreground">
+            {isEdit ? t('expenseForm.editExpense') : t('expenseForm.addExpense')}
+          </DialogTitle>
+          <div className="flex items-center gap-1">
+            {!isEdit && groupId != null && (
+              <label
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-full text-muted-1',
+                  scanning ? 'opacity-50' : 'cursor-pointer hover:bg-surface-sunken hover:text-foreground',
+                )}
+                title={t('expenseForm.scanImage')}
+              >
+                <ImagePlus className="h-4 w-4" />
                 <input
                   type="file"
                   accept="image/*"
@@ -282,300 +360,463 @@ export function AddExpenseDialog({
                   disabled={scanning || disabled}
                   onChange={e => {
                     const file = e.target.files?.[0];
-                    // Clear the input so picking the same photo twice still fires onChange.
                     e.target.value = '';
                     if (file) scanImage(file);
                   }}
                 />
               </label>
-              <p className="mt-1 text-xs text-muted-foreground">{t('expenseForm.scanHint')}</p>
-              {scanNote && <p className="mt-1 text-xs text-brand">{scanNote}</p>}
+            )}
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              aria-label={t('common.cancel')}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-1 hover:bg-surface-sunken hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="max-h-[calc(88dvh-3rem)] overflow-y-auto px-5 pb-5">
+          {/* ── Segmented: qué estás anotando ──────────────────────────────────────── */}
+          {canPickMode && (
+            <div className="flex gap-1 rounded-pill bg-surface-sunken p-1">
+              {([
+                { value: 'expense' as const, label: t('expenseForm.modeExpense') },
+                { value: 'loan' as const, label: t('expenseForm.modeLoan') },
+              ]).map(option => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setMode(option.value)}
+                  className={cn(
+                    'h-8 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
+                    mode === option.value
+                      ? option.value === 'expense'
+                        ? 'bg-negative text-white'
+                        : 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                      : 'text-muted-1',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
+          )}
+
+          {/* ── El monto, que es de lo que se trata la pantalla ────────────────────── */}
+          <div className="pt-5 text-center">
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-[22px] font-semibold text-muted-2">$</span>
+              <span className="text-[52px] font-bold leading-none tracking-[-0.035em] tabular-nums text-foreground">
+                {form.amountText || '0'}
+              </span>
+              <span className="h-[46px] w-[2px] animate-pulse bg-brand" aria-hidden="true" />
+            </div>
+
+            <div className="mt-2.5 flex justify-center gap-1.5">
+              {(['ARS', 'USD'] as const).map(currency => (
+                <button
+                  key={currency}
+                  type="button"
+                  disabled={disabled || mode === 'loan'}
+                  onClick={() => set({ currency })}
+                  className={cn(
+                    'h-7 rounded-pill px-3 text-[11.5px] font-bold transition-colors',
+                    form.currency === currency
+                      ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                      : 'border border-line-strong text-muted-1',
+                    (disabled || mode === 'loan') ? 'cursor-default opacity-60' : 'cursor-pointer',
+                  )}
+                >
+                  {currency === 'USD' && blueRate
+                    ? t('expenseForm.blueRate', { rate: Math.round(blueRate) })
+                    : currency}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Qué fue ────────────────────────────────────────────────────────────── */}
+          <input
+            type="text"
+            value={form.description}
+            maxLength={255}
+            disabled={disabled}
+            onChange={e => set({ description: e.target.value })}
+            placeholder={t('expenseForm.whatWasIt')}
+            className="mt-4 w-full border-0 bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-3"
+          />
+
+          {scanNote && (
+            <p className="mt-2 text-center text-[11.5px] font-medium text-brand-ink">{scanNote}</p>
+          )}
+
+          {/* ── Categorías ─────────────────────────────────────────────────────────── */}
+          {mode === 'expense' && (
+            <div className="-mx-5 mt-4 flex gap-1.5 overflow-x-auto px-5 pb-1">
+              {categories.map(category => (
+                <button
+                  key={category.name}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => set({ category: category.name })}
+                  className={cn(
+                    'h-9 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[12px] font-bold transition-colors',
+                    form.category === category.name
+                      ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                      : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
+                  )}
+                >
+                  {category.emoji} {t(`categories.${category.name}`, { defaultValue: category.name })}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── Contexto: una pastilla por decisión, cada una con su selector ──────── */}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {showContext && <Pill label={payerLabel} onClick={() => setPicker('payer')} />}
+            {showContext && mode === 'loan' && (
+              <Pill
+                label={form.loanTargetId ? `→ ${memberName(form.loanTargetId)}` : t('expenseForm.chooseLoanTarget')}
+                onClick={() => setPicker('loanTarget')}
+              />
+            )}
+            {showContext && mode === 'expense' && (
+              <Pill label={splitLabel} onClick={() => setPicker('split')} />
+            )}
+            <Pill label={dateLabel} onClick={() => setPicker('date')} />
+            {showPayment && <Pill label={paymentLabel} onClick={() => setPicker('payment')} />}
+          </div>
+
+          {/* ── Se repite cada mes ─────────────────────────────────────────────────── */}
+          {!isEdit && showContext && !isOneTimeGroup && mode === 'expense' && (
+            <div className="mt-3 rounded-card border border-line bg-surface p-3.5">
+              <label className="flex cursor-pointer items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-bold text-foreground">
+                    {t('expenseForm.repeatCard')}
+                  </span>
+                  {isRecurring && (
+                    <span className="mt-0.5 block text-[11.5px] font-medium text-muted-2">
+                      {t('expenseForm.repeatNote', { month: nextMonthName })}
+                    </span>
+                  )}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={isRecurring}
+                  disabled={disabled}
+                  onChange={e => {
+                    setIsRecurring(e.target.checked);
+                    if (e.target.checked) set({ paymentType: 'debit', installments: 1 });
+                  }}
+                  className="sr-only"
+                />
+                <span
+                  className={cn(
+                    'relative h-6 w-10 shrink-0 rounded-full transition-colors',
+                    isRecurring ? 'bg-brand' : 'bg-surface-sunken',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-card transition-all',
+                      isRecurring ? 'left-[18px]' : 'left-0.5',
+                    )}
+                  />
+                </span>
+              </label>
+            </div>
+          )}
+
+          {isRecurringEdit && (
+            <p className="mt-3 text-[11.5px] font-medium text-muted-2">
+              {t('expenseForm.recurringEditNote')}
+            </p>
           )}
 
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            <p className="mt-3 rounded-[12px] border border-negative-wash-line bg-negative-wash px-3 py-2 text-[12px] font-semibold text-negative-ink">
               {error}
-            </div>
+            </p>
           )}
 
-          {/* Amount */}
-          <div className="space-y-1.5">
-            <Label htmlFor="amount">{t('expenseForm.amount')}</Label>
-            <div className="flex gap-2 items-center">
-              <Input id="amount" type="number" step="0.01" min="0" required
-                placeholder="e.g. 4500" disabled={disabled}
-                value={expense.amount === '' ? '' : expense.amount}
-                onChange={e => set({ amount: e.target.value ? parseFloat(e.target.value) : '' as unknown as number })} />
-              {!isLoanEdit && (
-                <CurrencyToggle
-                  value={(expense.currency ?? 'ARS') as 'ARS' | 'USD'}
-                  onChange={v => set({ currency: v })}
-                />
-              )}
-            </div>
-          </div>
+          {/* ── Teclado y guardar ──────────────────────────────────────────────────── */}
+          <AmountKeypad
+            className="mt-4"
+            value={form.amountText}
+            onChange={v => set({ amountText: v })}
+            disabled={disabled}
+          />
 
-          {/* Description */}
-          <div className="space-y-1.5">
-            <Label htmlFor="desc">{t('expenseForm.description')}</Label>
-            <Input id="desc" required maxLength={255} disabled={disabled}
-              value={expense.description}
-              onChange={e => set({ description: e.target.value })} />
-          </div>
-
-          {/* Date */}
-          <div className="space-y-1.5">
-            <Label htmlFor="date">{t('expenseForm.date')}</Label>
-            <Input id="date" type="date" required disabled={disabled}
-              value={expense.date}
-              onChange={e => set({ date: e.target.value })} />
-          </div>
-
-          <div className={hidePayerAndSplit ? '' : 'grid grid-cols-2 gap-4'}>
-            {/* Category */}
-            <div className="space-y-1.5">
-              <Label>{t('expenseForm.category')}</Label>
-              {isLoanEdit ? (
-                <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2">
-                  <span>🤝</span>
-                  <span className="text-sm text-foreground">Préstamo</span>
-                </div>
-              ) : (
-                <Select value={expense.category.name} disabled={loadingCats || disabled}
-                  onValueChange={v => set({ category: { name: v } })}>
-                  <SelectTrigger>
-                    <span className="flex-1 text-left truncate">
-                      {loadingCats ? t('common.loading') : (() => {
-                        const c = categories.find(c => c.name === expense.category.name);
-                        const label = c ? t(`categories.${c.name}`, { defaultValue: c.name }) : '';
-                        return c ? `${c.emoji} ${label}` : t('expenseForm.selectPlaceholder');
-                      })()}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => (
-                      <SelectItem key={c.name} value={c.name}>
-                        {c.emoji} {t(`categories.${c.name}`, { defaultValue: c.name })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            {/* Payer — hidden for single-member personal context */}
-            {!hidePayerAndSplit && (
-              <div className="space-y-1.5">
-                <Label>{t('expenseForm.payer')}</Label>
-                <Select value={String(expense.payerId)} disabled={disabled}
-                  onValueChange={v => set({ payerId: parseInt(v) })}>
-                  <SelectTrigger>
-                    <span className="flex-1 text-left truncate">
-                      {members.find(m => m.id === expense.payerId)?.name ?? 'Select…'}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {members.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          {/* A one-time group has no months to spread installments across, and the backend
-              rejects credit there — so the whole payment-type row goes away. */}
-          {!isRecurring && !isLoanEdit && !isOneTimeGroup && (
-          <div className="grid grid-cols-2 gap-4">
-            {/* Payment type */}
-            <div className="space-y-1.5">
-              <Label>{t('expenseForm.paymentType')}</Label>
-              <Select value={expense.paymentType} disabled={disabled}
-                onValueChange={v => set({ paymentType: v as 'debit' | 'credit' })}>
-                <SelectTrigger>
-                  <span className="flex-1 text-left">{expense.paymentType === 'debit' ? t('expenseForm.debit') : t('expenseForm.credit')}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="debit">{t('expenseForm.debit')}</SelectItem>
-                  <SelectItem value="credit">{t('expenseForm.credit')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Installments (credit only) */}
-            {expense.paymentType === 'credit' && (
-              <div className="space-y-1.5">
-                <Label htmlFor="installments">{t('expenseForm.installments')}</Label>
-                <Input id="installments" type="number" min="1" required disabled={disabled}
-                  value={expense.installments}
-                  onChange={e => set({ installments: parseInt(e.target.value) || 1 })} />
-              </div>
-            )}
-          </div>
-          )}
-
-          {!hidePayerAndSplit && <Separator />}
-
-          {/* Split strategy — hidden for single-member personal context and loan edits */}
-          {!hidePayerAndSplit && !isLoanEdit && (<>
-          <div className="space-y-1.5">
-            <Label>{t('expenseForm.splitType')}</Label>
-            <Select value={expense.splitStrategy.type} disabled={disabled}
-              onValueChange={val => {
-                const type = val as SplitStrategy['type'];
-                set({
-                  splitStrategy: {
-                    type,
-                    percentages: type === 'percentage'
-                      ? Object.fromEntries(members.map(m => [m.id.toString(), null]))
-                      : null,
-                    amounts: type === 'exact'
-                      ? Object.fromEntries(members.map(m => [m.id.toString(), null]))
-                      : null,
-                    participantIds: null,
-                  },
-                });
-              }}>
-              <SelectTrigger>
-                <span className="flex-1 text-left">
-                  {{ equal: t('expenseForm.equal'), percentage: t('expenseForm.percentage'), exact: t('expenseForm.exact') }[expense.splitStrategy.type]}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="equal">{t('expenseForm.equal')}</SelectItem>
-                <SelectItem value="percentage">{t('expenseForm.percentage')}</SelectItem>
-                <SelectItem value="exact">{t('expenseForm.exact')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Equal — optional participant subset */}
-          {expense.splitStrategy.type === 'equal' && members.length > 2 && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">
-                {t('expenseForm.participants')}
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {members.map(m => {
-                  const ids = expense.splitStrategy.participantIds;
-                  const checked = ids == null || ids.includes(m.id);
-                  return (
-                    <button key={m.id} type="button" disabled={disabled}
-                      onClick={() => {
-                        const current = expense.splitStrategy.participantIds ?? members.map(x => x.id);
-                        const next = checked
-                          ? current.filter(id => id !== m.id)
-                          : [...current, m.id];
-                        set({
-                          splitStrategy: {
-                            ...expense.splitStrategy,
-                            participantIds: next.length === members.length ? null : next,
-                          },
-                        });
-                      }}
-                      className={cn(
-                        'px-2.5 py-1 rounded-full text-xs font-medium border transition-colors',
-                        checked
-                          ? 'bg-brand/20 border-brand text-foreground font-semibold ring-1 ring-brand'
-                          : 'bg-transparent border-border text-muted-foreground opacity-50'
-                      )}>
-                      {m.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Percentage inputs */}
-          {expense.splitStrategy.type === 'percentage' && (
-            <div className="space-y-2">
-              <Label>{t('expenseForm.percentagesLabel')}</Label>
-              {members.map(m => (
-                <div key={m.id} className="flex items-center gap-2">
-                  <span className="text-sm w-24 truncate">{m.name}</span>
-                  <Input type="number" min="0" max="100" step="0.01" required
-                    placeholder="e.g. 50" disabled={disabled}
-                    className="w-24"
-                    value={expense.splitStrategy.percentages?.[m.id] == null ? ''
-                      : expense.splitStrategy.percentages[m.id]}
-                    onChange={e => {
-                      const v = e.target.value === '' ? null : parseFloat(e.target.value);
-                      set({ splitStrategy: {
-                        ...expense.splitStrategy,
-                        percentages: { ...expense.splitStrategy.percentages, [m.id]: v },
-                      }});
-                    }} />
-                  <span className="text-sm text-muted-foreground">%</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Exact amount inputs */}
-          {expense.splitStrategy.type === 'exact' && (
-            <div className="space-y-2">
-              <Label>{t('expenseForm.exactLabel')}</Label>
-              {members.map(m => (
-                <div key={m.id} className="flex items-center gap-2">
-                  <span className="text-sm w-24 truncate">{m.name}</span>
-                  <Input type="number" min="0" step="0.01" placeholder="0.00"
-                    disabled={disabled} className="w-28"
-                    value={expense.splitStrategy.amounts?.[m.id] == null ? ''
-                      : expense.splitStrategy.amounts[m.id]}
-                    onChange={e => {
-                      const v = e.target.value === '' ? null : parseFloat(e.target.value);
-                      set({ splitStrategy: {
-                        ...expense.splitStrategy,
-                        amounts: { ...expense.splitStrategy.amounts, [m.id]: v },
-                      }});
-                    }} />
-                </div>
-              ))}
-              <p className={cn('text-xs font-medium', Math.abs(exactRemaining) <= 0.01 ? 'text-settle' : 'text-destructive')}>
-                {Math.abs(exactRemaining) <= 0.01
-                  ? t('expenseForm.amountsCorrect')
-                  : exactRemaining > 0
-                    ? t('expenseForm.unassigned', { amount: exactRemaining.toFixed(2) })
-                    : t('expenseForm.overBy', { amount: Math.abs(exactRemaining).toFixed(2) })}
-              </p>
-            </div>
-          )}
-          </>)}
-
-          {/* Recurring toggle — only when creating, and never in a one-time group:
-              "repeats every month" is meaningless where there are no months. */}
-          {!isEdit && !hidePayerAndSplit && !isOneTimeGroup && (
-            <div className="pt-1">
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => {
-                  const next = !isRecurring;
-                  setIsRecurring(next);
-                  if (next) set({ paymentType: 'debit', installments: 1 });
-                }}
-                className={cn(
-                  'cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
-                  isRecurring
-                    ? 'bg-brand/10 border-brand text-brand dark:bg-brand/25 dark:border-brand dark:text-brand'
-                    : 'bg-muted border-border text-muted-foreground hover:border-brand/50 dark:bg-transparent dark:border-muted/40 dark:text-muted-foreground/40 dark:hover:border-brand/30',
-                )}
-              >
-                ↺ {t('expenseForm.repeatEveryMonth')}
-              </button>
-            </div>
-          )}
-        </form>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={disabled || submitting}
+            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting
+              ? t('expenseForm.saving')
+              : isEdit
+                ? t('expenseForm.update')
+                : mode === 'loan' ? t('expenseForm.saveLoan') : t('expenseForm.saveExpense')}
+          </button>
         </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
-          <Button form="expense-form" type="submit" className="bg-brand hover:bg-brand/90 text-white"
-            disabled={disabled || submittingRecurring || submitting}>
-            {isEdit ? t('expenseForm.update') : t('expenseForm.addExpense')}
-          </Button>
-        </DialogFooter>
+        {/* ── Selectores: cada pastilla abre el suyo, encima de la hoja ───────────── */}
+        {picker && (
+          <div className="absolute inset-0 z-10 flex flex-col bg-popover">
+            <div className="flex items-center gap-2 border-b border-line px-5 py-3">
+              <button
+                type="button"
+                onClick={() => setPicker(null)}
+                aria-label={t('common.back')}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-1 hover:bg-surface-sunken"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-[13px] font-bold text-foreground">
+                {picker === 'payer' && t('expenseForm.choosePayer')}
+                {picker === 'loanTarget' && t('expenseForm.chooseLoanTarget')}
+                {picker === 'split' && t('expenseForm.chooseSplit')}
+                {picker === 'date' && t('expenseForm.chooseDate')}
+                {picker === 'payment' && t('expenseForm.choosePayment')}
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5">
+              {(picker === 'payer' || picker === 'loanTarget') && (
+                <div className="space-y-1.5">
+                  {members
+                    .filter(m => picker !== 'loanTarget' || m.id !== form.payerId)
+                    .map(m => {
+                      const selected = picker === 'payer'
+                        ? form.payerId === m.id
+                        : form.loanTargetId === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            if (picker === 'payer') set({ payerId: m.id });
+                            else set({ loanTargetId: m.id });
+                            setPicker(null);
+                          }}
+                          className={cn(
+                            'flex w-full cursor-pointer items-center gap-3 rounded-[12px] border px-3 py-2.5 text-left transition-colors',
+                            selected
+                              ? 'border-brand bg-brand-wash'
+                              : 'border-line hover:bg-surface-sunken',
+                          )}
+                        >
+                          <span className={cn(
+                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white',
+                            avatarBg(m.id),
+                          )}>
+                            {initials(m.name)}
+                          </span>
+                          <span className="text-[13px] font-semibold text-foreground">{m.name}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
+
+              {picker === 'date' && (
+                <Input
+                  type="date"
+                  value={form.date}
+                  onChange={e => set({ date: e.target.value })}
+                  className="text-base"
+                />
+              )}
+
+              {picker === 'payment' && (
+                <div className="space-y-3">
+                  <div className="flex gap-1.5">
+                    {(['debit', 'credit'] as const).map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => set({
+                          paymentType: type,
+                          installments: type === 'debit' ? 1 : Math.max(form.installments, 2),
+                        })}
+                        className={cn(
+                          'h-9 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
+                          form.paymentType === type
+                            ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                            : 'border border-line-strong text-muted-1',
+                        )}
+                      >
+                        {t(type === 'debit' ? 'expenseForm.debit' : 'expenseForm.credit')}
+                      </button>
+                    ))}
+                  </div>
+                  {form.paymentType === 'credit' && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {[2, 3, 6, 9, 12, 18, 24].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => set({ installments: n })}
+                          className={cn(
+                            'h-9 w-11 cursor-pointer rounded-pill text-[12.5px] font-bold tabular-nums transition-colors',
+                            form.installments === n
+                              ? 'bg-brand text-white'
+                              : 'border border-line-strong text-muted-1',
+                          )}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {picker === 'split' && (
+                <div className="space-y-4">
+                  <div className="flex gap-1.5">
+                    {(['equal', 'percentage', 'exact'] as const).map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => set({
+                          splitStrategy: {
+                            type,
+                            percentages: type === 'percentage'
+                              ? Object.fromEntries(members.map(m => [String(m.id), null])) : null,
+                            amounts: type === 'exact'
+                              ? Object.fromEntries(members.map(m => [String(m.id), null])) : null,
+                            participantIds: null,
+                          },
+                        })}
+                        className={cn(
+                          'h-9 flex-1 cursor-pointer rounded-pill text-[12px] font-bold transition-colors',
+                          form.splitStrategy.type === type
+                            ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                            : 'border border-line-strong text-muted-1',
+                        )}
+                      >
+                        {t(`expenseForm.${type}`)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {form.splitStrategy.type === 'equal' && members.length > 2 && (
+                    <div>
+                      <p className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+                        {t('expenseForm.participants')}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {members.map(m => {
+                          const ids = form.splitStrategy.participantIds;
+                          const checked = ids == null || ids.includes(m.id);
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => {
+                                const current = ids ?? members.map(x => x.id);
+                                const next = checked
+                                  ? current.filter(id => id !== m.id)
+                                  : [...current, m.id];
+                                set({
+                                  splitStrategy: {
+                                    ...form.splitStrategy,
+                                    participantIds: next.length === members.length ? null : next,
+                                  },
+                                });
+                              }}
+                              className={cn(
+                                'h-9 cursor-pointer rounded-pill px-3 text-[12px] font-bold transition-colors',
+                                checked
+                                  ? 'bg-brand-wash text-brand-ink ring-1 ring-brand'
+                                  : 'border border-line-strong text-muted-3',
+                              )}
+                            >
+                              {m.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {form.splitStrategy.type === 'percentage' && (
+                    <div className="space-y-2">
+                      {members.map(m => (
+                        <div key={m.id} className="flex items-center gap-2">
+                          <span className="w-24 truncate text-[12.5px] font-medium">{m.name}</span>
+                          <Input
+                            type="number" min="0" max="100" step="0.01" className="w-24"
+                            value={form.splitStrategy.percentages?.[m.id] ?? ''}
+                            onChange={e => set({
+                              splitStrategy: {
+                                ...form.splitStrategy,
+                                percentages: {
+                                  ...form.splitStrategy.percentages,
+                                  [m.id]: e.target.value === '' ? null : parseFloat(e.target.value),
+                                },
+                              },
+                            })}
+                          />
+                          <span className="text-[12.5px] text-muted-2">%</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {form.splitStrategy.type === 'exact' && (
+                    <div className="space-y-2">
+                      {members.map(m => (
+                        <div key={m.id} className="flex items-center gap-2">
+                          <span className="w-24 truncate text-[12.5px] font-medium">{m.name}</span>
+                          <Input
+                            type="number" min="0" step="0.01" className="w-28"
+                            value={form.splitStrategy.amounts?.[m.id] ?? ''}
+                            onChange={e => set({
+                              splitStrategy: {
+                                ...form.splitStrategy,
+                                amounts: {
+                                  ...form.splitStrategy.amounts,
+                                  [m.id]: e.target.value === '' ? null : parseFloat(e.target.value),
+                                },
+                              },
+                            })}
+                          />
+                        </div>
+                      ))}
+                      <p className={cn(
+                        'text-[11.5px] font-semibold',
+                        Math.abs(exactRemaining) <= 0.01 ? 'text-positive' : 'text-negative',
+                      )}>
+                        {Math.abs(exactRemaining) <= 0.01
+                          ? t('expenseForm.amountsCorrect')
+                          : exactRemaining > 0
+                            ? t('expenseForm.unassigned', { amount: exactRemaining.toFixed(2) })
+                            : t('expenseForm.overBy', { amount: Math.abs(exactRemaining).toFixed(2) })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-line p-4">
+              <button
+                type="button"
+                onClick={() => setPicker(null)}
+                className="h-11 w-full cursor-pointer rounded-[12px] bg-ink text-[13px] font-bold text-paper dark:bg-paper dark:text-ink"
+              >
+                {t('expenseForm.done')}
+              </button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

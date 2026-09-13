@@ -6,7 +6,7 @@ import { useScroll } from '@/contexts/ScrollContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useCategories } from '@/hooks/useCategories';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
-import { MonthPicker } from '@/components/expenses/MonthPicker';
+import { MonthPager } from '@/components/expenses/MonthPager';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IncomesSection } from '@/components/personal/IncomesSection';
 import { PersonalExpensesSection } from '@/components/personal/PersonalExpensesSection';
@@ -49,7 +49,7 @@ export function PersonalSectionPage({ section }: { section: Section }) {
           </div>
 
           {/* Month picker */}
-          <MonthPicker year={year} month={month} onNavigate={setYearMonth} />
+          <MonthPager year={year} month={month} onNavigate={setYearMonth} />
 
           {isLoading || !ledger ? (
             <div className="space-y-4">

@@ -1,34 +1,26 @@
-import React from 'react';
-import { Pen, Trash2, Repeat } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatCurrency, capitalize, formatDate } from '@/utils/format';
-import { useCategories } from '@/hooks/useCategories';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  capitalize, firstInstallmentDate, formatWeekdayDayMonth,
+} from '@/utils/format';
+import { useTranslation } from 'react-i18next';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { avatarBg, initials } from '@/utils/avatar';
+import { computeSplit, netOf, shareOf } from '@/utils/split';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
-const SPLIT_BADGE: Record<string, string> = {
-  equal:      'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  percentage: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40  dark:text-amber-300',
-  exact:      'bg-sky-100    text-sky-700    dark:bg-sky-900/40    dark:text-sky-300',
-};
-
-const PAYMENT_BADGE: Record<string, string> = {
-  debit:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-  credit: 'bg-blue-100    text-blue-700    dark:bg-blue-900/40    dark:text-blue-300',
-};
-
+/** Las categorías internas son símbolos, no palabras: van con su emoji y no con iniciales. */
 const INTERNAL_EMOJI: Record<string, string> = {
-  balance:  '⚖️',
+  balance: '⚖️',
   prestamo: '🤝',
 };
+
+/** A partir de cuántos participantes el reparto se pliega (§6.5). */
+const FOLD_THRESHOLD = 4;
 
 interface ExpenseDetailDialogProps {
   expense: ExpenseResponse;
@@ -40,6 +32,11 @@ interface ExpenseDetailDialogProps {
   onDelete: (expense: ExpenseResponse) => void;
   hideSplitBadge?: boolean;
   hideActions?: boolean;
+  groupId?: number;
+  groupName?: string;
+  isOneTimeGroup?: boolean;
+  viewedYear?: number;
+  viewedMonth?: number;
   onRecurringDelete?: (templateId: number) => void;
   onRecurringEdit?: (expense: ExpenseResponse) => void;
 }
@@ -48,51 +45,117 @@ function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+/** Celda de dato: label chico arriba, valor firme abajo. Nunca pares label-valor en prosa. */
+function Cell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
-      <span className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">{label}</span>
-      <span className="text-xs text-foreground flex-1">{children}</span>
+    <div className="min-w-0 flex-1 rounded-[12px] border border-line bg-surface px-3 py-2.5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-muted-2">{label}</p>
+      <p className="mt-1 truncate text-[12.5px] font-bold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+/** Caja de cifra del bloque oscuro. */
+function DarkBox({
+  label, value, tone = 'neutral',
+}: { label: string; value: string; tone?: 'neutral' | 'positive' | 'negative' }) {
+  return (
+    <div
+      className={cn(
+        'min-w-0 flex-1 rounded-[14px] px-3.5 py-3',
+        tone === 'neutral' && 'bg-white/[0.07]',
+        tone === 'positive' && 'bg-positive-on-dark/[0.14]',
+        tone === 'negative' && 'bg-negative-on-dark/[0.16]',
+      )}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-muted-on-dark">{label}</p>
+      <p
+        className={cn(
+          'mt-1 truncate text-[21px] font-bold leading-none tracking-[-0.03em] tabular-nums',
+          tone === 'neutral' && 'text-paper',
+          tone === 'positive' && 'text-positive-on-dark',
+          tone === 'negative' && 'text-negative-on-dark',
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }
 
 export function ExpenseDetailDialog({
-  expense,
-  members,
-  isSettled,
-  open,
-  onOpenChange,
-  onEdit,
-  onDelete,
-  hideSplitBadge = false,
-  hideActions = false,
-  onRecurringDelete,
-  onRecurringEdit,
+  expense, members, isSettled, open, onOpenChange, onEdit, onDelete,
+  hideSplitBadge = false, hideActions = false,
+  groupId, groupName, isOneTimeGroup = false,
+  onRecurringDelete, onRecurringEdit,
 }: ExpenseDetailDialogProps) {
   const { t } = useTranslation();
-  const { data: categories = [] } = useCategories();
-  const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
-    ?? INTERNAL_EMOJI[expense.category];
-  const canEdit = expense.installmentNo === 1;
+  const navigate = useNavigate();
+  const { formatAmount } = useCurrency();
+  const currentMember = useCurrentMember();
+  const [expandedSplit, setExpandedSplit] = useState(false);
 
-  const splitLabel = (() => {
-    if (expense.splitStrategy.type === 'equal' && expense.splitStrategy.participantIds?.length) {
-      return expense.splitStrategy.participantIds.map(id => memberName(members, id)).join(', ');
+  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
+  const weekdaysShort = t('weekdaysShort', { returnObjects: true }) as string[];
+
+  const canEdit = expense.installmentNo === 1;
+  const hasInstallments = expense.paymentType === 'credit' && expense.installments > 1;
+  const split = computeSplit(expense, members);
+  const categoryLabel = capitalize(
+    t(`categories.${expense.category}`, { defaultValue: expense.category }),
+  );
+
+  const subtitle = [
+    categoryLabel,
+    formatWeekdayDayMonth(expense.date, monthsShort, weekdaysShort),
+    groupName,
+  ].filter(Boolean).join(' · ');
+
+  /* ── Tu posición en este gasto ────────────────────────────────────────────────────── */
+  const net = currentMember ? netOf(expense, split, currentMember.id) : 0;
+  const showYourBox = currentMember != null && Math.abs(net) > 0.01;
+
+  /* ── Reparto, con plegado para grupos grandes ─────────────────────────────────────── */
+  const splitRows = split.participantIds.map(id => ({
+    id,
+    name: id === currentMember?.id ? t('expenseDetail.splitYou') : memberName(members, id),
+    amount: shareOf(split, id),
+  }));
+
+  const splitTitle = (() => {
+    if (expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages) {
+      return Object.values(expense.splitStrategy.percentages)
+        .map(p => Math.round(p ?? 0))
+        .join('/');
     }
-    return null;
+    if (expense.splitStrategy.type === 'exact') return t('expenseDetail.splitExact');
+    return t('expenseDetail.splitEqual');
   })();
 
+  const shouldFold = splitRows.length > FOLD_THRESHOLD && !expandedSplit;
+  // Se muestran siempre los extremos: vos, quien pagó y quien más debe. El resto se pliega.
+  const anchorIds = new Set<number>();
+  if (shouldFold) {
+    if (currentMember) anchorIds.add(currentMember.id);
+    anchorIds.add(expense.payerId);
+    const biggest = [...splitRows].sort((a, b) => b.amount - a.amount)[0];
+    if (biggest) anchorIds.add(biggest.id);
+  }
+  const shownRows = shouldFold ? splitRows.filter(r => anchorIds.has(r.id)) : splitRows;
+  const foldedRows = shouldFold ? splitRows.filter(r => !anchorIds.has(r.id)) : [];
+  const foldedAreEqual = foldedRows.length > 0
+    && foldedRows.every(r => Math.abs(r.amount - foldedRows[0].amount) < 0.01);
+
+  /* ── Acciones ─────────────────────────────────────────────────────────────────────── */
   const handleEdit = () => {
+    if (!canEdit) return;
     onOpenChange(false);
-    if (expense.recurringTemplateId != null && onRecurringEdit) {
-      onRecurringEdit(expense);
-    } else {
-      onEdit(expense);
-    }
+    if (expense.recurringTemplateId != null && onRecurringEdit) onRecurringEdit(expense);
+    else onEdit(expense);
   };
 
   const handleDelete = () => {
+    if (!canEdit) return;
     onOpenChange(false);
     if (expense.recurringTemplateId != null && onRecurringDelete) {
       onRecurringDelete(expense.recurringTemplateId);
@@ -101,121 +164,238 @@ export function ExpenseDetailDialog({
     }
   };
 
+  /**
+   * Ir a la cuota 1, que es donde el gasto se edita.
+   *
+   * Las cuotas son una fila por mes, así que la primera vive en otro mes: el link lleva el
+   * año y el mes calculados, y el id del gasto padre para que su detalle se abra solo.
+   */
+  const firstInstallmentHref = (() => {
+    if (canEdit || groupId == null) return null;
+    const target = expense.parentExpenseId ?? expense.id;
+    const date = firstInstallmentDate(expense.date, expense.installmentNo);
+    const params = new URLSearchParams({
+      year: String(date.getFullYear()),
+      month: String(date.getMonth() + 1),
+      expense: String(target),
+      highlight: String(target),
+    });
+    return `/groups/${groupId}?${params}`;
+  })();
+
+  const showActions = !isSettled && !hideActions;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          {/* Emoji + title */}
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-muted flex items-center justify-center flex-shrink-0">
-              {categoryEmoji
-                ? <span className="text-2xl leading-none">{categoryEmoji}</span>
-                : <span className="text-sm font-bold text-muted-foreground uppercase">{expense.category.slice(0, 2)}</span>
-              }
+      <DialogContent
+        variant="panel"
+        showCloseButton={false}
+        className="gap-0 overflow-hidden bg-ink p-0 rounded-t-sheet"
+      >
+        {/* ── Bloque oscuro ──────────────────────────────────────────────────────────── */}
+        <div className="relative bg-ink px-5 pb-5 pt-4 lg:pt-5">
+          <DialogClose
+            render={
+              <button
+                type="button"
+                aria-label={t('expenseDetail.close')}
+                className="absolute right-4 top-4 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-paper/50 outline-none transition-colors hover:bg-white/10 hover:text-paper focus-visible:ring-2 focus-visible:ring-brand-soft"
+              />
+            }
+          >
+            <X className="h-4 w-4" />
+          </DialogClose>
+
+          <div className="flex items-start gap-3 pr-8">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-white/[0.07] text-[13px] font-bold uppercase text-brand-soft">
+              {INTERNAL_EMOJI[expense.category]
+                ? <span className="text-xl leading-none">{INTERNAL_EMOJI[expense.category]}</span>
+                : categoryLabel.slice(0, 2)}
             </div>
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-base leading-tight">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="truncate text-[15px] font-bold leading-tight text-paper">
                 {capitalize(expense.description)}
-                {expense.recurringTemplateId != null && (
-                  <Repeat className="inline h-3.5 w-3.5 text-brand ml-1.5 align-middle" title={t('expenses.recurringBadgeTitle')} />
-                )}
               </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {capitalize(t(`categories.${expense.category}`, { defaultValue: expense.category }))}
-                {' · '}{formatDate(expense.date, true)}
+              <p className="mt-1 truncate text-[11.5px] font-medium text-muted-on-dark">
+                {subtitle}
               </p>
             </div>
-          </div>
-
-          {/* Amount — prominent */}
-          <div className="bg-muted/50 rounded-lg px-4 py-3 mt-1 flex items-baseline justify-between">
-            <span className="text-xs text-muted-foreground">{t('expenses.amount', { defaultValue: 'Amount' })}</span>
-            <div className="text-right">
-              <span className="text-xl font-bold text-foreground tabular-nums">
-                {formatCurrency(expense.amount)}
+            {hasInstallments && (
+              <span className="shrink-0 rounded-chip border border-brand-soft/40 px-2 py-0.5 text-[11px] font-bold tabular-nums text-brand-soft">
+                {expense.installmentNo}/{expense.installments}
               </span>
-              {expense.paymentType === 'credit' && expense.installments > 1 && (
-                <p className="text-[11px] text-muted-foreground">
-                  {t('expenses.installmentOf', { defaultValue: 'instalment {{no}}/{{total}} of {{total_amount}}', no: expense.installmentNo, total: expense.installments, total_amount: formatCurrency(expense.amount * expense.installments) })}
-                </p>
-              )}
-            </div>
+            )}
           </div>
-        </DialogHeader>
 
-        {/* Detail rows */}
-        <div className="px-1">
-          <DetailRow label={t('expenses.payer', { defaultValue: 'Payer' })}>
-            {memberName(members, expense.payerId)}
-          </DetailRow>
+          <div className="mt-4 flex gap-2">
+            <DarkBox
+              label={hasInstallments ? t('expenseDetail.thisInstallment') : t('expenseDetail.amount')}
+              value={formatAmount(expense.amount, expense.currency)}
+            />
+            {showYourBox && (
+              <DarkBox
+                label={net > 0 ? t('expenseDetail.theyOwe') : t('expenseDetail.youOwe')}
+                value={formatAmount(Math.abs(net), expense.currency)}
+                tone={net > 0 ? 'positive' : 'negative'}
+              />
+            )}
+          </div>
+        </div>
 
-          <DetailRow label={t('expenses.payment', { defaultValue: 'Payment' })}>
-            <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', PAYMENT_BADGE[expense.paymentType])}>
-              {expense.paymentType}
-              {expense.paymentType === 'credit' && expense.installments > 1 && ` ${expense.installmentNo}/${expense.installments}`}
-            </span>
-          </DetailRow>
+        {/* ── Cuerpo claro ───────────────────────────────────────────────────────────── */}
+        <div className="space-y-3 bg-background px-5 pb-5 pt-4">
+          <div className="flex gap-2">
+            <Cell label={t('expenseDetail.cellPayer')} value={memberName(members, expense.payerId)} />
+            <Cell
+              label={t('expenseDetail.cellMethod')}
+              value={
+                hasInstallments
+                  ? `${t('expenseDetail.methodCredit')} ${expense.installmentNo}/${expense.installments}`
+                  : t(expense.paymentType === 'credit' ? 'expenseDetail.methodCredit' : 'expenseDetail.methodDebit')
+              }
+            />
+            {hasInstallments ? (
+              <Cell
+                label={t('expenseDetail.cellTotal')}
+                value={formatAmount(expense.amount * expense.installments, expense.currency)}
+              />
+            ) : (
+              <Cell
+                label={t('expenseDetail.cellStatus')}
+                value={t(isSettled ? 'expenseDetail.statusSettled' : 'expenseDetail.statusOpen')}
+              />
+            )}
+          </div>
 
-          {!hideSplitBadge && (
-            <DetailRow label={t('expenses.split', { defaultValue: 'Split' })}>
-              <div className="flex flex-col gap-1">
-                <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full self-start', SPLIT_BADGE[expense.splitStrategy.type])}>
-                  {expense.splitStrategy.type}
-                  {splitLabel && `: ${splitLabel}`}
-                </span>
-                {expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages && (
-                  <div className="flex flex-col gap-0.5 mt-0.5">
-                    {Object.entries(expense.splitStrategy.percentages).map(([id, pct]) => {
-                      const pctNum = parseFloat(Number(pct).toFixed(1));
-                      const amt = formatCurrency((expense.amount * (pct ?? 0)) / 100);
-                      return (
-                        <span key={id} className="text-xs text-muted-foreground">
-                          {memberName(members, parseInt(id))}: {pctNum}% ({amt})
-                        </span>
-                      );
-                    })}
+          {/* Reparto */}
+          {!hideSplitBadge && splitRows.length > 0 && (
+            <div className="rounded-card border border-line bg-surface p-4">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="truncate text-[13px] font-bold text-foreground">{splitTitle}</p>
+                <p className="shrink-0 text-[11.5px] font-medium text-muted-2">
+                  {t('expenseDetail.splitCount', { count: splitRows.length })}
+                </p>
+              </div>
+              <div className="mt-3 space-y-2">
+                {shownRows.map(row => (
+                  <div key={row.id} className="flex items-center gap-2.5">
+                    <div
+                      className={cn(
+                        'flex h-[26px] w-[26px] shrink-0 select-none items-center justify-center rounded-full text-[10px] font-bold text-white',
+                        avatarBg(row.id),
+                      )}
+                      aria-hidden="true"
+                    >
+                      {initials(memberName(members, row.id))}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground">
+                      {row.name}
+                    </span>
+                    <span className="shrink-0 text-[12.5px] font-bold tabular-nums text-foreground">
+                      {formatAmount(row.amount, expense.currency)}
+                    </span>
                   </div>
-                )}
-                {expense.splitStrategy.type === 'exact' && expense.splitStrategy.amounts && (
-                  <div className="flex flex-col gap-0.5 mt-0.5">
-                    {Object.entries(expense.splitStrategy.amounts).map(([id, amt]) => (
-                      <span key={id} className="text-xs text-muted-foreground">
-                        {memberName(members, parseInt(id))}: {formatCurrency(amt ?? 0)}
-                      </span>
-                    ))}
+                ))}
+
+                {foldedRows.length > 0 && (
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex shrink-0 items-center" aria-hidden="true">
+                      {foldedRows.slice(0, 3).map((row, i) => (
+                        <div
+                          key={row.id}
+                          className={cn(
+                            'flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-surface text-[10px] font-bold text-white',
+                            avatarBg(row.id),
+                            i > 0 && '-ml-[9px]',
+                          )}
+                        >
+                          {initials(memberName(members, row.id))}
+                        </div>
+                      ))}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-muted-2">
+                      {foldedAreEqual
+                        ? t('expenseDetail.foldedEven', {
+                            count: foldedRows.length,
+                            amount: formatAmount(foldedRows[0].amount, expense.currency),
+                          })
+                        : t('expenseDetail.folded', { count: foldedRows.length })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedSplit(true)}
+                      className="shrink-0 cursor-pointer text-[12px] font-bold text-brand-ink hover:underline"
+                    >
+                      {t('expenseDetail.seeAll')}
+                    </button>
                   </div>
                 )}
               </div>
-            </DetailRow>
+            </div>
+          )}
+
+          {/* Acciones — dos botones de igual ancho */}
+          {showActions && (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  disabled={!canEdit}
+                  className={cn(
+                    'h-11 flex-1 rounded-[12px] text-[13px] font-bold transition-colors',
+                    canEdit
+                      ? 'cursor-pointer bg-ink text-paper hover:bg-ink/90 dark:bg-paper dark:text-ink dark:hover:bg-paper/90'
+                      : 'cursor-default bg-surface-sunken text-muted-3',
+                  )}
+                >
+                  {t('common.edit')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={!canEdit}
+                  className={cn(
+                    'h-11 flex-1 rounded-[12px] border text-[13px] font-bold transition-colors',
+                    canEdit
+                      ? 'cursor-pointer border-negative-wash-line bg-negative-wash text-negative hover:bg-negative-wash/70'
+                      : 'cursor-default border-transparent bg-surface-sunken text-muted-3',
+                  )}
+                >
+                  {t('expenseDetail.delete')}
+                </button>
+              </div>
+
+              {/* La regla se explica en palabras, no con un botón gris y un `title` (principio 4) */}
+              {!canEdit && (
+                <p className="flex items-start gap-1.5 text-[11px] font-medium leading-[1.45] text-muted-1">
+                  <AlertCircle className="mt-px h-3 w-3 shrink-0 text-muted-2" aria-hidden="true" />
+                  <span>
+                    {t('expenseDetail.installmentLock', { no: expense.installmentNo })}
+                    {firstInstallmentHref && (
+                      <>
+                        {' — '}
+                        <button
+                          type="button"
+                          onClick={() => { onOpenChange(false); navigate(firstInstallmentHref); }}
+                          className="cursor-pointer font-bold text-brand-ink hover:underline"
+                        >
+                          {t('expenseDetail.goToFirst')}
+                        </button>
+                      </>
+                    )}
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {isOneTimeGroup && groupName && (
+            <p className="text-[11px] font-medium leading-[1.45] text-muted-2">
+              {t('expenseDetail.eventFootnote', { group: groupName })}
+            </p>
           )}
         </div>
-
-        {/* Footer actions */}
-        {!isSettled && !hideActions && (
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!canEdit}
-              title={canEdit ? undefined : 'Edit the first installment only'}
-              onClick={handleEdit}
-            >
-              <Pen className="h-3.5 w-3.5 mr-1.5" />
-              {t('common.edit', { defaultValue: 'Edit' })}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!canEdit}
-              title={canEdit ? undefined : 'Delete the first installment only'}
-              className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-              onClick={handleDelete}
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              {t('common.delete', { defaultValue: 'Delete' })}
-            </Button>
-          </DialogFooter>
-        )}
       </DialogContent>
     </Dialog>
   );

@@ -1,31 +1,32 @@
 /**
- * Centralized chart palette — single source of truth for recharts colors.
+ * Paleta de los gráficos — una sola fuente de verdad para recharts.
  *
- * Muted, brand-anchored (violet `--brand` ≈ hsl(270 40% 45%)) hues chosen to
- * read acceptably on both light (`--card` white) and dark (`--card` slate)
- * grounds, so no per-mode branching is needed. Prefer the semantic `SERIES`
- * entries for fixed roles (income / expenses / groups) and `CHART_COLORS`
- * (cycled by index) for categorical breakdowns.
+ * Son los mismos colores que el resto de la app (handoff §3): los seis de avatar para lo
+ * categórico, y los semánticos anclados en `positive` / `brand` / `negative` para que un
+ * ingreso sea verde y un gasto grupal naranja en cualquier gráfico, igual que en las cifras.
+ *
+ * Van como hex y no como `hsl(var(--token))` porque recharts los escribe en atributos SVG,
+ * donde una variable CSS no resuelve. Si la paleta de §3 cambia, cambian acá también.
  */
 
-/** Categorical palette — cycled by `i % CHART_COLORS.length` for donuts/bars. */
+/** Paleta categórica — los seis colores de avatar, en orden. */
 export const CHART_COLORS = [
-  '#7C6BC4', // violet (brand-anchored)
-  '#4C9A94', // teal
-  '#C99A5B', // gold
-  '#C56B7B', // rose
-  '#5B82C4', // blue
-  '#6FA97D', // green
-  '#B072A6', // mauve
-  '#5FAAB0', // cyan
-  '#C08457', // terracotta
+  '#E98A2B', // brand
+  '#8C5A2B', // marrón
+  '#6B4A8C', // violeta
+  '#1C5A8C', // azul
+  '#1F8A5B', // verde
+  '#C2452D', // rojo
+  '#B8651A', // brand-ink
+  '#1F6B57', // verde USD
+  '#8E2617', // negative-ink
 ] as const;
 
-/** Semantic colors for fixed series (keep meaning stable across charts). */
+/** Colores fijos por rol, para que el significado no cambie de gráfico en gráfico. */
 export const SERIES = {
-  income: '#6FA97D', // green — money in
-  personal: '#C99A5B', // gold — personal spend
-  groups: '#7C6BC4', // brand violet — group shares
-  thisMonth: '#7C6BC4', // brand violet — current-period line
-  lastMonth: '#8A93A6', // muted slate — reference / prior-period line
+  income: '#1F8A5B',    // positive — lo que entra
+  personal: '#C2452D',  // negative — lo que gastás vos
+  groups: '#E98A2B',    // brand — lo que te toca de los grupos
+  thisMonth: '#E98A2B', // brand — el período en curso
+  lastMonth: '#C9BEB0', // muted-3 — la referencia anterior
 } as const;

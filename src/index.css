@@ -2,53 +2,160 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens — "Cuenta Clara" ───────────────────────────────────────
+   La paleta del rediseño (handoff §3) escrita sobre las variables que shadcn
+   ya consumía, para que cada componente herede la piel nueva sin tocarlo.
+
+   Los nombres semánticos de shadcn (--background, --primary…) apuntan a los
+   tokens del diseño; los tokens propios (--ink, --paper, --positive…) existen
+   además porque el diseño los usa por nombre y no todos tienen equivalente en
+   shadcn.
+
+   Regla del modo oscuro: `ink` y los seis colores de avatar son absolutos —
+   valen igual en ambos temas. Todo lo demás se redefine abajo, en `.dark`.
+   -------------------------------------------------------------------------- */
 @layer base {
   :root {
-    --background: 270 50% 97%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 270 33% 80%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 93%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 0 0% 93%;
-    --muted-foreground: 0 0% 47%;
-    --accent: 270 33% 93%;
-    --accent-foreground: 270 30% 30%;
-    --destructive: 0 84% 57%;
+    /* Superficies y tinta */
+    --ink:              30 9.4% 12.5%;    /* #23201D */
+    --paper:            33.3 52.9% 96.7%; /* #FBF7F2 */
+    --surface:          0 0% 100%;        /* #FFFFFF */
+    --surface-sunken:   31.6 44.2% 91.6%; /* #F3EAE0 */
+
+    /* Bordes */
+    --line:             31.6 34.5% 89.2%; /* #EDE4DA */
+    --line-strong:      32.5 30% 84.3%;   /* #E3D8CB */
+    --line-soft:        33 41.7% 90.6%;   /* #F1E8DD */
+
+    /* Marca */
+    --brand:            30 81.2% 54.1%;   /* #E98A2B */
+    --brand-ink:        28.5 75.2% 41.2%; /* #B8651A */
+    --brand-wash:       25.7 84% 95.1%;   /* #FDF1E8 */
+    --brand-wash-line:  30 74.3% 86.3%;   /* #F6DCC2 */
+    --brand-soft:       33.5 85.2% 76.1%; /* #F6C88E */
+
+    /* Estados */
+    --positive:            153.6 63.3% 33.1%; /* #1F8A5B */
+    --positive-wash:       145.7 35% 92.2%;   /* #E4F2EA */
+    --positive-wash-line:  148 34.1% 82.7%;   /* #C4E2D2 */
+    --positive-on-dark:    153.9 42.2% 64.7%; /* #7FCBAA */
+    --negative:            9.7 62.3% 46.9%;   /* #C2452D */
+    --negative-wash:       9.5 82.6% 95.5%;   /* #FDEDEA */
+    --negative-wash-line:  9.8 64.2% 86.9%;   /* #F3CFC8 */
+    --negative-ink:        7.6 72.1% 32.4%;   /* #8E2617 */
+    --negative-on-dark:    8.9 75.8% 75.7%;   /* #F0A092 */
+
+    /* Texto secundario */
+    --muted-1:          30 6.9% 45.5%;    /* #7C746C — secundario */
+    --muted-2:          32.5 11.4% 58.8%; /* #A2978A — terciario, metadatos */
+    --muted-3:          33.6 18.8% 73.9%; /* #C9BEB0 — deshabilitado, chevrons */
+    --muted-on-dark:    30 9% 56.5%;      /* #9A9086 */
+    --muted-on-dark-2:  31.6 8.2% 45.7%;  /* #7E756B */
+
+    /* Badges de excepción de la fila de gasto (§3) */
+    --tag-credit:        206.8 66.7% 32.9%; /* #1C5A8C — cuotas */
+    --tag-credit-wash:   205.3 51.4% 92.7%; /* #E3EEF6 */
+    --tag-usd:           164.2 55.1% 27.1%; /* #1F6B57 */
+    --tag-usd-wash:      145.7 35% 92.2%;   /* #E4F2EA */
+    --tag-split:         270 30.8% 42%;     /* #6B4A8C — división no equitativa, evento */
+    --tag-split-wash:    274.3 41.2% 93.3%; /* #EFE7F5 */
+
+    /* Avatares — asignados de forma estable por id de miembro */
+    --avatar-1: 30 81.2% 54.1%;   /* #E98A2B */
+    --avatar-2: 29.1 53% 35.9%;   /* #8C5A2B */
+    --avatar-3: 270 30.8% 42%;    /* #6B4A8C */
+    --avatar-4: 206.8 66.7% 32.9%;/* #1C5A8C */
+    --avatar-5: 153.6 63.3% 33.1%;/* #1F8A5B */
+    --avatar-6: 9.7 62.3% 46.9%;  /* #C2452D */
+
+    /* ── Alias de shadcn ──────────────────────────────────────────────── */
+    --background:            var(--paper);
+    --foreground:            var(--ink);
+    --card:                  var(--surface);
+    --card-foreground:       var(--ink);
+    --popover:               var(--surface);
+    --popover-foreground:    var(--ink);
+    --primary:               var(--brand);
+    --primary-foreground:    0 0% 100%;
+    /* §3: ink es también el color de los botones secundarios. */
+    --secondary:             var(--ink);
+    --secondary-foreground:  var(--paper);
+    --muted:                 var(--surface-sunken);
+    --muted-foreground:      var(--muted-1);
+    --accent:                var(--brand-wash);
+    --accent-foreground:     var(--brand-ink);
+    --destructive:           var(--negative);
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 270 33% 70%;
-    --radius: 0.5rem;
-    --settle: 122 39% 49%;
-    --brand: 270 40% 45%;
+    --border:                var(--line);
+    --input:                 var(--line-strong);
+    --ring:                  var(--brand);
+    --settle:                var(--positive);
+    /* Input y pastilla: 11–14px en el diseño. lg=12 · md=10 · sm=8. */
+    --radius: 0.75rem;
+
+    /* Sombras (§3) */
+    --shadow-card:  0 1px 2px rgba(0, 0, 0, .04);
+    --shadow-panel: 0 14px 34px -18px rgba(0, 0, 0, .3);
+    --shadow-sheet: 0 -20px 50px -20px rgba(0, 0, 0, .4);
+    --shadow-fab:   0 12px 26px -8px rgba(233, 138, 43, .7);
+    --scrim: 35 32 29;
   }
+
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 98%;
-    --card: 215 28% 17%;
-    --card-foreground: 0 0% 98%;
-    --popover: 215 28% 17%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 270 33% 80%;
-    --primary-foreground: 270 30% 15%;
-    --secondary: 215 28% 22%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 215 28% 22%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 270 20% 25%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 57%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 215 28% 25%;
-    --input: 215 28% 25%;
-    --ring: 270 33% 70%;
-    --settle: 122 39% 49%;
-    --brand: 270 25% 70%;
+    /* El diseño es claro; el oscuro sigue la paleta dibujada en `1b` (§3).
+       Los tokens `*-on-dark` del diseño pasan a ser aquí los principales:
+       sobre fondo oscuro, positivo y negativo son los tonos claros.
+
+       `--paper` NO se redefine: igual que `ink`, es un color absoluto, el crema de la marca.
+       Lo que cambia es el rol (`--background`). Redefinirlo volvía ilegible todo lo que el
+       diseño pinta sobre tinta —chips activos, botones, el bloque del detalle—, porque
+       `text-paper` sobre `bg-ink` quedaba oscuro sobre oscuro. */
+    --background:       30 11.1% 7.1%;    /* #141210 */
+    --surface:          34.3 13.2% 10.4%; /* #1E1B17 */
+    --surface-sunken:   32 12% 14%;
+
+    --line:             32 11% 18%;
+    --line-strong:      32 11% 24%;
+    --line-soft:        32 11% 15%;
+
+    --brand:            31 85.6% 59.2%;   /* #F09A3E */
+    /* Sobre oscuro, el rol "marca sobre el fondo, legible" lo cumple el tono claro. */
+    --brand-ink:        33.5 85.2% 76.1%; /* #F6C88E */
+    --brand-wash:       30 40% 14%;
+    --brand-wash-line:  30 40% 24%;
+
+    --positive:            153.9 42.2% 64.7%; /* #7FCBAA */
+    --positive-wash:       154 30% 14%;
+    --positive-wash-line:  154 28% 24%;
+    --negative:            8.9 75.8% 75.7%;   /* #F0A092 */
+    --negative-wash:       9 35% 15%;
+    --negative-wash-line:  9 33% 25%;
+    --negative-ink:        8.9 75.8% 75.7%;
+
+    --muted-1:          30 9% 56.5%;    /* #9A9086 */
+    --muted-2:          31.6 8.2% 45.7%;/* #7E756B */
+    --muted-3:          32 8% 34%;
+
+    --tag-credit:        206.8 55% 70%;
+    --tag-credit-wash:   206 35% 18%;
+    --tag-usd:           164 45% 62%;
+    --tag-usd-wash:      154 30% 14%;
+    --tag-split:         270 45% 74%;
+    --tag-split-wash:    272 28% 19%;
+
+    /* El texto se aclara; el resto de los alias siguen a los tokens de arriba. */
+    --foreground:            34.3 41.2% 93.3%; /* #F5EFE7 */
+    --card-foreground:       var(--foreground);
+    --popover-foreground:    var(--foreground);
+    --primary-foreground:    30 11.1% 7.1%;
+    --secondary:             34.3 13.2% 10.4%;
+    --secondary-foreground:  var(--foreground);
+    --destructive-foreground: 30 11.1% 7.1%;
+
+    --shadow-card:  0 1px 2px rgba(0, 0, 0, .3);
+    --shadow-panel: 0 14px 34px -18px rgba(0, 0, 0, .7);
+    --shadow-sheet: 0 -20px 50px -20px rgba(0, 0, 0, .75);
+    --scrim: 10 8 7;
   }
 }
 
@@ -64,8 +171,8 @@
 /* ── Liquid Glass — iOS 26 material ────────────────────────────────────────
    Heavy blur + saturation lets background colours bleed through (the "liquid"
    quality). The inset box-shadows simulate the top specular edge and a faint
-   bottom rim — thickness of the glass. Dark mode shifts the tint to the app's
-   purple brand hue so the pill reads as part of the design system.
+   bottom rim — thickness of the glass. El tinte sigue a la paleta: cálido
+   sobre papel, y tinta (no violeta) en oscuro.
    -------------------------------------------------------------------------- */
 .liquid-glass {
   background: rgba(255, 255, 255, 0.22);
@@ -75,40 +182,39 @@
   box-shadow:
     inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
     inset 0 -1px   0 rgba(255, 255, 255, 0.14),
-    0 2px  8px  rgba(0, 0, 0, 0.10),
-    0 8px  28px rgba(0, 0, 0, 0.14),
-    0 0    0 0.5px rgba(0, 0, 0, 0.04);
+    0 2px  8px  rgba(35, 32, 29, 0.08),
+    0 8px  28px rgba(35, 32, 29, 0.12),
+    0 0    0 0.5px rgba(35, 32, 29, 0.04);
 }
 .dark .liquid-glass {
-  background: rgba(28, 22, 50, 0.48);
+  background: rgba(30, 27, 23, 0.52);
   backdrop-filter: blur(60px) saturate(150%) brightness(88%);
   -webkit-backdrop-filter: blur(60px) saturate(150%) brightness(88%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(245, 239, 231, 0.12);
   box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.20),
-    inset 0 -1px   0 rgba(255, 255, 255, 0.05),
+    inset 0 1.5px 0 rgba(245, 239, 231, 0.18),
+    inset 0 -1px   0 rgba(245, 239, 231, 0.05),
     0 2px  8px  rgba(0, 0, 0, 0.40),
     0 8px  28px rgba(0, 0, 0, 0.50);
 }
 
 /* ── Savings hatch — budget bar "projected savings" zone ───────────────────
-   A diagonal two-tone emerald stripe reads as "projected / what you keep",
-   distinct from the solid committed zones (spent + pending group costs).
-   Shades track Tailwind's emerald-400/500 (light) and 500/600 (dark), the
-   same scale the solid zones use, so light and dark stay coherent.
+   A diagonal two-tone stripe reads as "projected / what you keep", distinct
+   from the solid committed zones (spent + pending group costs). Los tonos
+   siguen a `positive` para que la barra hable el mismo idioma que los saldos.
    -------------------------------------------------------------------------- */
 .savings-hatch {
   background-image: repeating-linear-gradient(
     45deg,
-    #34d399 0, #34d399 6px,
-    #10b981 6px, #10b981 12px
+    #2FA36F 0, #2FA36F 6px,
+    #1F8A5B 6px, #1F8A5B 12px
   );
 }
 .dark .savings-hatch {
   background-image: repeating-linear-gradient(
     45deg,
-    #10b981 0, #10b981 6px,
-    #059669 6px, #059669 12px
+    #7FCBAA 0, #7FCBAA 6px,
+    #4E9E7C 6px, #4E9E7C 12px
   );
 }
 
