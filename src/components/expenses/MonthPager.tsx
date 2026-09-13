@@ -1,0 +1,152 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+
+interface MonthPagerProps {
+  year: number;
+  month: number; // 1–12
+  onNavigate: (year: number, month: number) => void;
+  /** Un punto al lado del mes cuando ya está saldado (§6.6: cerrar un mes no congela el grupo). */
+  isSettled?: boolean;
+  className?: string;
+}
+
+/**
+ * Paginador de mes.
+ *
+ * El mes es el alcance de la pantalla, no un filtro más (principio 3), así que manda arriba
+ * de la lista y lo comparten Gastos y Números. Hacia adelante se corta en el mes actual:
+ * no hay gastos en el futuro, y un botón que no lleva a ningún lado se ve deshabilitado en
+ * vez de desaparecer, para que el paginador no cambie de ancho.
+ */
+export function MonthPager({ year, month, onNavigate, isSettled = false, className }: MonthPagerProps) {
+  const { t } = useTranslation();
+  const months = t('months', { returnObjects: true }) as string[];
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(year);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const today = new Date();
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth() + 1;
+
+  useEffect(() => { setPickerYear(year); }, [year, pickerOpen]);
+
+  // Cerrar al tocar afuera: el selector es un panel flotante, no un diálogo.
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setPickerOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setPickerOpen(false); };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [pickerOpen]);
+
+  const prev = () => (month === 1 ? onNavigate(year - 1, 12) : onNavigate(year, month - 1));
+  const next = () => {
+    if (isCurrentMonth) return;
+    return month === 12 ? onNavigate(year + 1, 1) : onNavigate(year, month + 1);
+  };
+
+  const arrow = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors';
+
+  return (
+    <div ref={containerRef} className={cn('relative flex items-center justify-center gap-2', className)}>
+      <button
+        type="button"
+        onClick={prev}
+        aria-label={t('monthPager.previous')}
+        className={cn(arrow, 'cursor-pointer border-line-strong text-foreground hover:bg-surface-sunken')}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setPickerOpen(o => !o)}
+        aria-label={t('monthPager.pick')}
+        aria-expanded={pickerOpen}
+        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-pill border border-line-strong bg-surface px-3.5 text-[12.5px] font-bold text-foreground transition-colors hover:bg-surface-sunken"
+      >
+        {isSettled && (
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-positive" aria-hidden="true" />
+        )}
+        <span className="tabular-nums">{months[month - 1]} {year}</span>
+        <ChevronDown className={cn('h-3.5 w-3.5 text-muted-2 transition-transform', pickerOpen && 'rotate-180')} />
+      </button>
+
+      <button
+        type="button"
+        onClick={next}
+        disabled={isCurrentMonth}
+        aria-label={isCurrentMonth ? t('monthPager.atCurrentMonth') : t('monthPager.next')}
+        className={cn(
+          arrow,
+          isCurrentMonth
+            ? 'cursor-default border-transparent bg-surface-sunken text-muted-3'
+            : 'cursor-pointer border-line-strong text-foreground hover:bg-surface-sunken',
+        )}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+
+      {pickerOpen && (
+        <div className="absolute left-1/2 top-10 z-40 w-64 -translate-x-1/2 rounded-card border border-line bg-surface p-3 shadow-panel">
+          <div className="mb-2 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setPickerYear(y => y - 1)}
+              aria-label={String(pickerYear - 1)}
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-1 hover:bg-surface-sunken"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-[13px] font-bold tabular-nums text-foreground">{pickerYear}</span>
+            <button
+              type="button"
+              onClick={() => setPickerYear(y => y + 1)}
+              disabled={pickerYear >= today.getFullYear()}
+              aria-label={String(pickerYear + 1)}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-full',
+                pickerYear >= today.getFullYear()
+                  ? 'cursor-default text-muted-3'
+                  : 'cursor-pointer text-muted-1 hover:bg-surface-sunken',
+              )}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {months.map((name, i) => {
+              const isFuture = pickerYear > today.getFullYear()
+                || (pickerYear === today.getFullYear() && i + 1 > today.getMonth() + 1);
+              const isActive = pickerYear === year && i + 1 === month;
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  disabled={isFuture}
+                  onClick={() => { onNavigate(pickerYear, i + 1); setPickerOpen(false); }}
+                  className={cn(
+                    'h-8 rounded-chip text-[12px] font-semibold capitalize transition-colors',
+                    isFuture && 'cursor-default text-muted-3',
+                    !isFuture && isActive && 'cursor-pointer bg-ink text-paper dark:bg-paper dark:text-ink',
+                    !isFuture && !isActive && 'cursor-pointer text-foreground hover:bg-surface-sunken',
+                  )}
+                >
+                  {name.slice(0, 3)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

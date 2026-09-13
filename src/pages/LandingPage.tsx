@@ -1,9 +1,15 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { MessageSquare, Scale, Camera, Users, ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, Camera, CheckCircle, MessageSquare, Scale, Users } from 'lucide-react';
+import { JirensMark } from '@/components/brand/JirensMark';
 
+/**
+ * La pública de marketing.
+ *
+ * Mismo contenido que antes — las cuatro features, los tres pasos y sus textos son los que ya
+ * estaban en i18n —, con el material del ingreso: tinta arriba, tipografía de display en los
+ * títulos y papel para lo que se lee. No es un rediseño, es la misma página con la piel nueva.
+ */
 export function LandingPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -21,109 +27,145 @@ export function LandingPage() {
     { n: '03', title: t('landing.howItWorks.step3.title'), desc: t('landing.howItWorks.step3.desc') },
   ];
 
+  const scrollTo = (id: string) =>
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
   return (
-    <div className="min-h-screen bg-white dark:bg-background font-sans">
-      {/* Navbar */}
-      <nav className="bg-sidebar sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center text-white font-black text-sm">✦</div>
-            <span className="text-white font-extrabold text-lg tracking-tight">Jirens</span>
+    <div className="min-h-screen bg-background">
+      {/* ── Barra ───────────────────────────────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 bg-ink">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 lg:px-7">
+          <div className="flex items-center gap-2.5">
+            <JirensMark className="text-paper" size={28} />
+            <span className="font-display text-[19px] leading-none text-paper">Jirens</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 text-sm hidden sm:inline-flex"
-              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => scrollTo('features')}
+              className="hidden h-9 cursor-pointer rounded-pill px-3 text-[12.5px] font-semibold text-muted-on-dark transition-colors hover:bg-white/10 hover:text-paper sm:inline-flex sm:items-center"
+            >
               {t('landing.nav.features')}
-            </Button>
-            <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 text-sm"
-              onClick={() => navigate('/login')}>{t('landing.nav.signIn')}</Button>
-            <Button className="bg-brand hover:bg-brand/90 text-white text-sm font-semibold"
-              onClick={() => navigate('/login')}>{t('landing.nav.getStarted')}</Button>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="flex h-9 cursor-pointer items-center rounded-pill px-3 text-[12.5px] font-semibold text-muted-on-dark transition-colors hover:bg-white/10 hover:text-paper"
+            >
+              {t('landing.nav.signIn')}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="flex h-9 cursor-pointer items-center rounded-pill bg-brand px-4 text-[12.5px] font-bold text-white transition-opacity hover:opacity-90"
+            >
+              {t('landing.nav.getStarted')}
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="bg-sidebar text-white pt-20 pb-24 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-brand/20 text-brand border border-brand/30 rounded-full px-4 py-1.5 text-sm font-medium mb-8">
-            <span>✦</span><span>{t('landing.hero.badge')}</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight mb-6">
+      {/* ── Hero ────────────────────────────────────────────────────────────────────── */}
+      <section className="bg-ink px-5 pb-24 pt-16 lg:px-7">
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-pill border border-brand-soft/30 bg-brand/15 px-3.5 py-1.5 text-[12px] font-semibold text-brand-soft">
+            {t('landing.hero.badge')}
+          </span>
+
+          <h1 className="mt-8 font-display text-[40px] leading-[1.1] text-paper sm:text-[52px]">
             {t('landing.hero.headline1')}{' '}
-            <span className="text-brand">{t('landing.hero.headline2')}</span>
+            <span className="text-brand-soft">{t('landing.hero.headline2')}</span>
           </h1>
-          <p className="text-white/60 text-lg mb-10 max-w-xl mx-auto">
+
+          <p className="mx-auto mt-5 max-w-xl text-[16px] font-medium leading-[1.55] text-muted-on-dark">
             {t('landing.hero.subheadline')}
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="bg-brand hover:bg-brand/90 text-white font-semibold px-8"
-              onClick={() => navigate('/login')}>
-              {t('landing.hero.cta')} <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button size="lg" variant="outline"
-              className="border-white/20 bg-transparent text-white hover:bg-white/10 font-semibold px-8"
-              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}>
+
+          <div className="mt-9 flex flex-col justify-center gap-2.5 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+            >
+              {t('landing.hero.cta')}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollTo('how-it-works')}
+              className="flex h-12 cursor-pointer items-center justify-center rounded-[12px] border border-paper/20 px-7 text-[14px] font-bold text-paper transition-colors hover:bg-white/10"
+            >
               {t('landing.hero.learnMore')}
-            </Button>
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-20 px-4 bg-background">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl font-bold text-center text-foreground mb-3 tracking-tight">{t('landing.features.title')}</h2>
-          <p className="text-muted-foreground text-center mb-12">{t('landing.features.subtitle')}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* ── Qué hace ────────────────────────────────────────────────────────────────── */}
+      <section id="features" className="px-5 py-20 lg:px-7">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center font-display text-[30px] leading-none text-foreground">
+            {t('landing.features.title')}
+          </h2>
+          <p className="mt-3 text-center text-[14px] font-medium text-muted-1">
+            {t('landing.features.subtitle')}
+          </p>
+
+          <div className="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-card border border-border rounded-xl p-5 hover:border-brand/40 transition-colors">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Icon className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+              <div key={title} className="rounded-card border border-line bg-surface p-5 shadow-card">
+                <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-[12px] bg-brand-wash">
+                  <Icon className="h-5 w-5 text-brand-ink" aria-hidden="true" />
+                </span>
+                <h3 className="text-[13.5px] font-bold text-foreground">{title}</h3>
+                <p className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-muted-1">{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how-it-works" className="py-20 px-4 bg-muted/30">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center text-foreground mb-12 tracking-tight">{t('landing.howItWorks.title')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+      {/* ── Cómo funciona ───────────────────────────────────────────────────────────── */}
+      <section id="how-it-works" className="bg-surface-sunken px-5 py-20 lg:px-7">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-center font-display text-[30px] leading-none text-foreground">
+            {t('landing.howItWorks.title')}
+          </h2>
+
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
             {STEPS.map(({ n, title, desc }) => (
               <div key={n} className="text-center">
-                <div className="text-4xl font-black text-brand/30 mb-3">{n}</div>
-                <h3 className="font-semibold text-foreground mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+                <p className="font-display text-[40px] leading-none tabular-nums text-brand-soft">{n}</p>
+                <h3 className="mt-3 text-[13.5px] font-bold text-foreground">{title}</h3>
+                <p className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-muted-1">{desc}</p>
               </div>
             ))}
           </div>
+
           <div className="mt-12 text-center">
-            <Button size="lg" className="bg-brand hover:bg-brand/90 text-white font-semibold px-8"
-              onClick={() => navigate('/login')}>
-              {t('landing.howItWorks.cta')} <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+            >
+              {t('landing.howItWorks.cta')}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-sidebar text-white/40 py-10 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-brand rounded-md flex items-center justify-center text-white font-black text-xs">✦</div>
-            <div>
-              <div className="text-white font-bold text-sm">Jirens</div>
-              <div className="text-[10px] uppercase tracking-widest text-white/40">Shared Expenses</div>
-            </div>
+      {/* ── Pie ─────────────────────────────────────────────────────────────────────── */}
+      <footer className="bg-ink px-5 py-10 lg:px-7">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex items-center gap-2.5">
+            <JirensMark className="text-paper" size={26} />
+            <span className="font-display text-[17px] leading-none text-paper">Jirens</span>
           </div>
-          <div className="flex items-center gap-1 text-xs">
-            <CheckCircle className="h-3 w-3 text-settle" /><span>{t('landing.footer.freeToUse')}</span>
-          </div>
+          <p className="flex items-center gap-1.5 text-[11.5px] font-medium text-muted-on-dark">
+            <CheckCircle className="h-3.5 w-3.5 text-positive-on-dark" aria-hidden="true" />
+            {t('landing.footer.freeToUse')}
+          </p>
         </div>
       </footer>
     </div>

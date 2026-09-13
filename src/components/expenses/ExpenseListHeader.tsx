@@ -1,22 +1,50 @@
-import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowDownUp, FileDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
 type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'paymentType' | 'splitStrategy';
 type SortOrder = 'asc' | 'desc';
 
+/**
+ * Los tres chips de alcance dentro del mes.
+ *
+ * "Todo el mes" reemplaza al viejo "Todos", que se leía como "todos los gastos de la historia":
+ * el mes ya es el alcance, y el chip sólo filtra adentro (principio 3).
+ */
+type Scope = 'all' | 'unsettled' | 'mine';
+
+/** Las categorías internas son plata que ya se movió, no gasto pendiente. */
+const INTERNAL_CATEGORIES = new Set(['balance', 'prestamo']);
+
 interface ExpenseListHeaderProps {
   expenses: ExpenseResponse[];
   members: Member[];
   onSorted: (sorted: ExpenseResponse[]) => void;
+  /** Nombre del mes en curso, para el conteo en palabras. */
+  monthLabel: string;
+  /** Un grupo de evento no tiene meses: el conteo lo dice de otra manera. */
+  isOneTime?: boolean;
+  onExportPdf?: () => void;
+  /** Un mes cerrado se lee, no se edita: la lista lo dice sin que haya que deducirlo. */
+  isSettled?: boolean;
 }
 
-export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHeaderProps) {
+export function ExpenseListHeader({
+  expenses, members, onSorted, monthLabel, isOneTime = false, onExportPdf, isSettled = false,
+}: ExpenseListHeaderProps) {
   const { t } = useTranslation();
+  const { displayMode, setDisplayMode, blueRate } = useCurrency();
+  const currentMember = useCurrentMember();
+
+  const [scope, setScope] = useState<Scope>('all');
   const [sortField, setSortField] = useState<SortField>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [sortOpen, setSortOpen] = useState(false);
 
   const SORT_FIELDS: { value: SortField; label: string }[] = [
     { value: 'date',          label: t('expenses.sortFields.date') },
@@ -27,28 +55,14 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
     { value: 'paymentType',   label: t('expenses.sortFields.paymentType') },
     { value: 'splitStrategy', label: t('expenses.sortFields.splitStrategy') },
   ];
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [filterPayer, setFilterPayer] = useState<string>('all');
-  const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [filterRecurring, setFilterRecurring] = useState<string>('all');
-  const [filterCurrency, setFilterCurrency] = useState<string>('all');
 
   const memberName = (id: number) => members.find(m => m.id === id)?.name ?? 'Unknown';
-
-  const categories = useMemo(() => {
-    const cats = new Set(expenses.map(e => e.category));
-    return Array.from(cats).sort();
-  }, [expenses]);
-
   const hasUsdExpenses = useMemo(() => expenses.some(e => e.currency === 'USD'), [expenses]);
 
   const sorted = useMemo(() => {
     const filtered = expenses.filter(e => {
-      if (filterPayer !== 'all' && e.payerId !== parseInt(filterPayer)) return false;
-      if (filterCategory !== 'all' && e.category !== filterCategory) return false;
-      if (filterRecurring === 'recurring' && e.recurringTemplateId == null) return false;
-      if (filterRecurring === 'one-time' && e.recurringTemplateId != null) return false;
-      if (filterCurrency !== 'all' && (e.currency ?? 'ARS') !== filterCurrency) return false;
+      if (scope === 'unsettled' && INTERNAL_CATEGORIES.has(e.category)) return false;
+      if (scope === 'mine' && currentMember && e.payerId !== currentMember.id) return false;
       return true;
     });
 
@@ -66,111 +80,108 @@ export function ExpenseListHeader({ expenses, members, onSorted }: ExpenseListHe
       return sortOrder === 'asc' ? cmp : -cmp;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenses, sortField, sortOrder, filterPayer, filterCategory, filterRecurring, filterCurrency]);
+  }, [expenses, sortField, sortOrder, scope, currentMember]);
 
-  React.useEffect(() => { onSorted(sorted); }, [sorted, onSorted]);
+  useEffect(() => { onSorted(sorted); }, [sorted, onSorted]);
 
-  const toggleOrder = () => setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
-  const SortIcon = sortOrder === 'asc' ? ArrowUp : ArrowDown;
+  const CHIPS: { value: Scope; label: string }[] = [
+    { value: 'all',       label: t('expenses.chipAll') },
+    { value: 'unsettled', label: t('expenses.chipUnsettled') },
+    { value: 'mine',      label: t('expenses.chipMine') },
+  ];
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30 overflow-x-auto">
-      {/* Sort field */}
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.sort')}</span>
-        <Select value={sortField} onValueChange={v => setSortField(v as SortField)}>
-          <SelectTrigger className="h-7 text-xs w-32 bg-card">
-            <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label ?? sortField}</span>
-          </SelectTrigger>
-          <SelectContent>
-            {SORT_FIELDS.map(f => (
-              <SelectItem key={f.value} value={f.value} className="text-xs">{f.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={toggleOrder}
-          aria-label={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}>
-          <SortIcon className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+    <div className="border-b border-line px-5 pb-3 pt-4">
+      {/* Conteo: dice el alcance en palabras, y por eso cuenta el mes entero y no el filtro. */}
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="min-w-0 truncate text-[13px] font-bold text-foreground">
+          {isOneTime
+            ? t('expenses.countInEvent', { count: expenses.length })
+            : t('expenses.countInMonth', { count: expenses.length, month: monthLabel.toLowerCase() })}
+        </h2>
 
-      <div className="w-px h-4 bg-border shrink-0" />
-
-      {/* Filter by payer */}
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.payer')}</span>
-        <Select value={filterPayer} onValueChange={setFilterPayer}>
-          <SelectTrigger className="h-7 text-xs w-24 bg-card">
-            <span className="truncate">
-              {filterPayer === 'all' ? t('expenses.all') : members.find(m => m.id.toString() === filterPayer)?.name ?? filterPayer}
+        <div className="flex shrink-0 items-center gap-1">
+          {isSettled && (
+            <span className="mr-1 shrink-0 rounded-pill bg-positive-wash px-2.5 py-1 text-[11px] font-bold text-positive">
+              {t('settle.settledPill')}
             </span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
-            {members.map(m => (
-              <SelectItem key={m.id} value={m.id.toString()} className="text-xs">{m.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          )}
+          {hasUsdExpenses && blueRate !== null && (
+            <button
+              type="button"
+              onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
+              className={cn(
+                'h-7 cursor-pointer rounded-pill px-2.5 text-[11.5px] font-bold transition-colors',
+                displayMode === 'ars'
+                  ? 'bg-brand-wash text-brand-ink'
+                  : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
+              )}
+            >
+              {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
+            </button>
+          )}
+
+          {onExportPdf && (
+            <button
+              type="button"
+              onClick={onExportPdf}
+              title={t('expenses.exportPdfTitle')}
+              aria-label={t('expenses.exportPdf')}
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
+            >
+              <FileDown className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Orden: el control vive al lado del conteo (checklist §7). */}
+          <Select
+            value={sortField}
+            onValueChange={v => setSortField(v as SortField)}
+            open={sortOpen}
+            onOpenChange={setSortOpen}
+          >
+            <SelectTrigger
+              aria-label={t('expenses.sortLabel')}
+              className="h-7 w-auto gap-1 rounded-pill border-line-strong bg-transparent px-2.5 text-[11.5px] font-semibold text-muted-1 hover:bg-surface-sunken"
+            >
+              <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label}</span>
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_FIELDS.map(f => (
+                <SelectItem key={f.value} value={f.value} className="text-xs">{f.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            onClick={() => setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'))}
+            aria-label={t('expenses.sortLabel')}
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
+          >
+            <ArrowDownUp className={cn('h-3.5 w-3.5 transition-transform', sortOrder === 'asc' && 'rotate-180')} />
+          </button>
+        </div>
       </div>
 
-      {/* Filter by category */}
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.category')}</span>
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="h-7 text-xs w-28 bg-card">
-            <span className="truncate capitalize">{filterCategory === 'all' ? t('expenses.all') : filterCategory}</span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
-            {categories.map(c => (
-              <SelectItem key={c} value={c} className="text-xs capitalize">{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Chips — recién debajo del conteo, nunca por encima */}
+      <div className="mt-2.5 flex gap-1.5 overflow-x-auto">
+        {CHIPS.map(chip => (
+          <button
+            key={chip.value}
+            type="button"
+            onClick={() => setScope(chip.value)}
+            className={cn(
+              'h-7 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[11.5px] font-bold transition-colors',
+              scope === chip.value
+                // En oscuro se invierte: lo seleccionado tiene que ser lo más brillante.
+                ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
       </div>
-
-      {/* Filter by recurring */}
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-xs text-muted-foreground shrink-0">{t('expenses.type')}</span>
-        <Select value={filterRecurring} onValueChange={setFilterRecurring}>
-          <SelectTrigger className="h-7 text-xs w-24 bg-card">
-            <span className="truncate">
-              {filterRecurring === 'all' ? t('expenses.all')
-                : filterRecurring === 'recurring' ? t('expenses.filterRecurring')
-                : t('expenses.filterOneTime')}
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
-            <SelectItem value="recurring" className="text-xs">{t('expenses.filterRecurring')}</SelectItem>
-            <SelectItem value="one-time" className="text-xs">{t('expenses.filterOneTime')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Currency filter + display toggle — only when USD expenses exist */}
-      {hasUsdExpenses && (
-        <>
-          <div className="w-px h-4 bg-border shrink-0" />
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-xs text-muted-foreground shrink-0">{t('expenses.currency')}</span>
-            <Select value={filterCurrency} onValueChange={setFilterCurrency}>
-              <SelectTrigger className="h-7 text-xs w-20 bg-card">
-                <span className="truncate">
-                  {filterCurrency === 'all' ? t('expenses.all') : filterCurrency}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">{t('expenses.all')}</SelectItem>
-                <SelectItem value="ARS" className="text-xs">ARS</SelectItem>
-                <SelectItem value="USD" className="text-xs">USD</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-        </>
-      )}
     </div>
   );
 }

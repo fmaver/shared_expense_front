@@ -1,100 +1,176 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Archive, ChevronRight, Plus } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
+import { usePersonalLedger } from '@/hooks/usePersonalLedger';
+import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Archive, ChevronRight, PartyPopper, Plus, Users, User } from 'lucide-react';
+import { formatCurrency } from '@/utils/format';
+import { avatarBg, initials } from '@/utils/avatar';
+import { cn } from '@/lib/utils';
 import type { Group } from '@/types/expense';
 
+/**
+ * La primera pantalla después de entrar.
+ *
+ * Arriba la suma de todo lo que te deben o debés entre grupos, que es la pregunta con la que
+ * se abre la app; después tu plata del mes y la lista de grupos, cada uno con su saldo (§6.12).
+ */
 export function GroupSelectorPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { year, month } = useMonthSearchParams();
   const { data: groups = [], isLoading, error } = useGroups();
+  const { data: archived = [] } = useGroups(true);
+  const { data: ledger } = usePersonalLedger(year, month);
   const [showCreate, setShowCreate] = useState(false);
 
+  const months = t('months', { returnObjects: true }) as string[];
+  const monthName = months[month - 1] ?? '';
+
+  // El saldo de cada grupo ya viene calculado en el ledger personal: no hace falta pedir el
+  // mes de cada grupo por separado para saber cómo venís en cada uno.
+  const balanceByGroup = new Map(
+    (ledger?.groupBalances ?? []).map(g => [g.sourceGroupId, g]),
+  );
+  const pending = ledger?.pendingSettlementsTotal ?? 0;
+  const openMoves = (ledger?.groupBalances ?? [])
+    .filter(g => !g.isSettled && Math.abs(g.netBalance) > 0.01).length;
+
   return (
-    <div className="max-w-lg mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-foreground">{t('groups.yourGroups')}</h1>
-        <Button size="sm" className="bg-brand hover:bg-brand/90 text-white" onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4 mr-1.5" /> {t('groups.newGroup')}
-        </Button>
-      </div>
-
-      {error && <div className="bg-destructive/10 text-destructive text-sm rounded-lg px-4 py-3 mb-4">{t('groups.failedToFetch')}</div>}
-
-      {/* Personal Finance section */}
-      <div className="mb-6">
-        <button onClick={() => navigate('/personal')}
-          className="w-full bg-card border border-brand/20 rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-brand/50 hover:bg-accent/50 transition-colors text-left">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-brand/10 flex items-center justify-center">
-              <User className="h-4 w-4 text-brand" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm">{t('personal.title')}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t('personal.subtitle')}</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        </button>
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
-      ) : groups.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-border rounded-2xl">
-          <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm mb-4">{t('groups.noGroups')}</p>
-          <Button className="bg-brand hover:bg-brand/90 text-white" onClick={() => setShowCreate(true)}>
-            {t('groups.createFirst')}
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {groups.map(group => (
-            <button key={group.id} onClick={() => navigate(`/groups/${group.id}`)}
-              className="w-full bg-card border border-border rounded-xl px-4 py-3.5 flex items-center justify-between hover:border-brand/40 hover:bg-accent/50 transition-colors text-left">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-foreground text-sm">{group.name}</p>
-                  {/* One-time groups behave differently enough — no months, no credit — that the
-                      distinction has to be visible before you open one. */}
-                  {group.groupType === 'one_time' && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide bg-brand/10 text-brand px-1.5 py-0.5 rounded-full flex-shrink-0">
-                      <PartyPopper className="h-3 w-3" />
-                      {t('groups.badgeOneTime')}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t('groups.memberCount', { count: group.members.length })}
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            </button>
-          ))}
-        </div>
+    <div className="mx-auto w-full max-w-lg px-5 py-6">
+      {/* ── Cuánto te deben, entre todos los grupos ─────────────────────────────────── */}
+      <h1
+        className={cn(
+          'font-display text-[30px] leading-[1.1] tabular-nums',
+          Math.abs(pending) <= 0.01 ? 'text-foreground' : pending > 0 ? 'text-positive' : 'text-negative',
+        )}
+      >
+        {Math.abs(pending) <= 0.01
+          ? t('groups.squareTotal')
+          : pending > 0
+            ? t('groups.owedTotal', { amount: formatCurrency(pending) })
+            : t('groups.oweTotal', { amount: formatCurrency(Math.abs(pending)) })}
+      </h1>
+      {openMoves > 0 && (
+        <p className="mt-2 text-[12.5px] font-medium text-muted-1">
+          {t('groups.movesLeft', { count: openMoves })}
+        </p>
       )}
 
-      {/* Archived groups live behind their own screen so the main list stays about what is
-          active. Per member, so this count is yours alone. */}
+      {/* ── Tu plata ────────────────────────────────────────────────────────────────── */}
+      <Link
+        to="/personal"
+        className="mt-4 flex items-center justify-between gap-3 rounded-card-lg bg-ink p-4 transition-opacity hover:opacity-95"
+      >
+        <span className="min-w-0">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-on-dark">
+            {t('groups.yourMoney')}
+          </span>
+          <span className="mt-1 block font-display text-[26px] leading-none tabular-nums text-paper">
+            {ledger ? formatCurrency(ledger.currentBalance) : '—'}
+          </span>
+          <span className="mt-1 block text-[11.5px] font-medium text-muted-on-dark-2">
+            {t('groups.availableThisMonth')}
+          </span>
+        </span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-muted-on-dark" aria-hidden="true" />
+      </Link>
+
+      {error && (
+        <p className="mt-4 rounded-card border border-negative-wash-line bg-negative-wash px-4 py-3 text-[12.5px] font-semibold text-negative-ink">
+          {t('groups.failedToFetch')}
+        </p>
+      )}
+
+      {/* ── Tus grupos ──────────────────────────────────────────────────────────────── */}
+      <div className="mt-4 space-y-2">
+        {isLoading ? (
+          [1, 2].map(i => <Skeleton key={i} className="h-20 w-full rounded-card" />)
+        ) : (
+          groups.map(group => {
+            const balance = balanceByGroup.get(group.id);
+            const net = balance?.netBalance ?? 0;
+            const isSquare = Math.abs(net) <= 0.01;
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => navigate(`/groups/${group.id}`)}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-card transition-colors hover:bg-surface-sunken"
+              >
+                <span className={cn(
+                  'flex h-[34px] w-[34px] shrink-0 select-none items-center justify-center rounded-[11px] text-[12px] font-bold text-white',
+                  avatarBg(group.id),
+                )}>
+                  {initials(group.name)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-[13.5px] font-bold text-foreground">{group.name}</span>
+                    {group.groupType === 'one_time' && (
+                      <span className="shrink-0 rounded-chip bg-tag-split-wash px-1.5 py-0.5 text-[10.5px] font-bold text-tag-split">
+                        {t('expenses.badgeEvent')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11.5px] font-medium text-muted-2">
+                    {t('groups.peopleCount', { count: group.members.length })}
+                    {group.groupType !== 'one_time' && (
+                      <> · {t(balance?.isSettled ? 'groups.monthSettled' : 'groups.monthOpen', {
+                        month: monthName.toLocaleLowerCase(),
+                      })}</>
+                    )}
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    'shrink-0 text-[13px] font-bold tabular-nums',
+                    isSquare ? 'text-muted-2' : net > 0 ? 'text-positive' : 'text-negative',
+                  )}
+                >
+                  {isSquare ? t('groups.inZero') : `${net > 0 ? '+' : ''}${formatCurrency(net)}`}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── Armar uno ───────────────────────────────────────────────────────────────── */}
       <button
         type="button"
-        onClick={() => navigate('/groups/archived')}
-        className="mt-6 w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card text-left hover:bg-accent/50 transition-colors cursor-pointer"
+        onClick={() => setShowCreate(true)}
+        className="mt-3 flex w-full cursor-pointer items-center gap-3 rounded-card border border-dashed border-line-strong px-4 py-3.5 text-left transition-colors hover:bg-surface-sunken"
       >
-        <div className="flex items-center gap-2">
-          <Archive className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">{t('groups.archived')}</span>
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        <Plus className="h-4 w-4 shrink-0 text-muted-2" aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[12.5px] font-bold text-foreground">{t('groups.startOne')}</span>
+          <span className="block truncate text-[11.5px] font-medium text-muted-2">
+            {t('groups.orJoinWithLink')}
+          </span>
+        </span>
       </button>
 
-      <CreateGroupDialog open={showCreate} onOpenChange={setShowCreate}
-        onCreated={(g: Group) => navigate(`/groups/${g.id}`)} />
+      {/* ── Archivados ──────────────────────────────────────────────────────────────── */}
+      {archived.length > 0 && (
+        <Link
+          to="/groups/archived"
+          className="mt-4 flex items-center gap-2 text-[12px] font-medium text-muted-2 transition-colors hover:text-foreground"
+        >
+          <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('groups.archivedFooter', { count: archived.length })}
+          <span className="font-bold text-brand-ink">{t('groups.see')}</span>
+        </Link>
+      )}
+
+      <CreateGroupDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        onCreated={(g: Group) => navigate(`/groups/${g.id}`)}
+      />
     </div>
   );
 }

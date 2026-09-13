@@ -263,6 +263,8 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
               members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
               isSettled={false}
               hideSplitBadge
+              /* En la lista personal pagás siempre vos: el lugar del avatar lo ocupa la categoría. */
+              variant="category"
               onEdit={e => setEditingExpense(e)}
               onDelete={e => {
                 const id = e.parentExpenseId ?? e.id;

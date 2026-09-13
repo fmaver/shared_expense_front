@@ -1,72 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, updateProfile, NotificationType } from '@/api/auth';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { ChevronRight, KeyRound, LogOut } from 'lucide-react';
+import { getCurrentUser, updateProfile, type NotificationType } from '@/api/auth';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+import { PushCard } from '@/components/ui/PushCard';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { ConfigSheet } from '@/components/layout/ConfigSheet';
+import { useTheme, type ThemePreference } from '@/hooks/useTheme';
+import { avatarBg, initials } from '@/utils/avatar';
 import { normalizeArPhone, localArPhone } from '@/utils/phone';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { Bell } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-function getInitials(name: string): string {
-  if (!name) return '?';
-  return name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+/** Un bloque con su rótulo. Fuera del componente: adentro se remontaría en cada render. */
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-2">{label}</p>
+      {children}
+    </div>
+  );
 }
 
-export function ProfilePage() {
-  const { t } = useTranslation();
+/**
+ * Perfil.
+ *
+ * Los avisos van primero porque es lo que la gente viene a cambiar; los datos, después (§6.13).
+ */
+export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const { theme, setTheme } = useTheme();
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [memberId, setMemberId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [telephone, setTelephone] = useState('');
-  const [notificationPreference, setNotificationPreference] = useState<NotificationType>('NONE');
-  const {
-    status: pushStatus,
-    isBusy: pushBusy,
-    subscribe: subscribePush,
-    unsubscribe: unsubscribePush,
-  } = usePushNotifications();
+  const [channel, setChannel] = useState<NotificationType>('NONE');
   const [isSaving, setIsSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const userData = await getCurrentUser();
-        setName(userData.name);
-        setEmail(userData.email);
-        setTelephone(localArPhone(userData.telephone));
-        setNotificationPreference(userData.notificationPreference);
-      } catch {
+    getCurrentUser()
+      .then(user => {
+        setMemberId(user.id);
+        setName(user.name);
+        setEmail(user.email);
+        setTelephone(localArPhone(user.telephone));
+        setChannel(user.notificationPreference);
+      })
+      .catch(() => {
         toast.error('Failed to load user data');
         navigate('/');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadUserData();
+      })
+      .finally(() => setIsLoading(false));
   }, [navigate]);
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
+  const currentLang = i18n.language.startsWith('es') ? 'es' : 'en';
+  const changeLanguage = (lang: 'es' | 'en') => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
+
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (notificationPreference === 'WHATSAPP' && !telephone) {
-      toast.error('Phone number is required for WhatsApp notifications');
+    if (channel === 'WHATSAPP' && !telephone) {
+      toast.error(t('profile.whatsappNeedsPhone'));
       return;
     }
     setIsSaving(true);
@@ -75,7 +78,7 @@ export function ProfilePage() {
         name,
         email,
         telephone: normalizeArPhone(telephone),
-        notification_preference: notificationPreference,
+        notification_preference: channel,
       });
       toast.success(t('toasts.profileUpdated'));
     } catch (err) {
@@ -87,171 +90,146 @@ export function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Avatar skeleton */}
-        <div className="flex flex-col items-center gap-3 py-4">
-          <Skeleton className="w-20 h-20 rounded-full" />
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-4 w-44" />
-        </div>
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
+      <div className="mx-auto w-full max-w-lg space-y-3 px-5 py-6">
+        <Skeleton className="h-20 w-full rounded-card" />
+        <Skeleton className="h-32 w-full rounded-card" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 space-y-6">
-
-      {/* ── Avatar hero ─────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center gap-2 py-4">
-        <div className="w-20 h-20 rounded-full bg-brand flex items-center justify-center text-white text-2xl font-bold shadow-md select-none">
-          {getInitials(name)}
+    <div className="mx-auto w-full max-w-lg space-y-5 px-5 py-6">
+      {/* ── Quién sos ───────────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3">
+        <span className={cn(
+          'flex h-12 w-12 shrink-0 select-none items-center justify-center rounded-full text-[15px] font-bold text-white',
+          avatarBg(memberId ?? 1),
+        )}>
+          {initials(name, 2)}
+        </span>
+        <div className="min-w-0">
+          <h1 className="truncate font-display text-[26px] leading-none text-foreground">{name}</h1>
+          <p className="mt-1 truncate text-[12px] font-medium text-muted-2">{email}</p>
         </div>
-        <h1 className="text-lg font-bold text-foreground mt-1">{name}</h1>
-        <p className="text-sm text-muted-foreground">{email}</p>
       </div>
 
-      {/* ── Profile form ─────────────────────────────────────────────── */}
-      <form onSubmit={handleProfileSubmit} className="space-y-5">
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium">
-              {t('profile.fullName')}
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your full name"
-              className="text-sm"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">
-              {t('profile.email')}
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="text-sm"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="telephone" className="text-sm font-medium">
-              {t('profile.phone')}
-              {notificationPreference === 'WHATSAPP' && (
-                <span className="text-destructive ml-1">*</span>
-              )}
-            </Label>
-            <PhoneInput
-              id="telephone"
-              value={telephone}
-              onChange={setTelephone}
-            />
-            <p className="text-xs text-muted-foreground">{t('profile.phoneHelp')}</p>
-            {notificationPreference === 'WHATSAPP' && !telephone && (
-              <p className="text-xs text-destructive">
-                Phone number is required for WhatsApp notifications
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notification-preference" className="text-sm font-medium">
-              {t('profile.notifPref')}
-            </Label>
-            <Select
-              value={notificationPreference}
-              onValueChange={(value) => setNotificationPreference(value as NotificationType)}
-            >
-              <SelectTrigger id="notification-preference" className="text-sm">
-                <span className="flex-1 text-left">
-                  {
-                    { NONE: t('profile.notifNone'), EMAIL: t('profile.notifEmail'), WHATSAPP: t('profile.notifWhatsapp') }[notificationPreference]
-                    ?? notificationPreference
-                  }
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="NONE">{t('profile.notifNone')}</SelectItem>
-                <SelectItem value="EMAIL">{t('profile.notifEmail')}</SelectItem>
-                <SelectItem value="WHATSAPP">{t('profile.notifWhatsapp')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Push replaces the channel above on this device; email keeps covering everyone
-              who has not installed the app, which is why nobody loses notifications. */}
-          <div className="space-y-2 pt-2 border-t border-border">
-            <Label className="text-sm font-medium">{t('profile.pushTitle')}</Label>
-
-            {pushStatus === 'subscribed' && (
-              <>
-                <p className="text-xs text-muted-foreground">{t('profile.pushOn')}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full cursor-pointer"
-                  disabled={pushBusy}
-                  onClick={unsubscribePush}
-                >
-                  {pushBusy ? t('profile.pushWorking') : t('profile.pushDisable')}
-                </Button>
-              </>
-            )}
-
-            {pushStatus === 'available' && (
-              <>
-                <p className="text-xs text-muted-foreground">{t('profile.pushFallbackNote')}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full cursor-pointer"
-                  disabled={pushBusy}
-                  onClick={subscribePush}
-                >
-                  <Bell className="h-4 w-4 mr-1.5" />
-                  {pushBusy ? t('profile.pushWorking') : t('profile.pushEnable')}
-                </Button>
-              </>
-            )}
-
-            {pushStatus === 'needs-install' && (
-              <p className="text-xs text-muted-foreground">{t('profile.pushInstallIOS')}</p>
-            )}
-            {pushStatus === 'denied' && (
-              <p className="text-xs text-muted-foreground">{t('profile.pushDenied')}</p>
-            )}
-            {pushStatus === 'not-configured' && (
-              <p className="text-xs text-muted-foreground">{t('profile.pushNotConfigured')}</p>
-            )}
-            {pushStatus === 'unsupported' && (
-              <p className="text-xs text-muted-foreground">{t('profile.pushUnsupported')}</p>
-            )}
-          </div>
+      {/* ── Avisos, primero ─────────────────────────────────────────────────────────── */}
+      <Section label={t('profile.notifications')}>
+        <PushCard />
+        <div className="mt-3 rounded-card border border-line bg-surface p-4 shadow-card">
+          <p className="text-[12.5px] font-bold text-foreground">{t('profile.fallbackChannel')}</p>
+          <SegmentedControl
+            className="mt-2.5"
+            aria-label={t('profile.fallbackChannel')}
+            value={channel}
+            onChange={setChannel}
+            options={[
+              { value: 'EMAIL' as NotificationType, label: t('profile.notifEmail') },
+              { value: 'WHATSAPP' as NotificationType, label: t('profile.notifWhatsapp') },
+              { value: 'NONE' as NotificationType, label: t('profile.notifNone') },
+            ]}
+          />
+          {channel === 'WHATSAPP' && !telephone && (
+            <p className="mt-2 text-[11.5px] font-medium text-negative">
+              {t('profile.whatsappNeedsPhone')}
+            </p>
+          )}
         </div>
+      </Section>
 
-        <Button
-          type="submit"
-          disabled={isSaving}
-          className="bg-brand hover:bg-brand/90 text-white w-full"
+      {/* ── Datos ───────────────────────────────────────────────────────────────────── */}
+      <Section label={t('profile.yourData')}>
+        <form onSubmit={save} className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card">
+          <div>
+            <label htmlFor="name" className="text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+              {t('profile.fullName')}
+            </label>
+            <Input id="name" value={name} onChange={e => setName(e.target.value)} required className="mt-1.5 text-[13px]" />
+          </div>
+          <div>
+            <label htmlFor="email" className="text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+              {t('profile.email')}
+            </label>
+            <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1.5 text-[13px]" />
+          </div>
+          <div>
+            <label htmlFor="telephone" className="text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+              {t('profile.phone')}
+            </label>
+            <div className="mt-1.5">
+              <PhoneInput id="telephone" value={telephone} onChange={setTelephone} />
+            </div>
+            <p className="mt-1 text-[11px] font-medium text-muted-2">{t('profile.phoneHelp')}</p>
+          </div>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="h-11 w-full cursor-pointer rounded-[12px] bg-brand text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {isSaving ? t('profile.saving') : t('profile.saveProfile')}
+          </button>
+        </form>
+      </Section>
+
+      {/* ── App ─────────────────────────────────────────────────────────────────────── */}
+      <Section label="App">
+        <div className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card">
+          <div>
+            <p className="mb-2 text-[12.5px] font-bold text-foreground">{t('profile.theme')}</p>
+            <SegmentedControl
+              aria-label={t('profile.theme')}
+              value={theme}
+              onChange={(value: ThemePreference) => setTheme(value)}
+              options={[
+                { value: 'light' as ThemePreference, label: t('profile.themeLight') },
+                { value: 'dark' as ThemePreference, label: t('profile.themeDark') },
+                { value: 'system' as ThemePreference, label: t('profile.themeAuto') },
+              ]}
+            />
+          </div>
+          <div>
+            <p className="mb-2 text-[12.5px] font-bold text-foreground">{t('profile.language')}</p>
+            <SegmentedControl
+              aria-label={t('profile.language')}
+              value={currentLang}
+              onChange={changeLanguage}
+              options={[
+                { value: 'es' as const, label: 'ES' },
+                { value: 'en' as const, label: 'EN' },
+              ]}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPassword(true)}
+            className="flex w-full cursor-pointer items-center gap-2.5 rounded-[12px] border border-line px-3 py-2.5 text-left transition-colors hover:bg-surface-sunken"
+          >
+            <KeyRound className="h-4 w-4 shrink-0 text-muted-1" aria-hidden="true" />
+            <span className="flex-1 text-[12.5px] font-bold text-foreground">
+              {t('profile.changePassword')}
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-3" aria-hidden="true" />
+          </button>
+        </div>
+      </Section>
+
+      {/* ── Cerrar sesión ───────────────────────────────────────────────────────────── */}
+      {onLogout && (
+        <button
+          type="button"
+          onClick={onLogout}
+          className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[12px] border border-negative-wash-line bg-surface text-[13px] font-bold text-negative transition-colors hover:bg-negative-wash"
         >
-          {isSaving ? t('profile.saving') : t('profile.saveProfile')}
-        </Button>
-      </form>
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          {t('nav.logout')}
+        </button>
+      )}
+
+      <p className="pb-2 text-center text-[11px] font-medium text-muted-3">
+        {t('profile.version', { version: __APP_VERSION__ })}
+      </p>
+
+      <ConfigSheet open={showPassword} onOpenChange={setShowPassword} />
     </div>
   );
 }

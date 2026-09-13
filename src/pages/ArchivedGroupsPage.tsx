@@ -1,17 +1,20 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ChevronLeft, FileDown, RotateCcw } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
 import { unarchiveGroup } from '@/api/groups';
-import { Button } from '@/components/ui/button';
+import { downloadGroupPdf } from '@/api/shares';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArchiveRestore, ArrowLeft, PartyPopper } from 'lucide-react';
+import { avatarBg, initials } from '@/utils/avatar';
+import { cn } from '@/lib/utils';
 
 /**
- * The groups this member has archived.
+ * Los grupos que archivaste.
  *
- * Archiving is per member, so this list says nothing about anyone else — the same group can be
- * archived here and perfectly active for everybody else in it.
+ * Archivar es por persona, así que esta lista no dice nada del resto: el mismo grupo puede
+ * estar archivado acá y perfectamente activo para los demás. Y como el backend sólo deja
+ * archivar con las cuentas en cero, acá nunca hay plata pendiente — la nota al pie lo dice.
  */
 export function ArchivedGroupsPage() {
   const { t } = useTranslation();
@@ -28,65 +31,98 @@ export function ArchivedGroupsPage() {
     }
   };
 
+  const handlePdf = async (groupId: number, groupName: string) => {
+    try {
+      await downloadGroupPdf(groupId, groupName);
+    } catch {
+      toast.error(t('toasts.failedExport'));
+    }
+  };
+
+  const formatYear = (iso?: string | null) =>
+    iso ? new Date(iso).getFullYear().toString() : null;
+
   return (
-    <div className="max-w-lg mx-auto px-4 py-10">
-      <div className="flex items-center gap-2 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/groups')} className="cursor-pointer">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-xl font-bold text-foreground">{t('groups.archivedTitle')}</h1>
-      </div>
+    <div className="mx-auto w-full max-w-lg px-5 py-6">
+      <Link
+        to="/groups"
+        className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        {t('mobileNav.groups')}
+      </Link>
+      <h1 className="mt-1.5 font-display text-[26px] leading-none text-foreground">
+        {t('groups.archivedTitle')}
+      </h1>
 
       {error && (
-        <div className="bg-destructive/10 text-destructive text-sm rounded-lg px-4 py-3 mb-4">
+        <p className="mt-4 rounded-card border border-negative-wash-line bg-negative-wash px-4 py-3 text-[12.5px] font-semibold text-negative-ink">
           {t('groups.failedToFetch')}
-        </div>
+        </p>
       )}
 
-      {isLoading ? (
-        <div className="space-y-2">
-          {[1, 2].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
-        </div>
-      ) : groups.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">{t('groups.noArchived')}</p>
-      ) : (
-        <div className="space-y-2">
-          {groups.map(group => (
-            <div
-              key={group.id}
-              className="w-full bg-card border border-border rounded-xl px-4 py-3.5 flex items-center justify-between gap-3"
-            >
-              <button
-                type="button"
-                onClick={() => navigate(`/groups/${group.id}`)}
-                className="min-w-0 flex-1 text-left cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-foreground text-sm truncate">{group.name}</p>
-                  {group.groupType === 'one_time' && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide bg-brand/10 text-brand px-1.5 py-0.5 rounded-full flex-shrink-0">
-                      <PartyPopper className="h-3 w-3" />
-                      {t('groups.badgeOneTime')}
+      <div className="mt-5 space-y-2">
+        {isLoading ? (
+          [1, 2].map(i => <Skeleton key={i} className="h-24 w-full rounded-card" />)
+        ) : groups.length === 0 ? (
+          <p className="py-10 text-center text-[12.5px] text-muted-2">{t('groups.noArchived')}</p>
+        ) : (
+          groups.map(group => {
+            const since = formatYear(group.createdAt);
+            return (
+              <div key={group.id} className="rounded-card bg-surface-sunken p-4">
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    'flex h-[34px] w-[34px] shrink-0 select-none items-center justify-center rounded-[11px] text-[12px] font-bold text-white opacity-70',
+                    avatarBg(group.id),
+                  )}>
+                    {initials(group.name)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/groups/${group.id}`)}
+                    className="min-w-0 flex-1 cursor-pointer text-left"
+                  >
+                    <span className="block truncate text-[13.5px] font-bold text-muted-1">
+                      {group.name}
                     </span>
-                  )}
+                    <span className="mt-0.5 block truncate text-[11.5px] font-medium text-muted-2">
+                      {t('groups.peopleCount', { count: group.members.length })}
+                      {since && <> · {since}</>}
+                    </span>
+                  </button>
+                  <span className="shrink-0 rounded-pill bg-positive-wash px-2.5 py-1 text-[11px] font-bold text-positive">
+                    {t('groups.inZero')}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t('groups.memberCount', { count: group.members.length })}
-                </p>
-              </button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="cursor-pointer flex-shrink-0"
-                onClick={() => handleUnarchive(group.id)}
-              >
-                <ArchiveRestore className="h-3.5 w-3.5 mr-1.5" />
-                {t('groups.unarchive')}
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
+
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePdf(group.id, group.name)}
+                    className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-pill border border-line-strong text-[12px] font-bold text-muted-1 transition-colors hover:bg-surface"
+                  >
+                    <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
+                    PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUnarchive(group.id)}
+                    className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-pill bg-ink text-[12px] font-bold text-paper transition-opacity hover:opacity-90 dark:bg-paper dark:text-ink"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                    {t('groups.unarchive')}
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <p className="mt-4 text-[11.5px] font-medium leading-[1.45] text-muted-2">
+        {t('groups.archivedNote')}
+      </p>
     </div>
   );
 }

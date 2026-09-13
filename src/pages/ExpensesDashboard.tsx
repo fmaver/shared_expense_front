@@ -10,30 +10,27 @@ import {
 import {
   updateRecurringGroupExpense, deleteRecurringGroupExpense,
 } from '@/api/recurringExpenses';
-import {
-  settleMonthlyShare, settleAll, unsettleMonthlyShare, unsettleAll, downloadMonthlyPdf, downloadGroupPdf,
-} from '@/api/shares';
 import { getCurrentUser } from '@/api/auth';
-import { MonthPicker } from '@/components/expenses/MonthPicker';
-import { BalancePanel } from '@/components/expenses/BalancePanel';
+import { MonthPager } from '@/components/expenses/MonthPager';
+import { SettleSheet } from '@/components/expenses/SettleSheet';
 import { ExpenseListHeader } from '@/components/expenses/ExpenseListHeader';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
-import { TransferDialog } from '@/components/expenses/TransferDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, ArrowLeftRight, FileDown } from 'lucide-react';
+import { Plus, ArrowLeftRight } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 import { useIsland } from '@/contexts/IslandContext';
-import { useCurrency } from '@/contexts/CurrencyContext';
+import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
+import { useSettlementState } from '@/contexts/SettlementContext';
+import { useSettlementActions } from '@/hooks/useSettlementActions';
 import { cn } from '@/lib/utils';
 
 export function ExpensesDashboard() {
   const { t } = useTranslation();
   const island = useIsland();
-  const { displayMode, setDisplayMode, blueRate } = useCurrency();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
@@ -43,24 +40,9 @@ export function ExpensesDashboard() {
   }, []);
 
   const [searchParams] = useSearchParams();
-  const [year, setYear] = useState(() => {
-    const y = searchParams.get('year');
-    return y ? parseInt(y, 10) : new Date().getFullYear();
-  });
-  const [month, setMonth] = useState(() => {
-    const m = searchParams.get('month');
-    return m ? parseInt(m, 10) : new Date().getMonth() + 1;
-  });
-  // The initialisers above run once, on mount. A push notification tapped while the app is
-  // already open changes the URL without remounting this page, so without this the month
-  // stayed wherever the user had left it — which is why settlement notifications appeared to
-  // do nothing: the month is the only thing their link carries.
-  useEffect(() => {
-    const y = searchParams.get('year');
-    const m = searchParams.get('month');
-    if (y) setYear(parseInt(y, 10));
-    if (m) setMonth(parseInt(m, 10));
-  }, [searchParams]);
+  // El mes vive en la URL: así lo comparten Gastos y Números, y una notificación que linkea a
+  // un mes lo cambia sin necesidad de remontar la página.
+  const { year, month, setYearMonth } = useMonthSearchParams();
 
   const highlightId = searchParams.get('highlight') ? parseInt(searchParams.get('highlight')!, 10) : null;
   const [showAdd, setShowAdd] = useState(false);
@@ -69,9 +51,7 @@ export function ExpensesDashboard() {
   const [pendingExpense, setPendingExpense] = useState<ExpenseCreate | null>(null);
   const [duplicates, setDuplicates] = useState<ExpenseResponse[]>([]);
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
-  const [isSettling, setIsSettling] = useState(false);
-  const [isUnsettling, setIsUnsettling] = useState(false);
-  const [showSettleConfirm, setShowSettleConfirm] = useState(false);
+  const [showSettle, setShowSettle] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
   const [recurringEditTarget, setRecurringEditTarget] = useState<ExpenseResponse | null>(null);
@@ -95,6 +75,18 @@ export function ExpensesDashboard() {
 
   const expenses = monthlyData?.expenses ?? [];
   const isSettled = monthlyData?.isSettled ?? false;
+
+  const yourPosition = currentMemberId != null && monthlyData
+    ? (monthlyData.balances[String(currentMemberId)] ?? 0)
+    : null;
+
+  // El "+" de la barra flotante vive en otro árbol y tiene que apagarse cuando el mes está
+  // cerrado: se le publica lo que esta página ya sabe.
+  const { setViewedMonthState } = useSettlementState();
+  useEffect(() => {
+    setViewedMonthState({ isSettled, yourBalance: yourPosition });
+    return () => setViewedMonthState({ isSettled: false, yourBalance: null });
+  }, [isSettled, yourPosition, setViewedMonthState]);
 
   const submitExpense = async (data: ExpenseCreate) => {
     const { data: result, error } = await createExpense(groupId, data);
@@ -174,80 +166,22 @@ export function ExpensesDashboard() {
     island.success();
   };
 
-  const handleSettle = async () => {
-    // Refuse rather than guess: settling the wrong thing is not recoverable from the UI.
-    if (!groupTypeKnown) return;
-    setIsSettling(true);
-    island.loading();
-    try {
-      // A one-time group is settled in one step: there are no months to close individually.
-      const result = isOneTime ? await settleAll(groupId) : await settleMonthlyShare(groupId, year, month);
-      if (!result) throw new Error('Failed to settle');
-      refetch();
-      toast.success(t(isOneTime ? 'toasts.groupSettled' : 'toasts.monthSettled'));
-      island.success();
-    } catch {
-      toast.error(t('toasts.failedSettle'));
-      island.reset();
-    } finally {
-      setIsSettling(false);
-    }
-  };
 
-  const handleUnsettle = async () => {
-    setIsUnsettling(true);
-    island.loading();
-    try {
-      // An occasion is settled as one thing, so it reopens as one thing.
-      if (!groupTypeKnown) return;
-      const result = isOneTime ? await unsettleAll(groupId) : await unsettleMonthlyShare(groupId, year, month);
-      if (!result) throw new Error('Failed to reopen');
-      refetch();
-      toast.success(t('toasts.monthReopened'));
-      island.success();
-    } catch {
-      toast.error(t('toasts.failedReopen'));
-      island.reset();
-    } finally {
-      setIsUnsettling(false);
-    }
-  };
 
-  const handleExportPDF = async () => {
-    try {
-      // An occasion exports whole; only an ongoing group exports a single month.
-      if (isOneTime) {
-        await downloadGroupPdf(groupId, group?.name ?? 'grupo');
-      } else {
-        await downloadMonthlyPdf(groupId, year, month);
-      }
-    } catch {
-      toast.error(t('toasts.failedExport'));
-    }
-  };
 
-  const handlePayTransfer = async (transfer: { fromMemberId: number; toMemberId: number; amount: number }) => {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const fromName = members.find(m => m.id === transfer.fromMemberId)?.name ?? 'Unknown';
-    const toName   = members.find(m => m.id === transfer.toMemberId)?.name ?? 'Unknown';
-    const data: ExpenseCreate = {
-      description: `${fromName} → ${toName}`,
-      amount: transfer.amount,
-      date: dateStr,
-      category: { name: 'prestamo' },
-      payerId: transfer.fromMemberId,
-      paymentType: 'debit',
-      installments: 1,
-      currency: 'ARS',
-      splitStrategy: { type: 'exact', amounts: { [transfer.toMemberId]: transfer.amount } },
-    };
-    const { data: result, error } = await createExpense(groupId, data);
-    if (error || !result) throw new Error(error ?? 'Failed to create transfer');
-    refetch();
-    toast.success(t('toasts.expenseAdded'));
-    island.success();
-  };
+  // Cerrar, reabrir y exportar: una sola implementación, compartida con la pantalla de Gente.
+  const { settle: handleSettle, unsettle: handleUnsettle, exportPdf: handleExportPDF } =
+    useSettlementActions({
+      groupId,
+      groupName: group?.name ?? '',
+      year,
+      month,
+      isOneTime,
+      groupTypeKnown,
+      refetch,
+    });
+
+  const monthName = (t('months', { returnObjects: true }) as string[])[month - 1];
 
   const handleSorted = useCallback((s: ExpenseResponse[]) => setSortedExpenses(s), []);
 
@@ -256,103 +190,87 @@ export function ExpensesDashboard() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto">
+    <div className="relative mx-auto w-full max-w-5xl space-y-4 px-5 py-4 lg:px-7 lg:py-6">
       {/* A one-time group ignores months entirely, so there is nothing to navigate. */}
       {!isOneTime && (
-        <MonthPicker year={year} month={month} onNavigate={(y, m) => { setYear(y); setMonth(m); }} />
-      )}
-
-      {monthlyData && (
-        <BalancePanel
-          isOneTime={isOneTime}
-          balances={monthlyData.balances}
-          transfers={monthlyData.transfers ?? []}
-          members={members}
-          isSettled={isSettled}
-          onSettleRequest={() => setShowSettleConfirm(true)}
-          isSettling={isSettling}
-          onUnsettle={handleUnsettle} isUnsettling={isUnsettling}
-          expenses={expenses}
-          onPayTransfer={handlePayTransfer}
-        />
-      )}
-
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">{t('expenses.title')}</h3>
-            {expenses.some(e => e.currency === 'USD') && blueRate !== null && (
-              <button
-                type="button"
-                onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
-                className={cn(
-                  'h-6 px-2 rounded-full text-xs font-semibold transition-colors cursor-pointer shrink-0',
-                  displayMode === 'ars'
-                    ? 'bg-brand/20 text-brand hover:bg-brand/30'
-                    : 'text-muted-foreground border border-border hover:bg-accent hover:text-foreground',
-                )}
-              >
-                {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground shrink-0"
-              onClick={handleExportPDF}
-              title={t('expenses.exportPdfTitle')}>
-              <FileDown className="h-3.5 w-3.5 mr-1" />
-              <span>{t('expenses.exportPdf')}</span>
-            </Button>
-            {/* Add + Transfer live in the FAB speed-dial on mobile — desktop only here */}
-            <Button size="sm" variant="outline" className="hidden lg:inline-flex h-7 px-2 text-xs shrink-0"
+        <div className="flex items-center justify-center gap-2">
+          <MonthPager year={year} month={month} onNavigate={setYearMonth} isSettled={isSettled} />
+          {/* Alta y transferencia en desktop; en mobile viven en el FAB. */}
+          <div className="hidden shrink-0 items-center gap-2 lg:absolute lg:right-0 lg:flex">
+            <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
               title={t('expenses.transfer')}
               onClick={() => { setShowTransfer(true); setShowAdd(false); }}>
-              <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" />
+              <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.transfer')}</span>
             </Button>
-            <Button size="sm" className="hidden lg:inline-flex h-7 px-2 text-xs bg-brand hover:bg-brand/90 text-white shrink-0"
+            <Button size="sm" className="h-8 rounded-pill bg-brand px-3 text-xs text-white hover:bg-brand/90"
               title={t('expenses.add')}
               onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); }}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.add')}</span>
             </Button>
           </div>
         </div>
+      )}
 
+
+      {/* Un mes cerrado se lee, no se edita: la lista se apaga y lo dice con una pastilla. */}
+      <div
+        className={cn(
+          'overflow-hidden rounded-card border border-line bg-surface shadow-card transition-opacity',
+          isSettled && 'opacity-[0.62]',
+        )}
+      >
         {loadingExpenses ? (
-          <div className="p-4 space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}</div>
+          <div className="space-y-2 p-4">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}</div>
         ) : expenses.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">{t('expenses.noExpenses')}</div>
+          <div className="py-12 text-center text-sm text-muted-1">{t('expenses.noExpenses')}</div>
         ) : (
           <>
-            <ExpenseListHeader expenses={expenses} members={members} onSorted={handleSorted} />
-            <div className="divide-y divide-border">
-              {sortedExpenses.map(e => (
-                <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
-                  autoOpenDetail={e.id === deepLinkedExpenseId}
-                  highlight={e.id === highlightId}
-                  groupId={groupId}
-                  viewedYear={year}
-                  viewedMonth={month}
-                  onEdit={exp => { setEditingExpense(exp); setShowAdd(true); }}
-                  onDelete={handleDelete}
-                  onRecurringDelete={templateId => setRecurringDeleteTarget(templateId)}
-                  onRecurringEdit={exp => { setRecurringEditTarget(exp); setShowAdd(true); }}
-                />
-              ))}
-            </div>
+            <ExpenseListHeader
+              expenses={expenses}
+              members={members}
+              onSorted={handleSorted}
+              monthLabel={monthName}
+              isOneTime={isOneTime}
+              onExportPdf={handleExportPDF}
+              isSettled={isSettled}
+            />
+            {sortedExpenses.length === 0 ? (
+              <div className="py-10 text-center text-[12.5px] text-muted-2">{t('expenses.noMatches')}</div>
+            ) : (
+              <div>
+                {sortedExpenses.map(e => (
+                  <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
+                    autoOpenDetail={e.id === deepLinkedExpenseId}
+                    highlight={e.id === highlightId}
+                    groupId={groupId}
+                    groupName={group?.name}
+                    isOneTimeGroup={isOneTime}
+                    viewedYear={year}
+                    viewedMonth={month}
+                    onEdit={exp => { setEditingExpense(exp); setShowAdd(true); }}
+                    onDelete={handleDelete}
+                    onRecurringDelete={templateId => setRecurringDeleteTarget(templateId)}
+                    onRecurringEdit={exp => { setRecurringEditTarget(exp); setShowAdd(true); }}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
 
       <AddExpenseDialog
         isOneTimeGroup={isOneTime}
-        open={showAdd}
+        open={showAdd || showTransfer}
         onOpenChange={v => {
           setShowAdd(v);
+          setShowTransfer(v && showTransfer);
           if (!v) { setEditingExpense(null); setRecurringEditTarget(null); }
         }}
         onSubmit={recurringEditTarget ? handleRecurringUpdate : (editingExpense ? handleUpdate : handleCreate)}
+        initialMode={showTransfer ? 'loan' : 'expense'}
         members={members}
         initialExpense={recurringEditTarget ?? editingExpense ?? undefined}
         isSettled={isSettled}
@@ -362,11 +280,6 @@ export function ExpensesDashboard() {
         isRecurringEdit={!!recurringEditTarget}
       />
 
-      <TransferDialog
-        open={showTransfer} onOpenChange={setShowTransfer}
-        onSubmit={handleCreate} members={members}
-        currentMemberId={currentMemberId}
-      />
 
       <Dialog open={duplicates.length > 0} onOpenChange={(isOpen) => { if (!isOpen) { setPendingExpense(null); setDuplicates([]); } }}>
         <DialogContent className="sm:max-w-sm">
@@ -431,31 +344,26 @@ export function ExpensesDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Settle confirmation dialog */}
-      <Dialog open={showSettleConfirm} onOpenChange={(isOpen) => { if (!isOpen) setShowSettleConfirm(false); }}>
-        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>
-              {isOneTime
-                ? t('balance.settleConfirmTitleOneTime')
-                : t('balance.settleConfirmTitle', { month: (t('months', { returnObjects: true }) as string[])[month - 1], year })}
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {isOneTime ? t('balance.settleConfirmDescOneTime') : t('balance.settleConfirmDesc')}
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSettleConfirm(false)}>{t('common.cancel')}</Button>
-            <Button
-              className="cursor-pointer"
-              style={{ backgroundColor: '#4CAF50', color: 'white' }}
-              onClick={async () => { setShowSettleConfirm(false); await handleSettle(); }}
-            >
-              {t('balance.settleUp')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Saldar: el plan, el progreso y el mes cerrado, en su propia hoja (§6.6) */}
+      {monthlyData && (
+        <SettleSheet
+          open={showSettle}
+          onOpenChange={setShowSettle}
+          groupId={groupId}
+          groupName={group?.name ?? ''}
+          month={month}
+          members={members}
+          transfers={monthlyData.transfers ?? []}
+          expenses={expenses}
+          isSettled={isSettled}
+          currentMemberId={currentMemberId}
+          onSettle={handleSettle}
+          onReopen={handleUnsettle}
+          onExportPdf={handleExportPDF}
+          onChanged={refetch}
+        />
+      )}
+
     </div>
   );
 }

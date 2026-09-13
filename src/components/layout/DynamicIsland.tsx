@@ -22,8 +22,8 @@ export function DynamicIsland({ state, groupName }: DynamicIslandProps) {
     >
       {state === 'idle' && (
         <>
-          <span className="font-black text-xs leading-none">✦</span>
-          <span className="font-extrabold text-xs tracking-tight">Jirens</span>
+          {/* La marca tiene un mínimo de 24px y acá no entra: va sólo el nombre. */}
+          <span className="font-display text-[13px] leading-none">Jirens</span>
         </>
       )}
 
@@ -36,14 +36,13 @@ export function DynamicIsland({ state, groupName }: DynamicIslandProps) {
 
       {state === 'success' && (
         <>
-          <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+          <Check className="h-3.5 w-3.5 shrink-0 text-positive" />
           <span className="font-semibold text-xs tracking-tight">Guardado</span>
         </>
       )}
 
       {state === 'group' && groupName && (
         <>
-          <span className="font-black text-xs leading-none">✦</span>
           <span className="font-semibold text-xs tracking-tight truncate max-w-[120px]">
             {groupName}
           </span>

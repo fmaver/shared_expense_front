@@ -1,60 +1,88 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { LogOut, UserPlus, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { getGroupMembers, leaveGroup } from '@/api/groups';
 import { listInvitations, revokeInvitation } from '@/api/invitations';
 import { InviteDialog } from '@/components/members/InviteDialog';
 import { JoinLinkCard } from '@/components/members/JoinLinkCard';
-import { UserPlus, LogOut, X } from 'lucide-react';
+import { BalancePanel } from '@/components/expenses/BalancePanel';
+import { SettleSheet } from '@/components/expenses/SettleSheet';
+import { MonthPager } from '@/components/expenses/MonthPager';
+import { useGroup } from '@/hooks/useGroups';
+import { useGroupMembers } from '@/hooks/useMembers';
+import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
+import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { useSettlementActions } from '@/hooks/useSettlementActions';
+import { useSettlementState } from '@/contexts/SettlementContext';
 import type { GroupMember, Invitation } from '@/types/expense';
 
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
-function formatDate(iso: string) {
+function formatInviteDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+    day: '2-digit', month: '2-digit', year: 'numeric',
   });
 }
 
+/**
+ * Gente: quiénes están en el grupo y cómo viene cada uno.
+ *
+ * Los saldos viven acá y no en la lista de gastos (§5): la lista responde "en qué se fue la
+ * plata" y esta pantalla responde "quién le debe a quién", que son dos preguntas distintas.
+ * Saldar se entra desde acá.
+ */
 export function GroupMembersPage() {
   const { t } = useTranslation();
   const { groupId: groupIdParam } = useParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam!, 10);
   const navigate = useNavigate();
 
+  const { year, month, setYearMonth } = useMonthSearchParams();
+  const { data: group, isLoading: loadingGroup } = useGroup(groupId);
+  const groupTypeKnown = !loadingGroup && group !== undefined;
+  const isOneTime = group?.groupType === 'one_time';
+
+  const { data: memberList = [] } = useGroupMembers(groupId);
+  const { data: monthlyData, refetch } = useMonthlyBalance(
+    groupId, year, month, isOneTime, groupTypeKnown,
+  );
+  const currentMember = useCurrentMember();
+
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
-
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [invitationsLoading, setInvitationsLoading] = useState(true);
-
   const [showInvite, setShowInvite] = useState(false);
+  const [showLink, setShowLink] = useState(false);
+  const [showSettle, setShowSettle] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  // El sidebar de desktop muestra tu posición en el grupo; se la publica quien ya la tiene.
+  const { setViewedMonthState } = useSettlementState();
+  useEffect(() => {
+    setViewedMonthState({
+      isSettled: monthlyData?.isSettled ?? false,
+      yourBalance: currentMember && monthlyData
+        ? (monthlyData.balances[String(currentMember.id)] ?? 0)
+        : null,
+    });
+    return () => setViewedMonthState({ isSettled: false, yourBalance: null });
+  }, [monthlyData, currentMember, setViewedMonthState]);
+
+  const { settle, unsettle, exportPdf } = useSettlementActions({
+    groupId, groupName: group?.name ?? '', year, month, isOneTime, groupTypeKnown, refetch,
+  });
 
   const loadMembers = useCallback(async () => {
     setMembersLoading(true);
     try {
-      const result = await getGroupMembers(groupId);
-      setMembers(result);
+      setMembers(await getGroupMembers(groupId));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load members');
     } finally {
@@ -63,31 +91,27 @@ export function GroupMembersPage() {
   }, [groupId]);
 
   const loadInvitations = useCallback(async () => {
-    setInvitationsLoading(true);
     try {
       const result = await listInvitations(groupId);
-      setInvitations(result.filter((i) => i.status === 'pending'));
+      setInvitations(result.filter(i => i.status === 'pending'));
     } catch {
-      // silently ignore — invitations are non-critical
-    } finally {
-      setInvitationsLoading(false);
+      // Las invitaciones no son críticas para leer la pantalla.
     }
   }, [groupId]);
 
-  const reload = useCallback(() => {
-    loadMembers();
-    loadInvitations();
-  }, [loadMembers, loadInvitations]);
+  const reload = useCallback(() => { loadMembers(); loadInvitations(); }, [loadMembers, loadInvitations]);
+  useEffect(() => { reload(); }, [reload]);
 
-  useEffect(() => {
-    reload();
-  }, [reload]);
+  const stubMemberIds = useMemo(
+    () => new Set(members.filter(m => m.isStub).map(m => m.memberId)),
+    [members],
+  );
 
-  const handleRevoke = async (inv: Invitation) => {
-    const token = inv.shareUrl.split('/').pop()!;
+  const handleRevoke = async (invitation: Invitation) => {
+    const token = invitation.shareUrl.split('/').pop()!;
     try {
       await revokeInvitation(groupId, token);
-      setInvitations((prev) => prev.filter((i) => i.id !== inv.id));
+      setInvitations(prev => prev.filter(i => i.id !== invitation.id));
       toast.success(t('toasts.invitationRevoked'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to revoke invitation');
@@ -101,6 +125,7 @@ export function GroupMembersPage() {
       toast.success(t('toasts.leftGroup'));
       navigate('/');
     } catch (err) {
+      // El backend rechaza mientras haya saldo abierto, y su mensaje lo explica.
       toast.error(err instanceof Error ? err.message : 'Failed to leave group');
       setIsLeaving(false);
       setShowLeaveConfirm(false);
@@ -108,149 +133,137 @@ export function GroupMembersPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">{t('members.title')}</h1>
-        <Button
-          size="sm"
-          className="bg-brand hover:bg-brand/90 text-white"
-          onClick={() => setShowInvite(true)}
-        >
-          <UserPlus className="h-4 w-4 mr-1.5" />
-          {t('members.invite')}
-        </Button>
-      </div>
+    <div className="mx-auto w-full max-w-5xl space-y-4 px-5 py-4 lg:px-7 lg:py-6">
+      {!isOneTime && (
+        <MonthPager
+          year={year}
+          month={month}
+          onNavigate={setYearMonth}
+          isSettled={monthlyData?.isSettled}
+        />
+      )}
 
-      {/* Member list */}
-      <div className="bg-card border border-border rounded-xl divide-y divide-border">
-        {membersLoading ? (
-          [1, 2, 3].map((i) => (
-            <div key={i} className="px-4 py-3 flex items-center gap-3">
-              <Skeleton className="h-9 w-9 rounded-full" />
-              <div className="space-y-1.5 flex-1">
-                <Skeleton className="h-3.5 w-28" />
-                <Skeleton className="h-3 w-40" />
-              </div>
-            </div>
-          ))
-        ) : members.length === 0 ? (
-          <p className="px-4 py-5 text-sm text-muted-foreground">No members yet.</p>
-        ) : (
-          members.map((member) => (
-            <div key={member.memberId} className="px-4 py-3 flex items-center gap-3">
-              {/* Initials avatar */}
-              <div className="h-9 w-9 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                {getInitials(member.name)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {member.name}
+      {/* ── Cómo viene cada uno ─────────────────────────────────────────────────────── */}
+      {monthlyData ? (
+        <BalancePanel
+          isOneTime={isOneTime}
+          balances={monthlyData.balances}
+          transfers={monthlyData.transfers ?? []}
+          members={memberList}
+          isSettled={monthlyData.isSettled}
+          expenses={monthlyData.expenses}
+          currentMemberId={currentMember?.id ?? null}
+          stubMemberIds={stubMemberIds}
+          onOpenSettle={() => setShowSettle(true)}
+        />
+      ) : (
+        <Skeleton className="h-64 w-full rounded-card" />
+      )}
+
+      {/* ── Invitaciones pendientes ─────────────────────────────────────────────────── */}
+      {invitations.length > 0 && (
+        <div className="rounded-card border border-line bg-surface p-4 shadow-card">
+          <h2 className="mb-3 text-[13px] font-bold text-foreground">
+            {t('members.pendingInvitations')}
+          </h2>
+          <div className="space-y-2">
+            {invitations.map(invitation => (
+              <div key={invitation.id} className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12.5px] font-semibold text-foreground">
+                    {invitation.target}
                   </p>
-                  {/* A stub with no contact details was never invited — nothing is pending,
-                      they are simply tracked by name until they claim an account. */}
-                  {member.isStub && !member.email && !member.telephone && (
-                    <span className="inline-flex items-center text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full flex-shrink-0">
-                      {t('members.noAccount')}
-                    </span>
-                  )}
-                  {member.isStub && (member.email || member.telephone) && (
-                    <span className="inline-flex items-center text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                      {t('members.pending')}
-                    </span>
-                  )}
+                  <p className="text-[11.5px] font-medium text-muted-2">
+                    {formatInviteDate(invitation.createdAt)}
+                  </p>
                 </div>
-                {member.email && (
-                  <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                )}
-                {!member.email && member.telephone && (
-                  <p className="text-xs text-muted-foreground truncate">{member.telephone}</p>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleRevoke(invitation)}
+                  aria-label={t('common.delete')}
+                  className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-2 hover:bg-surface-sunken hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Pending invitations */}
-      {(invitationsLoading || invitations.length > 0) && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <h3 className="font-semibold text-foreground text-sm mb-3">{t('members.pendingInvitations')}</h3>
-          {invitationsLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : (
-            <ul className="divide-y divide-border">
-              {invitations.map((inv) => (
-                <li key={inv.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{inv.target}</p>
-                    <p className="text-xs text-muted-foreground">
-                      via {inv.channel} · expires {formatDate(inv.expiresAt)}
-                    </p>
-                  </div>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                    onClick={() => handleRevoke(inv)}
-                    title="Revoke invitation"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Join link card */}
-      <JoinLinkCard groupId={groupId} />
+      {membersLoading && <Skeleton className="h-12 w-full rounded-card" />}
 
-      {/* Leave group — danger zone */}
-      <div className="pt-4 border-t border-destructive/20">
-        <p className="text-xs text-muted-foreground mb-2">{t('members.leaveGroupHint')}</p>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={() => setShowLeaveConfirm(true)}
+      {/* ── Sumar gente: una fila punteada, no una zona aparte ──────────────────────── */}
+      <div className="flex items-center gap-2 rounded-card border border-dashed border-line-strong px-4 py-3">
+        <UserPlus className="h-4 w-4 shrink-0 text-muted-2" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={() => setShowInvite(true)}
+          className="min-w-0 flex-1 cursor-pointer text-left text-[12.5px] font-bold text-foreground hover:text-brand-ink"
         >
-          <LogOut className="h-4 w-4 mr-1.5" />
-          {t('members.leaveGroup')}
-        </Button>
+          {t('members.inviteRow')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowLink(v => !v)}
+          className="shrink-0 cursor-pointer text-[12px] font-bold text-brand-ink hover:underline"
+        >
+          {t('members.inviteLink')}
+        </button>
       </div>
 
-      {/* Invite dialog */}
+      {showLink && <JoinLinkCard groupId={groupId} />}
+
+      {/* ── Salir del grupo ─────────────────────────────────────────────────────────── */}
+      <div className="pt-2">
+        <p className="mb-2 text-[11.5px] font-medium text-muted-2">{t('members.leaveGroupHint')}</p>
+        <button
+          type="button"
+          onClick={() => setShowLeaveConfirm(true)}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-pill border border-line-strong px-3.5 py-2 text-[12px] font-bold text-muted-1 transition-colors hover:bg-surface-sunken"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          {t('members.leaveGroup')}
+        </button>
+      </div>
+
       <InviteDialog
+        groupId={groupId}
         open={showInvite}
         onOpenChange={setShowInvite}
-        groupId={groupId}
         onMemberAdded={reload}
       />
 
-      {/* Leave confirmation dialog */}
-      <Dialog open={showLeaveConfirm} onOpenChange={(isOpen) => setShowLeaveConfirm(isOpen)}>
+      {monthlyData && (
+        <SettleSheet
+          open={showSettle}
+          onOpenChange={setShowSettle}
+          groupId={groupId}
+          groupName={group?.name ?? ''}
+          month={month}
+          members={memberList}
+          transfers={monthlyData.transfers ?? []}
+          expenses={monthlyData.expenses}
+          isSettled={monthlyData.isSettled}
+          currentMemberId={currentMember?.id ?? null}
+          onSettle={settle}
+          onReopen={unsettle}
+          onExportPdf={exportPdf}
+          onChanged={refetch}
+        />
+      )}
+
+      <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>{t('members.leaveTitle')}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {t('members.leaveDesc')}
-          </p>
+          <p className="text-sm text-muted-1">{t('members.leaveDesc')}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLeaveConfirm(false)}>
               {t('common.cancel')}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleLeave}
-              disabled={isLeaving}
-            >
+            <Button variant="destructive" onClick={handleLeave} disabled={isLeaving}>
               {isLeaving ? t('members.leaving') : t('members.leaveGroup')}
             </Button>
           </DialogFooter>

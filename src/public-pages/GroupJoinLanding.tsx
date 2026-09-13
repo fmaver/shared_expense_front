@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { PublicShell } from './PublicShell';
 import { resolveJoinToken, registerAndJoin } from '@/api/joinLinks';
 import type { GroupJoinResolveResponse } from '@/types/expense';
 import { Button } from '@/components/ui/button';
@@ -16,6 +18,7 @@ interface Props {
 export function GroupJoinLanding({ onLoginSuccess }: Props) {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [info, setInfo] = useState<GroupJoinResolveResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -44,8 +47,8 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
     if (!token) return;
     resolveJoinToken(token)
       .then(setInfo)
-      .catch(err => setLoadError(err instanceof Error ? err.message : 'Invalid join link'));
-  }, [token]);
+      .catch(err => setLoadError(err instanceof Error ? err.message : t('invite.invalidJoin')));
+  }, [token, t]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,48 +66,28 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
       localStorage.setItem('tokenExpiration', expiration);
       axios.defaults.headers.common['Authorization'] = `Bearer ${result.accessToken}`;
       onLoginSuccess(result.accessToken);
-      toast.success("Welcome! You've joined the group.");
+      toast.success(t('invite.welcome'));
       navigate('/groups');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to join group');
+      toast.error(err instanceof Error ? err.message : t('invite.joinFailed'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const brandHeader = (
-    <div className="text-center mb-8">
-      <div className="inline-flex items-center justify-center w-12 h-12 bg-brand rounded-xl mb-3">
-        <span className="text-white font-black text-xl">✦</span>
-      </div>
-      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Jirens</h1>
-      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-0.5">
-        Shared Expenses
-      </p>
-    </div>
-  );
-
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          {brandHeader}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm text-center">
-            <p className="text-sm text-destructive">{loadError}</p>
-          </div>
-        </div>
-      </div>
+      <PublicShell>
+        <p className="text-center text-[13px] font-semibold text-negative">{loadError}</p>
+      </PublicShell>
     );
   }
 
   if (!info) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm text-center">
-          {brandHeader}
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        </div>
-      </div>
+      <PublicShell>
+        <p className="text-center text-[13px] text-muted-2">{t('invite.loading')}</p>
+      </PublicShell>
     );
   }
 
@@ -112,44 +95,32 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
 
   if (info.alreadyMember) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          {brandHeader}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm text-center">
-            <h2 className="text-lg font-bold text-foreground mb-1">You're already in</h2>
-            <p className="text-sm text-muted-foreground mb-5">
-              You are already a member of{' '}
-              <span className="font-semibold text-foreground">{info.groupName}</span>.
-            </p>
-            <Link
-              to="/groups"
-              className="inline-flex w-full items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90"
-            >
-              Go to my groups
-            </Link>
-          </div>
-        </div>
-      </div>
+      <PublicShell
+        title={t('invite.alreadyIn')}
+        subtitle={t('invite.alreadyInDesc', { group: info.groupName })}
+      >
+        <Link
+          to="/groups"
+          className="flex h-12 w-full items-center justify-center rounded-[12px] bg-brand text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+        >
+          {t('invite.goToGroup')}
+        </Link>
+      </PublicShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        {brandHeader}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-foreground mb-1">Join group</h2>
-          <p className="text-sm text-muted-foreground mb-5">
-            You were invited to join{' '}
-            <span className="font-semibold text-foreground">{info.groupName}</span>. Create your
-            account to get started.
-          </p>
+    <PublicShell
+      title={t('invite.joinTitle', { group: info.groupName })}
+      subtitle={t('invite.joinSubtitle')}
+    >
+      <>
 
           {claimable.length > 0 && (
             <div className="mb-5 space-y-1.5">
-              <p className="text-sm font-medium text-foreground">Are you one of these people?</p>
-              <p className="text-xs text-muted-foreground mb-2">
-                Pick your name to keep the expenses already assigned to you.
+              <p className="text-[13px] font-bold text-foreground">{t('invite.areYouOneOf')}</p>
+              <p className="mb-2 text-[11.5px] font-medium leading-[1.45] text-muted-2">
+                {t('invite.claimHelp')}
               </p>
               {claimable.map(member => (
                 <button
@@ -180,7 +151,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
                     : 'border-border hover:bg-muted/50 text-muted-foreground'
                 }`}
               >
-                I'm someone else
+                {t('invite.noneOfThem')}
               </button>
             </div>
           )}
@@ -188,22 +159,22 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
           {isLoggedIn ? (
             <form onSubmit={handleJoin} className="space-y-4">
               <p className="text-xs text-muted-foreground">
-                You're signed in — joining will use your existing account.
-                {claimable.length > 0 && ' Pick your name above to take over its expenses.'}
+                {t('invite.signedInNote')}
+                {claimable.length > 0 && ` ${t('invite.signedInPickNote')}`}
               </p>
               <Button
                 type="submit"
                 className="w-full bg-brand hover:bg-brand/90 text-white"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Joining…' : 'Join group'}
+                {isSubmitting ? t('invite.joining') : t('invite.join')}
               </Button>
             </form>
           ) : (
           <>
           <form onSubmit={handleJoin} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name">{t('invite.fullName')}</Label>
               <Input
                 id="name"
                 required
@@ -215,7 +186,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('invite.email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -238,11 +209,11 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
                 value={telephone}
                 onChange={e => setTelephone(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">Include country code, no + sign.</p>
+              <p className="text-xs text-muted-foreground">{t('invite.phoneHelp')}</p>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('invite.password')}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -270,7 +241,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
               className="w-full bg-brand hover:bg-brand/90 text-white font-semibold"
               disabled={isSubmitting || !name.trim() || !email.trim() || !password}
             >
-              {isSubmitting ? 'Joining…' : 'Create Account & Join'}
+              {isSubmitting ? 'Joining…' : t('invite.createAndJoin')}
             </Button>
           </form>
 
@@ -289,8 +260,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
           </p>
           </>
           )}
-        </div>
-      </div>
-    </div>
+      </>
+    </PublicShell>
   );
 }

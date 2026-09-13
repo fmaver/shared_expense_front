@@ -1,30 +1,50 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Pen, Trash2, Repeat } from 'lucide-react';
+import { Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { capitalize, formatDate } from '@/utils/format';
+import { capitalize, formatDayMonth } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from 'react-i18next';
 import type { ExpenseResponse, Member } from '@/types/expense';
 import { ExpenseDetailDialog } from './ExpenseDetailDialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { avatarBg, initials } from '@/utils/avatar';
+import { computeSplit, isOutsider, netOf } from '@/utils/split';
 
-const SPLIT_BADGE: Record<string, string> = {
-  equal:      'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  percentage: 'bg-amber-100  text-amber-700  dark:bg-amber-900/40  dark:text-amber-300',
-  exact:      'bg-sky-100    text-sky-700    dark:bg-sky-900/40    dark:text-sky-300',
-};
-
-const PAYMENT_BADGE: Record<string, string> = {
-  debit:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-  credit: 'bg-blue-100    text-blue-700    dark:bg-blue-900/40    dark:text-blue-300',
-};
-
-// Internal categories are filtered from the API — hardcode their emojis here
+// Las categorías internas no las devuelve la API — sus emojis viven acá.
 const INTERNAL_EMOJI: Record<string, string> = {
-  balance:  '⚖️',
+  balance: '⚖️',
   prestamo: '🤝',
 };
+
+type BadgeTone = 'fixed' | 'credit' | 'usd' | 'split';
+
+const BADGE_TONE: Record<BadgeTone, string> = {
+  fixed:  'bg-brand-wash text-brand-ink',
+  credit: 'bg-tag-credit-wash text-tag-credit',
+  usd:    'bg-tag-usd-wash text-tag-usd',
+  split:  'bg-tag-split-wash text-tag-split',
+};
+
+/**
+ * Badge de excepción.
+ *
+ * Sólo aparece cuando el gasto se sale de lo normal. Un gasto en débito, en partes iguales y
+ * en pesos no lleva ninguno: etiquetar lo esperable es ruido (principio 2 del handoff).
+ */
+function ExceptionBadge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-0.5 rounded-chip px-1.5 py-0.5',
+        'text-[10.5px] font-bold leading-[1.4]',
+        BADGE_TONE[tone],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
 
 interface ExpenseRowProps {
   expense: ExpenseResponse;
@@ -36,8 +56,16 @@ interface ExpenseRowProps {
   hideSplitBadge?: boolean;
   hideActions?: boolean;
   groupId?: number;
+  groupName?: string;
+  /** Un grupo de evento no tiene meses ni cuotas; el detalle lo aclara al pie. */
+  isOneTimeGroup?: boolean;
   viewedYear?: number;
   viewedMonth?: number;
+  /**
+   * Qué se dibuja a la izquierda. En un grupo importa quién pagó, así que va su avatar; en la
+   * lista personal pagaste siempre vos, así que el lugar lo ocupa la categoría (§6.4).
+   */
+  variant?: 'payer' | 'category';
   /** Open this row's detail on mount — used when a push notification deep-links to it. */
   autoOpenDetail?: boolean;
   onRecurringDelete?: (templateId: number) => void;
@@ -48,11 +76,19 @@ function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, highlight = false, hideSplitBadge = false, hideActions = false, autoOpenDetail = false, onRecurringDelete, onRecurringEdit }: ExpenseRowProps) {
-  const canEdit = expense.installmentNo === 1;
+export function ExpenseRow({
+  expense, members, isSettled, onEdit, onDelete,
+  highlight = false, hideSplitBadge = false, hideActions = false,
+  groupId, groupName, isOneTimeGroup = false, viewedYear, viewedMonth,
+  variant = 'payer', autoOpenDetail = false,
+  onRecurringDelete, onRecurringEdit,
+}: ExpenseRowProps) {
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
   const { formatAmount } = useCurrency();
+  const currentMember = useCurrentMember();
+  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
+
   const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
     ?? INTERNAL_EMOJI[expense.category];
   const rowRef = useRef<HTMLDivElement>(null);
@@ -72,154 +108,148 @@ export function ExpenseRow({ expense, members, isSettled, onEdit, onDelete, high
     return () => clearTimeout(timer);
   }, [highlight]);
 
-  const splitLabel = (() => {
-    if (expense.splitStrategy.type === 'equal' && expense.splitStrategy.participantIds?.length) {
-      const names = expense.splitStrategy.participantIds
-        .map(id => memberName(members, id))
-        .join(', ');
-      return `equal: ${names}`;
+  const split = computeSplit(expense, members);
+  const isRecurring = expense.recurringTemplateId != null;
+  const hasInstallments = expense.paymentType === 'credit' && expense.installments > 1;
+  const isUsd = (expense.currency ?? 'ARS') === 'USD';
+  const showSplitInfo = !hideSplitBadge && variant === 'payer';
+  const unevenSplit = showSplitInfo && !split.isEven;
+
+  /* ── Metadato: quién pagó · cómo se dividió (si no es lo normal) · cuándo ─────────── */
+  const meta: string[] = [];
+  if (variant === 'payer') {
+    meta.push(
+      currentMember && expense.payerId === currentMember.id
+        ? t('expenses.paidByYou')
+        : t('expenses.paidBy', { name: memberName(members, expense.payerId) }),
+    );
+  }
+  if (unevenSplit) {
+    if (expense.splitStrategy.type === 'equal') {
+      meta.push(t('expenses.metaEqualAmong', { count: split.participantIds.length }));
+    } else if (expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages) {
+      // "40/30/30" dice más que la palabra "porcentajes" y entra en el mismo espacio.
+      meta.push(
+        Object.values(expense.splitStrategy.percentages)
+          .map(p => Math.round(p ?? 0))
+          .join('/'),
+      );
+    } else {
+      meta.push(t('expenses.metaExact'));
     }
-    return expense.splitStrategy.type;
-  })();
+  }
+  meta.push(formatDayMonth(expense.date, monthsShort));
+
+  /* ── Tu parte: la única cifra de la fila que habla de vos ─────────────────────────── */
+  const net = currentMember ? netOf(expense, split, currentMember.id) : 0;
+  const outsider = currentMember ? isOutsider(expense, split, currentMember.id) : false;
+  let yourPart: { text: string; tone: string } | null = null;
+  if (currentMember && variant === 'payer') {
+    if (outsider) {
+      yourPart = { text: t('expenses.notInvolved'), tone: 'text-muted-2 font-medium' };
+    } else if (net > 0.01) {
+      yourPart = {
+        text: t('expenses.theyOweYou', { amount: formatAmount(net, expense.currency) }),
+        tone: 'text-positive',
+      };
+    } else if (net < -0.01) {
+      yourPart = {
+        text: t('expenses.youOwe', { amount: formatAmount(-net, expense.currency) }),
+        tone: 'text-negative',
+      };
+    }
+  }
 
   return (
     <>
-    <div
-      ref={rowRef}
-      onClick={() => setDetailOpen(true)}
-      className={cn(
-        'flex items-center gap-3 px-4 py-3 [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors group cursor-pointer touch-manipulation',
-        isFlashing && 'bg-brand/10'
-      )}
-    >
-      {/* Category icon — emoji from API, first 2 letters as fallback */}
-      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-        {categoryEmoji
-          ? <span className="text-lg leading-none">{categoryEmoji}</span>
-          : <span className="text-xs font-bold text-muted-foreground uppercase">{expense.category.slice(0, 2)}</span>
-        }
-      </div>
-
-      {/* Description + meta */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground flex items-center gap-1 line-clamp-2">
-          {capitalize(expense.description)}
-          {expense.recurringTemplateId != null && (
-            <Repeat className="h-3 w-3 text-brand flex-shrink-0" title={t('expenses.recurringBadgeTitle')} />
-          )}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {memberName(members, expense.payerId)} · {formatDate(expense.date, true)}
-        </p>
-        {expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages && (
-          <p className="text-xs text-muted-foreground line-clamp-1">
-            {Object.entries(expense.splitStrategy.percentages)
-              .map(([id, pct]) => {
-                const pctNum = parseFloat(Number(pct).toFixed(1));
-                const amt = formatAmount((expense.amount * (pct ?? 0)) / 100, expense.currency);
-                return `${memberName(members, parseInt(id))} ${pctNum}% (${amt})`;
-              })
-              .join(' · ')}
-          </p>
+      <div
+        ref={rowRef}
+        onClick={() => setDetailOpen(true)}
+        className={cn(
+          'flex cursor-pointer touch-manipulation items-center gap-3 px-5 py-3 transition-colors',
+          'border-b border-line last:border-b-0',
+          '[@media(hover:hover)]:hover:bg-brand-wash active:bg-brand-wash',
+          // La fila abierta queda marcada mientras el panel se lee al costado (sólo desktop:
+          // en mobile la hoja tapa la lista, así que no hay nada que señalar).
+          detailOpen && 'lg:bg-brand-wash',
+          isFlashing && 'bg-brand-wash',
         )}
-        {expense.splitStrategy.type === 'exact' && expense.splitStrategy.amounts && (
-          <p className="text-xs text-muted-foreground line-clamp-1">
-            {Object.entries(expense.splitStrategy.amounts)
-              .map(([id, amt]) => `${memberName(members, parseInt(id))} ${formatAmount(amt ?? 0, expense.currency)}`)
-              .join(' · ')}
-          </p>
-        )}
-        {/* Mobile-only badges row */}
-        <div className="flex sm:hidden items-center flex-wrap gap-1 mt-1">
-          {!hideSplitBadge && (
-            <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', SPLIT_BADGE[expense.splitStrategy.type])}>
-              {splitLabel}
-            </span>
-          )}
-          <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', PAYMENT_BADGE[expense.paymentType])}>
-            {expense.paymentType}
-            {expense.paymentType === 'credit' && expense.installments > 1 && ` ${expense.installmentNo}/${expense.installments}`}
-          </span>
-          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-            {capitalize(t(`categories.${expense.category}`, { defaultValue: expense.category }))}
-          </span>
-        </div>
-      </div>
-
-      {/* Badges */}
-      <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-        {!hideSplitBadge && (
-          <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', SPLIT_BADGE[expense.splitStrategy.type])}>
-            {splitLabel}
-          </span>
-        )}
-        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', PAYMENT_BADGE[expense.paymentType])}>
-          {expense.paymentType}
-          {expense.paymentType === 'credit' && expense.installments > 1 && ` ${expense.installmentNo}/${expense.installments}`}
-        </span>
-        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-          {capitalize(t(`categories.${expense.category}`, { defaultValue: expense.category }))}
-        </span>
-      </div>
-
-      {/* Amount */}
-      <div className="text-sm font-semibold text-foreground tabular-nums flex-shrink-0 w-24 text-right">
-        {formatAmount(expense.amount, expense.currency)}
-        {expense.paymentType === 'credit' && expense.installments > 1 && (
-          <div className="text-[10px] text-muted-foreground font-normal">
-            of {formatAmount(expense.amount * expense.installments, expense.currency)}
+      >
+        {variant === 'payer' ? (
+          <div
+            className={cn(
+              'flex h-[34px] w-[34px] shrink-0 select-none items-center justify-center rounded-full',
+              'text-[12px] font-bold text-white',
+              avatarBg(expense.payerId),
+            )}
+            aria-hidden="true"
+          >
+            {initials(memberName(members, expense.payerId))}
+          </div>
+        ) : (
+          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-surface-sunken">
+            {categoryEmoji
+              ? <span className="text-lg leading-none">{categoryEmoji}</span>
+              : <span className="text-[11px] font-bold uppercase text-muted-2">{expense.category.slice(0, 2)}</span>}
           </div>
         )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
+              {capitalize(expense.description)}
+            </p>
+            {/* El ícono de repetición se conserva (checklist §7), adentro del badge, porque
+                la palabra "recurrente" sale del copy de cara al usuario (§6.2). */}
+            {isRecurring && (
+              <ExceptionBadge tone="fixed">
+                <Repeat className="h-2.5 w-2.5" aria-hidden="true" />
+                {t('expenses.badgeFixed')}
+              </ExceptionBadge>
+            )}
+            {hasInstallments && (
+              <ExceptionBadge tone="credit">
+                {expense.installmentNo}/{expense.installments}
+              </ExceptionBadge>
+            )}
+            {isUsd && <ExceptionBadge tone="usd">USD</ExceptionBadge>}
+            {unevenSplit && <ExceptionBadge tone="split">{t('expenses.badgeSplit')}</ExceptionBadge>}
+          </div>
+          <p className="mt-0.5 truncate text-[11.5px] font-medium leading-tight text-muted-2">
+            {meta.join(' · ')}
+          </p>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <p className="text-[13.5px] font-bold leading-tight tabular-nums text-foreground">
+            {formatAmount(expense.amount, expense.currency)}
+          </p>
+          {yourPart && (
+            <p className={cn('mt-0.5 text-[11.5px] font-semibold leading-tight tabular-nums', yourPart.tone)}>
+              {yourPart.text}
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* Actions */}
-      {!isSettled && !hideActions && (
-        <div
-          className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"
-          onClick={e => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-7 w-7"
-            disabled={!canEdit}
-            title={canEdit ? 'Edit' : 'Edit the first installment only'}
-            onClick={() => {
-              if (!canEdit) return;
-              if (expense.recurringTemplateId != null && onRecurringEdit) {
-                onRecurringEdit(expense);
-              } else {
-                onEdit(expense);
-              }
-            }}>
-            <Pen className={cn('h-3.5 w-3.5', canEdit ? 'text-muted-foreground' : 'text-muted-foreground/30')} />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7"
-            disabled={!canEdit}
-            title={canEdit ? 'Delete' : 'Delete the first installment only'}
-            onClick={() => {
-              if (!canEdit) return;
-              if (expense.recurringTemplateId != null && onRecurringDelete) {
-                onRecurringDelete(expense.recurringTemplateId);
-              } else {
-                onDelete(expense);
-              }
-            }}>
-            <Trash2 className={cn('h-3.5 w-3.5', canEdit ? 'text-destructive' : 'text-muted-foreground/30')} />
-          </Button>
-        </div>
-      )}
-    </div>
-
-    <ExpenseDetailDialog
-      expense={expense}
-      members={members}
-      isSettled={isSettled}
-      open={detailOpen}
-      onOpenChange={setDetailOpen}
-      onEdit={onEdit}
-      onDelete={onDelete}
-      hideSplitBadge={hideSplitBadge}
-      hideActions={hideActions}
-      onRecurringDelete={onRecurringDelete}
-      onRecurringEdit={onRecurringEdit}
-    />
+      <ExpenseDetailDialog
+        expense={expense}
+        members={members}
+        isSettled={isSettled}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        hideSplitBadge={hideSplitBadge}
+        hideActions={hideActions}
+        groupId={groupId}
+        groupName={groupName}
+        isOneTimeGroup={isOneTimeGroup}
+        viewedYear={viewedYear}
+        viewedMonth={viewedMonth}
+        onRecurringDelete={onRecurringDelete}
+        onRecurringEdit={onRecurringEdit}
+      />
     </>
   );
 }

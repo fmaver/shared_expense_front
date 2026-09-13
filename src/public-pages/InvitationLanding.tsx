@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { PublicShell } from './PublicShell';
 import { resolveInvitation, acceptInvitation } from '@/api/invitations';
 import type { InvitationResolveResponse } from '@/types/expense';
 import { Button } from '@/components/ui/button';
@@ -16,6 +18,7 @@ interface Props {
 export function InvitationLanding({ onLoginSuccess }: Props) {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [info, setInfo] = useState<InvitationResolveResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -34,8 +37,8 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
     if (!token) return;
     resolveInvitation(token)
       .then(setInfo)
-      .catch(err => setLoadError(err instanceof Error ? err.message : 'Invalid invitation link'));
-  }, [token]);
+      .catch(err => setLoadError(err instanceof Error ? err.message : t('invite.invalidInvite')));
+  }, [token, t]);
 
   // --- Existing member: accept with current JWT ---
   const handleExistingAccept = async () => {
@@ -49,10 +52,10 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${result.accessToken}`;
       onLoginSuccess(result.accessToken);
       setAccepted(true);
-      toast.success('Joined! Redirecting…');
+      toast.success(t('invite.welcome'));
       setTimeout(() => navigate('/groups'), 1500);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to accept invitation');
+      toast.error(err instanceof Error ? err.message : t('invite.acceptFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -73,68 +76,43 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
       localStorage.setItem('tokenExpiration', expiration);
       axios.defaults.headers.common['Authorization'] = `Bearer ${result.accessToken}`;
       onLoginSuccess(result.accessToken);
-      toast.success('Account created! Welcome aboard.');
+      toast.success(t('invite.accountCreated'));
       navigate('/groups');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to accept invitation');
+      toast.error(err instanceof Error ? err.message : t('invite.acceptFailed'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const brandHeader = (
-    <div className="text-center mb-8">
-      <div className="inline-flex items-center justify-center w-12 h-12 bg-brand rounded-xl mb-3">
-        <span className="text-white font-black text-xl">✦</span>
-      </div>
-      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Jirens</h1>
-      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-0.5">
-        Shared Expenses
-      </p>
-    </div>
-  );
-
   if (loadError) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          {brandHeader}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm text-center">
-            <p className="text-sm text-destructive">{loadError}</p>
-          </div>
-        </div>
-      </div>
+      <PublicShell>
+        <p className="text-center text-[13px] font-semibold text-negative">{loadError}</p>
+      </PublicShell>
     );
   }
 
   if (!info) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm text-center">
-          {brandHeader}
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        </div>
-      </div>
+      <PublicShell>
+        <p className="text-center text-[13px] text-muted-2">{t('invite.loading')}</p>
+      </PublicShell>
     );
   }
 
   if (info.status !== 'pending') {
     const messages: Record<string, string> = {
-      expired: 'This invitation has expired.',
-      revoked: 'This invitation was revoked.',
-      accepted: 'This invitation has already been accepted.',
+      expired: t('invite.expired'),
+      revoked: t('invite.revoked'),
+      accepted: t('invite.alreadyAccepted'),
     };
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          {brandHeader}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm text-center">
+      <PublicShell>
             <p className="text-sm text-muted-foreground">
-              {messages[info.status] ?? 'This invitation is no longer valid.'}
+              {messages[info.status] ?? t('invite.noLongerValid')}
             </p>
-          </div>
-        </div>
-      </div>
+          </PublicShell>
     );
   }
 
@@ -151,38 +129,30 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
   // --- Existing member: not logged in ---
   if (info.isExistingMember && !isLoggedIn) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          {brandHeader}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-foreground mb-1">You're invited!</h2>
+      <PublicShell>
+            <h2 className="text-lg font-bold text-foreground mb-1">{t('invite.youreInvited')}</h2>
             {inviteContext}
             <p className="text-sm text-muted-foreground mb-4">
-              Log in with your existing account to accept this invitation.
+              {t('invite.loginToAccept')}
             </p>
             <Button
               className="w-full bg-brand hover:bg-brand/90 text-white font-semibold"
               onClick={() => navigate(`/login?redirect=/invite/${token}`)}
             >
-              Log in to accept
+              {t('invite.logInToAccept')}
             </Button>
-          </div>
-        </div>
-      </div>
+          </PublicShell>
     );
   }
 
   // --- Existing member: logged in ---
   if (info.isExistingMember) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          {brandHeader}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-foreground mb-1">You're invited!</h2>
+      <PublicShell>
+            <h2 className="text-lg font-bold text-foreground mb-1">{t('invite.youreInvited')}</h2>
             {inviteContext}
             {accepted ? (
-              <p className="text-sm text-brand font-medium">Joined! Redirecting…</p>
+              <p className="text-sm text-brand font-medium">{t('invite.welcome')}</p>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -194,25 +164,20 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
                   onClick={handleExistingAccept}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Joining…' : 'Accept & Join'}
+                  {isSubmitting ? 'Joining…' : t('invite.acceptAndJoin')}
                 </Button>
               </>
             )}
-          </div>
-        </div>
-      </div>
+          </PublicShell>
     );
   }
 
   // --- New user (stub): create account ---
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        {brandHeader}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-foreground mb-1">You're invited!</h2>
+    <PublicShell>
+          <h2 className="text-lg font-bold text-foreground mb-1">{t('invite.youreInvited')}</h2>
           {inviteContext}
-          <p className="text-sm text-muted-foreground mb-4">Create your account to join the group.</p>
+          <p className="text-sm text-muted-foreground mb-4">{t('invite.createToJoin')}</p>
 
           <form onSubmit={handleStubAccept} className="space-y-4">
             {info.requiresEmail ? (
@@ -266,11 +231,9 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
               className="w-full bg-brand hover:bg-brand/90 text-white font-semibold"
               disabled={isSubmitting || !password}
             >
-              {isSubmitting ? 'Creating account…' : 'Create account & Join'}
+              {isSubmitting ? t('invite.creatingAccount') : t('invite.createAndJoin')}
             </Button>
           </form>
-        </div>
-      </div>
-    </div>
-  );
+        </PublicShell>
+    );
 }

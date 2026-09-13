@@ -9,6 +9,8 @@ import type { DueDate } from '@/types/expense';
 
 interface DueDateDialogProps {
   groupId: number;
+  /** Nombre del grupo, para la confirmación en palabras. Sin él, el copy habla en singular. */
+  groupName?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (dueDate: DueDate) => void;
@@ -36,8 +38,8 @@ const ADVANCES = [0, 1, 3, 5, 7];
  * un `type="number"` abre el teclado y obliga a apuntar a una flechita de 2mm, y los valores
  * útiles son media docena. Es más rápido tocar "cada 2 meses" que tipearlo.
  */
-export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDateDialogProps) {
-  const { t } = useTranslation();
+export function DueDateDialog({ groupId, groupName, open, onOpenChange, onCreated }: DueDateDialogProps) {
+  const { t, i18n } = useTranslation();
 
   const [label, setLabel] = useState('');
   // Se pide la próxima fecha concreta, no "el día del mes": es como la gente lee la boleta
@@ -88,6 +90,17 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
       setIsLoading(false);
     }
   };
+
+  /** El día en que sale el aviso: el vencimiento menos los días de anticipación. */
+  const noticeDate = (() => {
+    const due = parseLocalDate(nextDue);
+    const notice = new Date(due);
+    notice.setDate(due.getDate() - notifyDaysBefore);
+    return notice.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-AR', {
+      day: 'numeric',
+      month: 'long',
+    });
+  })();
 
   const chip = (active: boolean) =>
     `h-9 min-w-9 px-3 rounded-full text-sm cursor-pointer transition-colors ${
@@ -160,6 +173,18 @@ export function DueDateDialog({ groupId, open, onOpenChange, onCreated }: DueDat
               ))}
             </div>
           </div>
+
+          {/*
+            Lo que se acaba de configurar, dicho en palabras. Las tres opciones de arriba son
+            parámetros; esta línea es la consecuencia, que es lo que la persona quiere confirmar.
+          */}
+          <p className="rounded-card border border-brand-wash-line bg-brand-wash px-3.5 py-3 text-[11.5px] font-medium leading-[1.5] text-brand-ink">
+            {t(groupName ? 'dueDates.confirmationGroup' : 'dueDates.confirmationSolo', {
+              group: groupName,
+              date: noticeDate,
+              cadence: t(`dueDates.cadenceEvery${everyNMonths}`),
+            })}
+          </p>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

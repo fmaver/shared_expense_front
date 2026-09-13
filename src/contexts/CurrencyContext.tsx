@@ -12,10 +12,12 @@ interface CurrencyContextValue {
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
+// Los pesos se muestran sin centavos: son cifras de seis dígitos y el diseño las escribe
+// enteras ("$575.000"). El dólar sí los conserva, donde dos centavos son plata.
 const ARS_FORMATTER = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 0,
 });
 
 const USD_FORMATTER = new Intl.NumberFormat('es-AR', {
@@ -24,15 +26,20 @@ const USD_FORMATTER = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 2,
 });
 
+/** Intl mete un espacio duro entre el signo y la cifra; el diseño los escribe pegados. */
+function tighten(formatted: string): string {
+  return formatted.replace(/\u00A0/g, '');
+}
+
 function formatAmount(amount: number, currency: string | undefined, displayMode: DisplayMode, blueRate: number | null): string {
   const curr = currency ?? 'ARS';
   if (displayMode === 'ars' && curr === 'USD' && blueRate !== null) {
-    return ARS_FORMATTER.format(amount * blueRate);
+    return tighten(ARS_FORMATTER.format(amount * blueRate));
   }
   if (curr === 'USD') {
-    return USD_FORMATTER.format(amount);
+    return tighten(USD_FORMATTER.format(amount));
   }
-  return ARS_FORMATTER.format(amount);
+  return tighten(ARS_FORMATTER.format(amount));
 }
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {

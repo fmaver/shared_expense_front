@@ -8,7 +8,9 @@ import type { DueDate } from '@/types/expense';
 import { useScroll } from '@/contexts/ScrollContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { DueDateDialog } from '@/components/expenses/DueDateDialog';
+import { useGroup } from '@/hooks/useGroups';
 
 /**
  * La misma regla que calcula las fechas en el backend, para poder mostrar el próximo
@@ -45,6 +47,7 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = explicitGroupId ?? parseInt(gp!, 10);
   const { t, i18n } = useTranslation();
+  const { data: group } = useGroup(groupId);
   const { notifyScroll } = useScroll();
 
   const [dueDates, setDueDates] = useState<DueDate[]>([]);
@@ -89,16 +92,25 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
     [dueDates, today],
   );
 
-  const formatNext = (d: DueDate) => {
+  /** Cuántos días faltan y la fecha en palabras: lo que se lee de un vencimiento. */
+  const describe = (d: DueDate) => {
     const next = nextOccurrence(d, today);
-    const days = Math.round((next.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000);
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const days = Math.round((next.getTime() - startOfToday.getTime()) / 86400000);
     const date = next.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-AR', {
       day: 'numeric',
       month: 'long',
     });
-    if (days === 0) return t('dueDates.dueToday', { date });
-    if (days === 1) return t('dueDates.dueTomorrow', { date });
-    return t('dueDates.dueIn', { date, days });
+    const eyebrow = days === 0
+      ? t('dueDates.eyebrowToday')
+      : days === 1
+        ? t('dueDates.eyebrowTomorrow')
+        : t('dueDates.eyebrowInDays', { count: days });
+    const notice = d.notifyDaysBefore === 0
+      ? t('dueDates.noticeSameDay')
+      : t('dueDates.noticeBefore', { count: d.notifyDaysBefore });
+    // Lo que vence hoy o mañana ya no es un dato, es una urgencia.
+    return { eyebrow, date, notice, urgent: days <= 1 };
   };
 
   return (
@@ -107,7 +119,7 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
         className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
         onScroll={(e) => notifyScroll((e.target as HTMLDivElement).scrollTop)}
       >
-        <div className="p-4 space-y-3 max-w-2xl mx-auto w-full">
+        <div className="mx-auto w-full max-w-2xl space-y-2.5 px-5 py-4 lg:px-7 lg:py-6">
           {loading ? (
             <>
               <Skeleton className="h-16 w-full rounded-xl" />
@@ -127,39 +139,60 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
             </div>
           ) : (
             <>
-              {sorted.map((d) => (
-                <div
-                  key={d.id}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3.5"
-                >
-                  <div className="h-10 w-10 shrink-0 rounded-full bg-brand/10 flex items-center justify-center">
-                    <CalendarClock className="h-5 w-5 text-brand" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">{d.label}</p>
-                    <p className="text-sm text-muted-foreground">{formatNext(d)}</p>
-                    <p className="text-xs text-muted-foreground/80 mt-0.5">
-                      {t(`dueDates.cadence${d.everyNMonths}`)}
-                      {' · '}
-                      {d.notifyDaysBefore === 0
-                        ? t('dueDates.sameDay')
-                        : t('dueDates.nDaysBefore', { count: d.notifyDaysBefore })}
+              {sorted.map((d) => {
+                const { eyebrow, date, notice, urgent } = describe(d);
+                return (
+                  <div
+                    key={d.id}
+                    className={cn(
+                      'rounded-card border p-4',
+                      urgent
+                        ? 'border-negative-wash-line bg-negative-wash'
+                        : 'border-line bg-surface shadow-card',
+                    )}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span
+                        className={cn(
+                          'text-[11px] font-semibold uppercase tracking-[0.14em]',
+                          urgent ? 'text-negative-ink' : 'text-muted-2',
+                        )}
+                      >
+                        {eyebrow}
+                      </span>
+                      <span className="shrink-0 text-[11px] font-medium text-muted-2">
+                        {t(`dueDates.cadence${d.everyNMonths}`)}
+                      </span>
+                    </div>
+
+                    <div className="mt-1.5 flex items-start gap-2">
+                      <p className="min-w-0 flex-1 truncate text-[15px] font-bold text-foreground">
+                        {d.label}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(d.id)}
+                        aria-label={t('dueDates.delete')}
+                        className="-mt-0.5 shrink-0 cursor-pointer p-1 text-muted-3 hover:text-negative"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <p className="mt-1 text-[12px] font-medium text-muted-1">
+                      {t('dueDates.dueOn', { date })} · {notice}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(d.id)}
-                    aria-label={t('dueDates.delete')}
-                    className="p-2 text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-              <Button variant="outline" onClick={() => setAdding(true)} className="w-full">
-                <Plus className="h-4 w-4 mr-1.5" />
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-card border border-dashed border-line-strong py-3 text-[12.5px] font-bold text-foreground transition-colors hover:bg-surface-sunken"
+              >
+                <Plus className="h-4 w-4" />
                 {t('dueDates.add')}
-              </Button>
+              </button>
             </>
           )}
         </div>
@@ -167,6 +200,7 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
 
       <DueDateDialog
         groupId={groupId}
+        groupName={group?.groupType === 'personal' ? undefined : group?.name}
         open={adding}
         onOpenChange={setAdding}
         onCreated={(created) => setDueDates((current) => [...current, created])}

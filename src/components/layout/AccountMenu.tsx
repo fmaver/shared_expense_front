@@ -24,7 +24,7 @@ interface AccountMenuProps {
 export function AccountMenu({ onLogout }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
-  const { theme, toggle } = useTheme();
+  const { resolved: theme, toggle } = useTheme();
   const { i18n } = useTranslation();
   const currentLang = i18n.language.startsWith('es') ? 'es' : 'en';
   const toggleLang = () => {
