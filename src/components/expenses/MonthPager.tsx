@@ -119,7 +119,7 @@ export function MonthPager({ year, month, onNavigate, isSettled = false, classNa
                   className={cn(
                     'h-8 cursor-pointer rounded-chip text-[12px] font-semibold capitalize transition-colors',
                     isActive
-                      ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                      ? 'bg-primary text-primary-foreground'
                       : isToday
                         ? 'text-brand-ink hover:bg-surface-sunken'
                         : 'text-foreground hover:bg-surface-sunken',

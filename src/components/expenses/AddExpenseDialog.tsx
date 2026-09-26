@@ -384,7 +384,7 @@ export function AddExpenseDialog({
                     mode === option.value
                       ? option.value === 'expense'
                         ? 'bg-negative text-white dark:text-ink'
-                        : 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                        : 'bg-primary text-primary-foreground'
                       : 'text-muted-1',
                   )}
                 >
@@ -414,7 +414,7 @@ export function AddExpenseDialog({
                   className={cn(
                     'h-7 rounded-pill px-3 text-[11.5px] font-bold transition-colors',
                     form.currency === currency
-                      ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                      ? 'bg-primary text-primary-foreground'
                       : 'border border-line-strong text-muted-1',
                     (disabled || mode === 'loan') ? 'cursor-default opacity-60' : 'cursor-pointer',
                   )}
@@ -661,7 +661,7 @@ export function AddExpenseDialog({
                         className={cn(
                           'h-9 flex-1 cursor-pointer rounded-pill text-[12px] font-bold transition-colors',
                           form.splitStrategy.type === type
-                            ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                            ? 'bg-primary text-primary-foreground'
                             : 'border border-line-strong text-muted-1',
                         )}
                       >
@@ -774,7 +774,7 @@ export function AddExpenseDialog({
               <button
                 type="button"
                 onClick={() => setPicker(null)}
-                className="h-11 w-full cursor-pointer rounded-[12px] bg-ink text-[13px] font-bold text-paper dark:bg-paper dark:text-ink"
+                className="h-11 w-full cursor-pointer rounded-[12px] bg-primary text-[13px] font-bold text-primary-foreground"
               >
                 {t('expenseForm.done')}
               </button>

@@ -1,32 +1,32 @@
 /**
  * Paleta de los gráficos — una sola fuente de verdad para recharts.
  *
- * Son los mismos colores que el resto de la app (handoff §3): los seis de avatar para lo
- * categórico, y los semánticos anclados en `positive` / `brand` / `negative` para que un
- * ingreso sea verde y un gasto grupal naranja en cualquier gráfico, igual que en las cifras.
+ * Piel violeta (ADDENDUM-violeta.md): los semánticos vienen de v2.1.0 y se usan sólo para
+ * barras y puntos, nunca para texto — ingreso verde salvia, personal ocre, grupos y el mes en
+ * curso violeta, el mes anterior gris pizarra. Así un ingreso se lee igual en cualquier gráfico.
  *
  * Van como hex y no como `hsl(var(--token))` porque recharts los escribe en atributos SVG,
- * donde una variable CSS no resuelve. Si la paleta de §3 cambia, cambian acá también.
+ * donde una variable CSS no resuelve. Si la paleta cambia, cambian acá también.
  */
 
-/** Paleta categórica — los seis colores de avatar, en orden. */
+/** Paleta categórica — arranca por los cuatro semánticos y sigue con tonos de la paleta. */
 export const CHART_COLORS = [
-  '#E98A2B', // brand
-  '#8C5A2B', // marrón
-  '#6B4A8C', // violeta
+  '#7C6BC4', // violeta — grupos
+  '#C99A5B', // ocre — personal
+  '#6FA97D', // salvia — ingreso
+  '#8A93A6', // pizarra — mes anterior
+  '#A99BEA', // brand-soft
   '#1C5A8C', // azul
-  '#1F8A5B', // verde
-  '#C2452D', // rojo
-  '#B8651A', // brand-ink
-  '#1F6B57', // verde USD
-  '#8E2617', // negative-ink
+  '#C62828', // negative
+  '#4A3C96', // violeta profundo
+  '#156B45', // positive
 ] as const;
 
 /** Colores fijos por rol, para que el significado no cambie de gráfico en gráfico. */
 export const SERIES = {
-  income: '#1F8A5B',    // positive — lo que entra
-  personal: '#C2452D',  // negative — lo que gastás vos
-  groups: '#E98A2B',    // brand — lo que te toca de los grupos
-  thisMonth: '#E98A2B', // brand — el período en curso
-  lastMonth: '#C9BEB0', // muted-3 — la referencia anterior
+  income: '#6FA97D',    // lo que entra
+  personal: '#C99A5B',  // lo que gastás vos
+  groups: '#7C6BC4',    // lo que te toca de los grupos
+  thisMonth: '#7C6BC4', // el período en curso
+  lastMonth: '#8A93A6', // la referencia anterior
 } as const;

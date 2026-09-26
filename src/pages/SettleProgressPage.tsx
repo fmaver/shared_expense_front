@@ -300,7 +300,7 @@ export function SettleProgressPage() {
           type="button"
           disabled={busy}
           onClick={async () => { setBusy(true); try { await settle(); } finally { setBusy(false); } }}
-          className="mt-3 h-12 w-full cursor-pointer rounded-[12px] bg-ink text-[13.5px] font-bold text-paper transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-paper dark:text-ink"
+          className="mt-3 h-12 w-full cursor-pointer rounded-[12px] bg-primary text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {t(isOneTime ? 'settle.closeGroup' : 'settle.closeMonth', { month: monthName.toLocaleLowerCase() })}
         </button>

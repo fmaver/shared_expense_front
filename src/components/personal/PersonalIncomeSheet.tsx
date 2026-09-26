@@ -175,7 +175,7 @@ export function PersonalIncomeSheet({
                   className={cn(
                     'h-7 cursor-pointer rounded-pill px-3 text-[11.5px] font-bold transition-colors',
                     currency === c
-                      ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                      ? 'bg-primary text-primary-foreground'
                       : 'border border-line-strong text-muted-1',
                   )}
                 >
@@ -237,7 +237,7 @@ export function PersonalIncomeSheet({
                     onOpenChange(false);
                     navigate(`/personal/incomes?year=${year}&month=${month}`);
                   }}
-                  className="h-9 flex-1 cursor-pointer rounded-pill bg-ink text-[12px] font-bold text-paper transition-opacity hover:opacity-90 dark:bg-paper dark:text-ink"
+                  className="h-9 flex-1 cursor-pointer rounded-pill bg-primary text-[12px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
                 >
                   {t('personalAdd.duplicateSeeExisting')}
                 </button>

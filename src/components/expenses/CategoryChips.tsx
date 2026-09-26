@@ -47,7 +47,7 @@ export function CategoryChips({
           className={cn(
             'h-9 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[12px] font-bold transition-colors',
             value === category.name
-              ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+              ? 'bg-primary text-primary-foreground'
               : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
             disabled && 'cursor-default opacity-60',
           )}

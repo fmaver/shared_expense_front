@@ -178,7 +178,7 @@ export function GroupSettingsPage() {
           <button
             type="submit"
             disabled={isRenaming || !name.trim()}
-            className="h-10 shrink-0 cursor-pointer rounded-[12px] bg-ink px-4 text-[12.5px] font-bold text-paper transition-opacity hover:opacity-90 disabled:opacity-40 dark:bg-paper dark:text-ink"
+            className="h-10 shrink-0 cursor-pointer rounded-[12px] bg-primary px-4 text-[12.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {isRenaming ? t('settings.saving') : t('settings.save')}
           </button>

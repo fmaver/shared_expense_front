@@ -41,7 +41,7 @@ export function PickerOverlay({
         <button
           type="button"
           onClick={onClose}
-          className="h-11 w-full cursor-pointer rounded-[12px] bg-ink text-[13px] font-bold text-paper dark:bg-paper dark:text-ink"
+          className="h-11 w-full cursor-pointer rounded-[12px] bg-primary text-[13px] font-bold text-primary-foreground"
         >
           {t('expenseForm.done')}
         </button>
@@ -80,7 +80,7 @@ export function PaymentPicker({
             className={cn(
               'h-9 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
               paymentType === type
-                ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                ? 'bg-primary text-primary-foreground'
                 : 'border border-line-strong text-muted-1',
             )}
           >
@@ -131,7 +131,7 @@ export function StartMonthPicker({
             onClick={() => onChange(y, month)}
             className={cn(
               'h-9 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold tabular-nums transition-colors',
-              y === year ? 'bg-ink text-paper dark:bg-paper dark:text-ink' : 'border border-line-strong text-muted-1',
+              y === year ? 'bg-primary text-primary-foreground' : 'border border-line-strong text-muted-1',
             )}
           >
             {y}

@@ -48,8 +48,8 @@ export function SettleUpCard({ group, currentMemberId, year, month }: SettleUpCa
       <Link
         to={`/groups/${group.groupId}/settle?year=${year}&month=${month}`}
         className={cn(
-          'flex h-9 shrink-0 items-center rounded-pill bg-ink px-4 text-[12px] font-bold text-paper',
-          'transition-opacity hover:opacity-90 dark:bg-paper dark:text-ink',
+          'flex h-9 shrink-0 items-center rounded-pill bg-primary px-4 text-[12px] font-bold text-primary-foreground',
+          'transition-opacity hover:opacity-90',
         )}
       >
         {t('personal.settleAction')}

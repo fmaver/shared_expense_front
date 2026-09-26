@@ -95,7 +95,7 @@ export function GroupBalanceCard({
         <button
           type="button"
           onClick={onOpenSettle}
-          className="h-11 flex-1 cursor-pointer rounded-[12px] bg-ink text-[13px] font-bold text-paper transition-opacity hover:opacity-90 dark:bg-paper dark:text-ink"
+          className="h-11 flex-1 cursor-pointer rounded-[12px] bg-primary text-[13px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
         >
           {isOneTime && !owed ? t('expenses.payMyPart') : t('expenses.settleAccounts')}
         </button>

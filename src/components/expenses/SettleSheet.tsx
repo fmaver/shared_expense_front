@@ -170,7 +170,7 @@ export function SettleSheet({
                   <button
                     type="button"
                     onClick={notifyEveryone}
-                    className="h-12 w-full cursor-pointer rounded-[12px] bg-ink text-[13.5px] font-bold text-paper transition-opacity hover:opacity-90 dark:bg-paper dark:text-ink"
+                    className="h-12 w-full cursor-pointer rounded-[12px] bg-primary text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
                   >
                     {notifyLabel}
                   </button>

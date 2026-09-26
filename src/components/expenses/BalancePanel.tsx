@@ -131,7 +131,7 @@ export function BalancePanel({
                   type="button"
                   disabled={busyIndex !== null}
                   onClick={() => markPaid(transfer, index)}
-                  className="h-8 shrink-0 cursor-pointer rounded-pill bg-ink px-3.5 text-[11.5px] font-bold text-paper transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-paper dark:text-ink"
+                  className="h-8 shrink-0 cursor-pointer rounded-pill bg-primary px-3.5 text-[11.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {busyIndex === index ? '…' : t('balance.markDone')}
                 </button>

@@ -149,7 +149,7 @@ export function ExpenseListHeader({
               className={cn(
                 'h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[11.5px] font-bold transition-colors',
                 scope === chip.value
-                  ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                  ? 'bg-primary text-primary-foreground'
                   : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
               )}
             >

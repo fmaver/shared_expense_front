@@ -388,7 +388,7 @@ export function ExpenseDetailDialog({
                   className={cn(
                     'h-11 flex-1 rounded-[12px] text-[13px] font-bold transition-colors',
                     canEdit
-                      ? 'cursor-pointer bg-ink text-paper hover:bg-ink/90 dark:bg-paper dark:text-ink dark:hover:bg-paper/90'
+                      ? 'cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90'
                       : 'cursor-default bg-surface-sunken text-muted-3',
                   )}
                 >
