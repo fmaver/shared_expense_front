@@ -1,20 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ChevronLeft, ImagePlus, X } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Segmented } from '@/components/ui/Segmented';
 import { useCategories } from '@/hooks/useCategories';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { parseExpenseImage } from '@/api/expenses';
 import { createRecurringGroupExpense } from '@/api/recurringExpenses';
 import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
 } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { AmountInput } from './AmountInput';
+import { FromPhotoPill, ScanReading, ScanReviewNotice } from './ScanReview';
+import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { CategoryChips } from './CategoryChips';
 import { ContextCard, ContextRow } from './ContextRows';
 import { DatePicker, PaymentPicker } from './ContextPickers';
@@ -41,6 +42,11 @@ interface AddExpenseDialogProps {
   isOneTimeGroup?: boolean;
   /** Con qué pestaña abre. `loan` es el viejo "Transferencia": un pago entre dos personas. */
   initialMode?: Mode;
+  /**
+   * Una foto de ticket elegida desde el "+" (V6.6): la hoja abre leyéndola y después muestra
+   * el formulario completado para revisar.
+   */
+  scanFile?: File | null;
 }
 
 interface FormState {
@@ -111,7 +117,7 @@ function buildInitial(
 export function AddExpenseDialog({
   open, onOpenChange, onSubmit, members, initialExpense, isSettled = false,
   hidePayerAndSplit = false, currentMemberId, groupId, onSuccess,
-  isRecurringEdit = false, isOneTimeGroup = false, initialMode = 'expense',
+  isRecurringEdit = false, isOneTimeGroup = false, initialMode = 'expense', scanFile = null,
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
@@ -128,8 +134,7 @@ export function AddExpenseDialog({
   const [isRecurring, setIsRecurring] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [scanNote, setScanNote] = useState<string | null>(null);
+  const scan = useReceiptScan(groupId);
 
   useEffect(() => {
     if (!open) return;
@@ -138,7 +143,8 @@ export function AddExpenseDialog({
     setPicker(null);
     setIsRecurring(false);
     setError('');
-    setScanNote(null);
+    scan.reset();
+    if (scanFile) scanImage(scanFile);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -167,28 +173,23 @@ export function AddExpenseDialog({
 
   /* ── Escaneo de ticket ────────────────────────────────────────────────────────────── */
   const scanImage = async (file: File) => {
-    if (groupId == null || scanning) return;
-    setScanning(true);
-    setScanNote(null);
+    if (groupId == null || scan.scanning) return;
     setError('');
     try {
-      const draft = await parseExpenseImage(groupId, file);
-      set({
-        ...(draft.amount != null ? { amountText: formatKeypadAmount(draft.amount) } : {}),
-        description: draft.description,
-        category: draft.category,
-        date: draft.date,
-        paymentType: draft.paymentType,
-        installments: draft.installments,
-        currency: draft.currency,
+      await scan.scan(file, draft => {
+        set({
+          ...(draft.amount != null ? { amountText: formatKeypadAmount(draft.amount) } : {}),
+          description: draft.description,
+          category: draft.category,
+          date: draft.date,
+          paymentType: draft.paymentType,
+          installments: draft.installments,
+          currency: draft.currency,
+        });
+        return draftFields(draft, { payment: !isOneTimeGroup });
       });
-      setScanNote(draft.confidence === 'low'
-        ? t('expenseForm.scanLowConfidence')
-        : t('expenseForm.scanFilled'));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.submitFailed'));
-    } finally {
-      setScanning(false);
     }
   };
 
@@ -335,28 +336,6 @@ export function AddExpenseDialog({
             {isEdit ? t('expenseForm.editExpense') : t('expenseForm.addExpense')}
           </DialogTitle>
           <div className="flex items-center gap-1">
-            {!isEdit && groupId != null && (
-              <label
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-full text-muted-1',
-                  scanning ? 'opacity-50' : 'cursor-pointer hover:bg-surface-sunken hover:text-foreground',
-                )}
-                title={t('expenseForm.scanImage')}
-              >
-                <ImagePlus className="h-4 w-4" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  disabled={scanning || disabled}
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (file) scanImage(file);
-                  }}
-                />
-              </label>
-            )}
             <button
               type="button"
               onClick={() => onOpenChange(false)}
@@ -369,6 +348,9 @@ export function AddExpenseDialog({
         </div>
 
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
+          {scan.scanning && <ScanReading receipt={scan.receipt} />}
+          <div hidden={scan.scanning}>
+          <ScanReviewNotice receipt={scan.receipt} confidence={scan.confidence} />
           {/* ── Segmented: qué estás anotando ──────────────────────────────────────── */}
           {canPickMode && (
             <Segmented
@@ -383,7 +365,12 @@ export function AddExpenseDialog({
 
           {/* ── El monto, que es de lo que se trata la pantalla ────────────────────── */}
           <div className="pt-5 text-center">
-            <AmountInput value={form.amountText} onChange={v => set({ amountText: v })} disabled={disabled} />
+            <AmountInput
+              value={form.amountText}
+              onChange={v => { set({ amountText: v }); scan.touch('amount'); }}
+              disabled={disabled}
+            />
+            {scan.fromPhoto.has('amount') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
 
             <div className="mt-2.5 flex justify-center gap-1.5">
               {(['ARS', 'USD'] as const).map(currency => (
@@ -414,14 +401,16 @@ export function AddExpenseDialog({
             value={form.description}
             maxLength={255}
             disabled={disabled}
-            onChange={e => set({ description: e.target.value })}
+            onChange={e => { set({ description: e.target.value }); scan.touch('description'); }}
             placeholder={t('expenseForm.whatWasIt')}
-            className="mt-4 w-full border-0 bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-3"
+            className={cn(
+              'mt-4 w-full bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-3',
+              scan.fromPhoto.has('description')
+                ? 'rounded-[12px] border border-brand-soft px-3 py-2'
+                : 'border-0',
+            )}
           />
-
-          {scanNote && (
-            <p className="mt-2 text-center text-[11.5px] font-medium text-brand-ink">{scanNote}</p>
-          )}
+          {scan.fromPhoto.has('description') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
 
           {/* ── Categorías ─────────────────────────────────────────────────────────── */}
           {mode === 'expense' && (
@@ -465,6 +454,7 @@ export function AddExpenseDialog({
               value={dateLabel}
               onClick={() => setPicker('date')}
               disabled={disabled}
+              badge={scan.fromPhoto.has('date') ? <FromPhotoPill /> : undefined}
             />
             {showPayment && (
               <ContextRow
@@ -472,6 +462,7 @@ export function AddExpenseDialog({
                 value={paymentLabel}
                 onClick={() => setPicker('payment')}
                 disabled={disabled}
+                badge={scan.fromPhoto.has('payment') ? <FromPhotoPill /> : undefined}
               />
             )}
           </ContextCard>
@@ -544,6 +535,7 @@ export function AddExpenseDialog({
                   : mode === 'loan' ? t('expenseForm.saveLoan') : t('expenseForm.saveExpense')}
             </button>
           </div>
+          </div>
         </div>
 
         {/* ── Selectores: cada pastilla abre el suyo, encima de la hoja ───────────── */}
@@ -606,14 +598,14 @@ export function AddExpenseDialog({
               )}
 
               {picker === 'date' && (
-                <DatePicker value={form.date} onChange={date => set({ date })} />
+                <DatePicker value={form.date} onChange={date => { set({ date }); scan.touch('date'); }} />
               )}
 
               {picker === 'payment' && (
                 <PaymentPicker
                   paymentType={form.paymentType}
                   installments={form.installments}
-                  onChange={next => set(next)}
+                  onChange={next => { set(next); scan.touch('payment'); }}
                 />
               )}
 

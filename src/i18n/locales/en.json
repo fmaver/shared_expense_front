@@ -193,7 +193,8 @@
     "members_one": "{{count}} member",
     "members_other": "{{count}} members",
     "addExpenseDesc": "Add a shared expense",
-    "transferDesc": "Record a payment between members"
+    "transferDesc": "Record a payment between members",
+    "addByHand": "Add by hand"
   },
   "charts": {
     "title": "Charts",
@@ -369,11 +370,8 @@
     "recurringEditNote": "Changes will apply to this month and all future occurrences.",
     "categoryRequired": "Pick a category",
     "submitFailed": "Could not save the expense",
-    "scanImage": "Scan a photo",
     "scanning": "Reading the image…",
     "scanHint": "Upload or paste a receipt or payment screenshot.",
-    "scanLowConfidence": "Check these values — the image was hard to read.",
-    "scanFilled": "Fields filled from the image. Review before saving.",
     "whatWasIt": "What was it?",
     "saveExpense": "Save expense",
     "saveLoan": "Save loan",
@@ -977,5 +975,14 @@
   },
   "search": {
     "open": "Search"
+  },
+  "scan": {
+    "menuTitle": "Scan a receipt",
+    "menuDesc": "Take a photo or pick one from your gallery",
+    "fromPhoto": "from photo",
+    "reading": "Reading the receipt…",
+    "read": "<0>We read the receipt.</0> Check what's marked “from photo” before saving.",
+    "lowConfidence": "We couldn't read everything: fill in what's missing.",
+    "thumbnailAlt": "Receipt photo"
   }
 }

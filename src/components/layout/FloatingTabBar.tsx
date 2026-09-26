@@ -1,19 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
 import {
-  ArrowLeftRight, PieChart, Plus, User, Users,
+  ArrowLeftRight, Camera, PenLine, PieChart, Plus, User, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { GroupExpenseLauncher, type LauncherMode } from './GroupExpenseLauncher';
+import { useScanPicker } from '@/components/expenses/ScanPicker';
+
+/** Cuánto hay que mantener apretado el "+" para ir directo a la cámara. */
+const LONG_PRESS_MS = 500;
 
 interface LauncherState {
   open: boolean;
   mode: LauncherMode;
   presetGroupId?: number;
+  scanFile?: File | null;
 }
 
 const CLOSED: LauncherState = { open: false, mode: 'expense' };
@@ -49,10 +54,13 @@ export function FloatingTabBar() {
   const [launcher, setLauncher] = useState<LauncherState>(CLOSED);
   const closeLauncher = useCallback(() => setLauncher(CLOSED), []);
 
-  const openLauncher = useCallback((mode: LauncherMode, presetGroupId?: number) => {
+  const openLauncher = useCallback((mode: LauncherMode, presetGroupId?: number, scanFile?: File) => {
     setSpeedDialOpen(false);
-    setLauncher({ open: true, mode, presetGroupId });
+    setLauncher({ open: true, mode, presetGroupId, scanFile: scanFile ?? null });
   }, []);
+
+  /* Escanear: la foto elegida abre la hoja del gasto leyéndola (V6.6). */
+  const scanPicker = useScanPicker(file => openLauncher('expense', groupId ?? undefined, file));
 
   const isPersonal = location.pathname === '/personal' || location.pathname.startsWith('/personal/');
 
@@ -67,42 +75,55 @@ export function FloatingTabBar() {
     { to: '/personal/charts', icon: PieChart, label: t('mobileNav.numbers') },
   ];
 
-  const menuItems = inGroup
-    ? [
-        {
-          icon: Plus,
-          label: t('fab.addExpense'),
-          desc: t('fab.addExpenseDesc'),
-          onClick: () => openLauncher('expense', groupId),
-        },
-        {
-          icon: ArrowLeftRight,
-          label: t('fab.transfer'),
-          desc: t('fab.transferDesc'),
-          onClick: () => openLauncher('transfer', groupId),
-        },
-      ]
-    : isPersonal
-    /*
-      En lo personal el "+" no abre un menú: abre la matriz. Eran cuatro entradas verticales que
-      decían lo mismo que las dos preguntas de la grilla, y un menú que lleva a un formulario
-      donde se puede cambiar la elección es un paso de más.
-    */
+  /*
+    Tres caminos en el "+" (V6.6): cargar a mano, escanear un ticket y la transferencia, que
+    el diseño no dibuja pero la sección 7 del README exige conservar acá. Va en una fila más
+    liviana porque se usa mucho menos. En lo personal el "+" abre su propio panel.
+  */
+  const scanItem = {
+    icon: Camera,
+    label: t('scan.menuTitle'),
+    desc: t('scan.menuDesc'),
+    tone: 'scan' as const,
+    onClick: () => { setSpeedDialOpen(false); scanPicker.pickAny(); },
+  };
+  const menuItems = isPersonal && !inGroup
     ? []
     : [
         {
-          icon: Plus,
-          label: t('fab.addExpense'),
+          icon: PenLine,
+          label: t('fab.addByHand'),
           desc: t('fab.addExpenseDesc'),
-          onClick: () => openLauncher('expense'),
+          tone: 'brand' as const,
+          onClick: () => openLauncher('expense', groupId ?? undefined),
         },
+        scanItem,
         {
           icon: ArrowLeftRight,
           label: t('fab.transfer'),
           desc: t('fab.transferDesc'),
-          onClick: () => openLauncher('transfer'),
+          tone: 'light' as const,
+          onClick: () => openLauncher('transfer', groupId ?? undefined),
         },
       ];
+
+  /*
+    Mantener apretado el "+" va directo a la cámara. Se decide al soltar y no con un timer:
+    iOS sólo abre el selector de archivos desde el toque mismo, y el `pointerup` lo es.
+  */
+  const pressStart = useRef<number | null>(null);
+  const longPressed = useRef(false);
+  const onFabPointerDown = () => { pressStart.current = performance.now(); longPressed.current = false; };
+  const onFabPointerUp = () => {
+    const start = pressStart.current;
+    pressStart.current = null;
+    if (start === null || performance.now() - start < LONG_PRESS_MS) return;
+    longPressed.current = true;
+    setSpeedDialOpen(false);
+    if (isPersonal && !inGroup) personalActions?.scanWithCamera();
+    else scanPicker.pickCamera();
+  };
+  const onFabPointerCancel = () => { pressStart.current = null; };
 
   return (
     <>
@@ -132,12 +153,23 @@ export function FloatingTabBar() {
               onClick={item.onClick}
               className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-white/20 active:bg-white/25 dark:hover:bg-white/10 dark:active:bg-white/15"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand">
-                <Icon className="h-5 w-5" />
+              <span
+                className={cn(
+                  'flex shrink-0 items-center justify-center rounded-lg',
+                  item.tone === 'light' ? 'h-8 w-8 bg-surface-sunken/70 text-muted-1' : 'h-10 w-10',
+                  item.tone === 'brand' && 'bg-brand/15 text-brand',
+                  item.tone === 'scan' && 'bg-surface-sunken text-brand-ink',
+                )}
+              >
+                <Icon className={item.tone === 'light' ? 'h-4 w-4' : 'h-5 w-5'} />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-foreground">{item.label}</span>
-                {item.desc && <span className="block truncate text-xs text-muted-1">{item.desc}</span>}
+                <span className={cn('block font-semibold', item.tone === 'light' ? 'text-[13px] text-muted-1' : 'text-sm text-foreground')}>
+                  {item.label}
+                </span>
+                {item.desc && item.tone !== 'light' && (
+                  <span className="block truncate text-xs text-muted-1">{item.desc}</span>
+                )}
               </span>
             </button>
           );
@@ -216,7 +248,14 @@ export function FloatingTabBar() {
           )}
           <button
             type="button"
+            onPointerDown={onFabPointerDown}
+            onPointerUp={onFabPointerUp}
+            onPointerCancel={onFabPointerCancel}
+            onPointerLeave={onFabPointerCancel}
+            onContextMenu={e => e.preventDefault()}
             onClick={() => {
+              // El click llega después del pointerup: si fue un toque largo, ya se escaneó.
+              if (longPressed.current) { longPressed.current = false; return; }
               if (isPersonal) { closeDial(); personalActions?.openMatrix(); return; }
               setSpeedDialOpen(prev => !prev);
             }}
@@ -240,7 +279,9 @@ export function FloatingTabBar() {
         onClose={closeLauncher}
         mode={launcher.mode}
         presetGroupId={launcher.presetGroupId}
+        scanFile={launcher.scanFile}
       />
+      {scanPicker.inputs}
     </>
   );
 }

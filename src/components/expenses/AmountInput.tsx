@@ -38,6 +38,9 @@ export function AmountInput({ value, onChange, disabled = false, tone = 'default
         </span>
         <input
           type="text"
+          // Sin esto el input pide su ancho intrínseco (20 caracteres a 52px) y ensancha la
+          // celda: el ancho lo tiene que dar el span espejo.
+          size={1}
           inputMode="decimal"
           pattern="[0-9]*[.,]?[0-9]*"
           enterKeyHint="done"

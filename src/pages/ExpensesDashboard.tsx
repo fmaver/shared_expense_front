@@ -17,12 +17,13 @@ import { GroupBalanceCard } from '@/components/expenses/GroupBalanceCard';
 import { SettledMonthCard } from '@/components/expenses/SettledMonthCard';
 import { ExpenseListHeader } from '@/components/expenses/ExpenseListHeader';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
+import { useScanPicker } from '@/components/expenses/ScanPicker';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, ArrowLeftRight } from 'lucide-react';
+import { Plus, ArrowLeftRight, Camera } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 import { useIsland } from '@/contexts/IslandContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
@@ -51,6 +52,14 @@ export function ExpensesDashboard() {
 
   const highlightId = searchParams.get('highlight') ? parseInt(searchParams.get('highlight')!, 10) : null;
   const [showAdd, setShowAdd] = useState(false);
+  /* Desktop: la foto de un ticket abre la misma hoja, leyéndola (V6.6). */
+  const [scanFile, setScanFile] = useState<File | null>(null);
+  const scanPicker = useScanPicker(file => {
+    setScanFile(file);
+    setEditingExpense(null);
+    setShowTransfer(false);
+    setShowAdd(true);
+  });
   const [showTransfer, setShowTransfer] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
   const [pendingExpense, setPendingExpense] = useState<ExpenseCreate | null>(null);
@@ -273,13 +282,19 @@ export function ExpensesDashboard() {
           <div className="hidden shrink-0 items-center gap-2 lg:absolute lg:right-0 lg:flex">
             <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
               title={t('expenses.transfer')}
-              onClick={() => { setShowTransfer(true); setShowAdd(false); }}>
+              onClick={() => { setShowTransfer(true); setShowAdd(false); setScanFile(null); }}>
               <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.transfer')}</span>
             </Button>
+            <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
+              title={t('scan.menuTitle')}
+              onClick={scanPicker.pickAny}>
+              <Camera className="mr-1.5 h-3.5 w-3.5" />
+              <span>{t('scan.menuTitle')}</span>
+            </Button>
             <Button size="sm" className="h-8 rounded-pill bg-brand px-3 text-xs text-primary-foreground hover:bg-brand/90"
               title={t('expenses.add')}
-              onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); }}>
+              onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); setScanFile(null); }}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.add')}</span>
             </Button>
@@ -345,14 +360,16 @@ export function ExpensesDashboard() {
         )}
       </div>
 
+      {scanPicker.inputs}
       <AddExpenseDialog
         isOneTimeGroup={isOneTime}
         open={showAdd || showTransfer}
         onOpenChange={v => {
           setShowAdd(v);
           setShowTransfer(v && showTransfer);
-          if (!v) { setEditingExpense(null); setRecurringEditTarget(null); }
+          if (!v) { setEditingExpense(null); setRecurringEditTarget(null); setScanFile(null); }
         }}
+        scanFile={scanFile}
         onSubmit={recurringEditTarget ? handleRecurringUpdate : (editingExpense ? handleUpdate : handleCreate)}
         initialMode={showTransfer ? 'loan' : 'expense'}
         members={members}

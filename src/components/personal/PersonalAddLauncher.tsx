@@ -4,6 +4,7 @@ import { useFabActions } from '@/contexts/FabActionsContext';
 import { PersonalAddMatrix, type PersonalEntryKind } from './PersonalAddMatrix';
 import { PersonalExpenseSheet } from './PersonalExpenseSheet';
 import { PersonalIncomeSheet } from './PersonalIncomeSheet';
+import { useScanPicker } from '@/components/expenses/ScanPicker';
 import type { PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
 
 interface PersonalAddLauncherProps {
@@ -27,24 +28,36 @@ export function PersonalAddLauncher({ ledger, year, month, categories, refetch }
 
   const [matrixOpen, setMatrixOpen] = useState(false);
   const [expenseKind, setExpenseKind] = useState<'expense' | 'fixed' | null>(null);
+  /* La foto elegida en "Escanear ticket": la hoja del gasto abre leyéndola (V6.6). */
+  const [scanFile, setScanFile] = useState<File | null>(null);
+  const scanPicker = useScanPicker(file => {
+    setMatrixOpen(false);
+    setScanFile(file);
+    setExpenseKind('expense');
+  });
   const [incomeKind, setIncomeKind] = useState<'extra' | 'salary' | null>(null);
 
   const openMatrix = useCallback(() => {
     setExpenseKind(null);
+    setScanFile(null);
     setIncomeKind(null);
     setMatrixOpen(true);
   }, []);
 
+  const { pickAny, pickCamera } = scanPicker;
   const pick = useCallback((kind: PersonalEntryKind) => {
+    // Escanear abre el selector desde este mismo toque: iOS no lo abre después.
+    if (kind === 'scan') { pickAny(); return; }
     setMatrixOpen(false);
+    setScanFile(null);
     if (kind === 'expense' || kind === 'fixed') setExpenseKind(kind);
     else setIncomeKind(kind);
-  }, []);
+  }, [pickAny]);
 
   useEffect(() => {
-    registerPersonalActions({ openMatrix, pick });
+    registerPersonalActions({ openMatrix, pick, scanWithCamera: pickCamera });
     return () => registerPersonalActions(null);
-  }, [registerPersonalActions, openMatrix, pick]);
+  }, [registerPersonalActions, openMatrix, pick, pickCamera]);
 
   const handleSaved = () => {
     refetch();
@@ -60,6 +73,7 @@ export function PersonalAddLauncher({ ledger, year, month, categories, refetch }
 
   return (
     <>
+      {scanPicker.inputs}
       <PersonalAddMatrix
         open={matrixOpen}
         onOpenChange={setMatrixOpen}
@@ -69,8 +83,9 @@ export function PersonalAddLauncher({ ledger, year, month, categories, refetch }
       {expenseKind && (
         <PersonalExpenseSheet
           open
-          onOpenChange={open => { if (!open) setExpenseKind(null); }}
+          onOpenChange={open => { if (!open) { setExpenseKind(null); setScanFile(null); } }}
           initialKind={expenseKind}
+          scanFile={scanFile}
           year={year}
           month={month}
           categories={categories}

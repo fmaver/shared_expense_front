@@ -19,12 +19,14 @@ export function ContextCard({ children, className }: { children: React.ReactNode
 }
 
 export function ContextRow({
-  label, value, onClick, disabled = false,
+  label, value, onClick, disabled = false, badge,
 }: {
   label: string;
   value: string;
   onClick: () => void;
   disabled?: boolean;
+  /** Algo chico antes del valor, como la pastilla "de la foto". */
+  badge?: React.ReactNode;
 }) {
   return (
     <button
@@ -38,7 +40,8 @@ export function ContextRow({
       )}
     >
       <span className="shrink-0 text-[12.5px] font-medium text-muted-1">{label}</span>
-      <span className="flex min-w-0 items-center gap-0.5 text-[13px] font-bold text-foreground">
+      <span className="flex min-w-0 items-center gap-1.5 text-[13px] font-bold text-foreground">
+        {badge}
         <span className="truncate">{value}</span>
         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-2" aria-hidden="true" />
       </span>

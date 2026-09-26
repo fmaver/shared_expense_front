@@ -26,6 +26,8 @@ interface GroupExpenseLauncherProps {
   mode: LauncherMode;
   /** When set, skip the group picker and go directly to the dialog */
   presetGroupId?: number;
+  /** Foto de ticket elegida en el "+": la hoja abre leyéndola (V6.6). */
+  scanFile?: File | null;
 }
 
 /** Inner component — only rendered when we have a resolved groupId */
@@ -34,11 +36,13 @@ function GroupExpenseDialogs({
   mode,
   open,
   onClose,
+  scanFile,
 }: {
   groupId: number;
   mode: LauncherMode;
   open: boolean;
   onClose: () => void;
+  scanFile: File | null;
 }) {
   const { t } = useTranslation();
   const island = useIsland();
@@ -95,6 +99,7 @@ function GroupExpenseDialogs({
           groupId={groupId}
           isOneTimeGroup={isOneTimeGroup}
           initialMode={mode === 'transfer' ? 'loan' : 'expense'}
+          scanFile={mode === 'expense' ? scanFile : null}
         />
       )}
 
@@ -145,6 +150,7 @@ export function GroupExpenseLauncher({
   onClose,
   mode,
   presetGroupId,
+  scanFile = null,
 }: GroupExpenseLauncherProps) {
   const { t } = useTranslation();
   const { data: groups = [], isLoading: loadingGroups } = useGroups();
@@ -213,6 +219,7 @@ export function GroupExpenseLauncher({
           mode={mode}
           open={showDialogs}
           onClose={onClose}
+          scanFile={scanFile}
         />
       )}
     </>
