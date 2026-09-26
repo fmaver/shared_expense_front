@@ -9,10 +9,13 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <!-- interactive-widget: let the keyboard resize the layout viewport so `fixed bottom-0`
          sheets stay above it. Honoured by Chrome/Android; Safari ignores it, which is what
-         useKeyboardInset() handles. -->
+         useKeyboardInset() handles.
+         Escala fija en 1: es una app, no un documento, y alejar el zoom sólo mostraba página
+         vacía. iOS Safari puede ignorar user-scalable/maximum-scale por accesibilidad; el
+         `touch-action` de index.css es lo que corta el pellizco ahí. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <!-- La app es clara, así que la barra del sistema es papel. El segundo valor sólo cubre
          el modo oscuro, donde un papel lavanda sobre una app casi negra se ve como un error. -->
