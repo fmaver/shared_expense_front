@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ArrowRight, Check, ChevronLeft, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MonthPager } from '@/components/expenses/MonthPager';
 import { avatarBg, initials } from '@/utils/avatar';
 import { buildTransferExpense } from '@/utils/transfer';
 import { shareReminder } from '@/utils/remind';
@@ -40,7 +41,7 @@ export function SettleProgressPage() {
   const { groupId: groupIdParam } = useParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam!, 10);
 
-  const { year, month } = useMonthSearchParams();
+  const { year, month, setYearMonth } = useMonthSearchParams();
   const { data: group, isLoading: loadingGroup } = useGroup(groupId);
   const groupTypeKnown = !loadingGroup && group !== undefined;
   const isOneTime = group?.groupType === 'one_time';
@@ -160,7 +161,17 @@ export function SettleProgressPage() {
         })}
       </h1>
 
-      <p className="mt-2 text-[12.5px] font-medium text-muted-1">
+      {!isOneTime && (
+        <MonthPager
+          className="mt-4"
+          year={year}
+          month={month}
+          onNavigate={setYearMonth}
+          isSettled={monthlyData?.isSettled ?? false}
+        />
+      )}
+
+      <p className="mt-3 text-[12.5px] font-medium text-muted-1">
         {transfers.length === 0
           ? t('settle.allMarked')
           : t('settle.progressCount', { count: transfers.length, total })}

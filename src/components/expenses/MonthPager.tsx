@@ -13,7 +13,7 @@ interface MonthPagerProps {
 }
 
 /**
- * Paginador de mes.
+ * Paginador de mes, como cápsula de vidrio centrada.
  *
  * El mes es el alcance de la pantalla, no un filtro más (principio 3), así que manda arriba de
  * la lista y lo comparten Gastos, Gente y Números. Se puede avanzar al futuro a propósito: un
@@ -49,44 +49,42 @@ export function MonthPager({ year, month, onNavigate, isSettled = false, classNa
   const prev = () => (month === 1 ? onNavigate(year - 1, 12) : onNavigate(year, month - 1));
   const next = () => (month === 12 ? onNavigate(year + 1, 1) : onNavigate(year, month + 1));
 
-  const arrow = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors';
+  const arrow = cn(
+    'flex h-[30px] w-[30px] shrink-0 cursor-pointer items-center justify-center rounded-full',
+    'text-foreground transition-colors hover:bg-surface-sunken/70',
+    "relative before:absolute before:-inset-1.5 before:content-['']",
+  );
 
   return (
-    <div ref={containerRef} className={cn('relative flex items-center justify-center gap-2', className)}>
-      <button
-        type="button"
-        onClick={prev}
-        aria-label={t('monthPager.previous')}
-        className={cn(arrow, 'cursor-pointer border-line-strong text-foreground hover:bg-surface-sunken')}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
+    <div ref={containerRef} className={cn('relative flex justify-center', className)}>
+      {/* Una sola cápsula de vidrio: ‹ Julio 2026 ▼ › (V6.4). */}
+      <div className="glass flex h-9 items-center gap-0.5 rounded-full px-[3px]">
+        <button type="button" onClick={prev} aria-label={t('monthPager.previous')} className={arrow}>
+          <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
+        </button>
 
-      <button
-        type="button"
-        onClick={() => setPickerOpen(o => !o)}
-        aria-label={t('monthPager.pick')}
-        aria-expanded={pickerOpen}
-        className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[14px] border border-line-strong bg-surface px-4 text-[13.5px] font-bold text-foreground transition-colors hover:bg-surface-sunken"
-      >
-        {isSettled && (
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-positive" aria-hidden="true" />
-        )}
-        <span className="tabular-nums">{months[month - 1]} {year}</span>
-        <ChevronDown className={cn('h-3.5 w-3.5 text-muted-2 transition-transform', pickerOpen && 'rotate-180')} />
-      </button>
+        <button
+          type="button"
+          onClick={() => setPickerOpen(o => !o)}
+          aria-label={t('monthPager.pick')}
+          aria-expanded={pickerOpen}
+          className="flex h-[30px] cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-[13px] font-bold text-foreground transition-colors hover:bg-surface-sunken/70"
+        >
+          {isSettled && (
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-positive" aria-hidden="true" />
+          )}
+          <span className="whitespace-nowrap tabular-nums">{months[month - 1]} {year}</span>
+          <ChevronDown className={cn('h-3.5 w-3.5 text-muted-1 transition-transform', pickerOpen && 'rotate-180')} />
+        </button>
 
-      <button
-        type="button"
-        onClick={next}
-        aria-label={t('monthPager.next')}
-        className={cn(arrow, 'cursor-pointer border-line-strong text-foreground hover:bg-surface-sunken')}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
+        {/* Siempre habilitada: las cuotas y los fijos ya viven en los meses que vienen. */}
+        <button type="button" onClick={next} aria-label={t('monthPager.next')} className={arrow}>
+          <ChevronRight className="h-4 w-4" strokeWidth={2.4} />
+        </button>
+      </div>
 
       {pickerOpen && (
-        <div className="absolute left-1/2 top-10 z-40 w-64 -translate-x-1/2 rounded-card border border-line bg-surface p-3 shadow-panel">
+        <div className="absolute left-1/2 top-11 z-40 w-64 -translate-x-1/2 rounded-card border border-line bg-surface p-3 shadow-panel">
           <div className="mb-2 flex items-center justify-between">
             <button
               type="button"

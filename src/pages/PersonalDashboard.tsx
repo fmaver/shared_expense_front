@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useScroll } from '@/contexts/ScrollContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { usePersonalTrend } from '@/hooks/usePersonalTrend';
@@ -11,6 +10,7 @@ import { getPersonalGroup } from '@/api/personal';
 import { useCategories } from '@/hooks/useCategories';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MonthPager } from '@/components/expenses/MonthPager';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import { avatarBg, initials } from '@/utils/avatar';
@@ -72,10 +72,6 @@ export function PersonalDashboard() {
   const today = new Date();
   const isCurrentMonth = year === today.getFullYear() && month === today.getMonth() + 1;
 
-  const goMonth = (delta: number) => {
-    const next = new Date(year, month - 1 + delta, 1);
-    setYearMonth(next.getFullYear(), next.getMonth() + 1);
-  };
 
   if (isLoading) {
     return (
@@ -103,46 +99,23 @@ export function PersonalDashboard() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
         <div className="mx-auto w-full max-w-5xl px-5 py-5 lg:px-7 lg:py-6">
 
-          {/* ── Encabezado: el mes como eyebrow, el saludo como título ──────────────── */}
+          {/* ── Encabezado: el saludo, y abajo el mes en su cápsula (V6.4) ────────── */}
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-2">
-                {months[month - 1]} {year}
-              </p>
-              <h1 className="mt-1 truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
-                {t('personal.greeting', { name: currentMember?.name ?? '' })}
-              </h1>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => goMonth(-1)}
-                aria-label={t('monthPager.previous')}
-                className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full border border-line-strong text-foreground transition-colors hover:bg-surface-sunken"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {/* Se puede ir al futuro: los fijos y las cuotas ya viven en los meses que vienen. */}
-              <button
-                type="button"
-                onClick={() => goMonth(1)}
-                aria-label={t('monthPager.next')}
-                className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full border border-line-strong text-foreground transition-colors hover:bg-surface-sunken"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              <Link
-                to="/profile"
-                aria-label={t('nav.profile')}
-                className={cn(
-                  'flex h-9 w-9 select-none items-center justify-center rounded-full text-[12px] font-bold text-white',
-                  avatarBg(currentMember?.id ?? 1),
-                )}
-              >
-                {initials(currentMember?.name ?? '?')}
-              </Link>
-            </div>
+            <h1 className="min-w-0 truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
+              {t('personal.greeting', { name: currentMember?.name ?? '' })}
+            </h1>
+            <Link
+              to="/profile"
+              aria-label={t('nav.profile')}
+              className={cn(
+                'flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full text-[12px] font-bold text-white',
+                avatarBg(currentMember?.id ?? 1),
+              )}
+            >
+              {initials(currentMember?.name ?? '?')}
+            </Link>
           </div>
+          <MonthPager className="mt-3.5" year={year} month={month} onNavigate={setYearMonth} />
 
           {/*
             Columnas con mínimo 0, y no el `auto` de una columna implícita: con `auto` la columna
