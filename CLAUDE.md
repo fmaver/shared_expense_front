@@ -45,7 +45,7 @@ The app serves two distinct experiences from the same codebase, gated by the `lg
 | Layer | Desktop (`lg:`) | Mobile (default) |
 |---|---|---|
 | **Shell** | `AppShell` — fixed left `Sidebar` + main content area | `AppShell` — no sidebar; `MobileHeader` fixed at top + `FloatingTabBar` fixed at bottom |
-| **Navigation** | `Sidebar` — vertical nav list with group links | `FloatingTabBar` — floating pill that collapses to active-tab circle on scroll |
+| **Navigation** | `Sidebar` — vertical nav list with group links | `FloatingTabBar` — edge-to-edge glass bar (icon + label tabs, 62px "+" on the right); inside a group only the "+" |
 | **Header** | None (sidebar has branding) | `FloatingTopBar` (glass back button + right capsule, band on scroll) on group/personal/detail screens; `MobileHeader` (brand · `DynamicIsland` · avatar) only on `/groups` and `/personal/charts` |
 | **Add expense** | Inline button in group header | FAB (plus button) in `FloatingTabBar` → speed-dial or direct group launcher |
 | **Forms / dialogs** | Centered modal (zoom in/out) | Bottom sheet (slides up from bottom, drag down to dismiss) |
@@ -71,7 +71,7 @@ src/
 │   └── shares.ts            # GET/settle/unsettle/recalculate monthly share; getGroupTrend()
 ├── contexts/
 │   ├── CurrencyContext.tsx  # useCurrency(): displayMode, setDisplayMode, blueRate, formatAmount
-│   ├── ScrollContext.tsx    # useScroll(): isAtTop, tabBarCollapsed, notifyScroll(scrollTop)
+│   ├── ScrollContext.tsx    # useScroll(): isAtTop, notifyScroll(scrollTop)
 │   ├── IslandContext.tsx    # useIsland(): island state machine for DynamicIsland display
 │   └── FabActionsContext.tsx # useFabActions(): personalAdd callback (PersonalDashboard → FAB bridge)
 ├── components/
@@ -90,7 +90,7 @@ src/
 │   │   ├── MobileHeader.tsx        # mobile-only fixed top bar: brand · DynamicIsland (centered) · AccountMenu
 │   │   ├── DynamicIsland.tsx       # animated pill showing current group name or app state
 │   │   ├── AccountMenu.tsx         # avatar dropdown: profile, theme, logout
-│   │   ├── FloatingTabBar.tsx      # mobile bottom nav pill; collapses to active-tab circle on scroll; FAB + speed-dial
+│   │   ├── FloatingTabBar.tsx      # mobile bottom bar (V7): tabs with labels + FAB + speed-dial; scroll fade behind it
 │   │   ├── GroupExpenseLauncher.tsx # FAB target — opens AddExpenseDialog or TransferDialog for a group
 │   │   ├── Sidebar.tsx             # desktop left nav: personal, groups list, profile, theme/lang toggles
 │   │   └── TopBar.tsx              # legacy mobile header (hamburger → Sheet); kept for non-authenticated pages
@@ -244,9 +244,9 @@ Current non-internal categories (as of 2026-05): `comida`, `supermercado`, `entr
 
 ## Mobile UX patterns
 
-### Scroll-aware tab bar collapse
+### Scroll notification and bottom-bar clearance
 
-`ScrollContext` tracks scroll position across all pages. Pages must notify the context by calling `notifyScroll(scrollTop)` from their scroll container's `onScroll` handler. Failure to do this means `FloatingTabBar` never collapses on that page.
+`ScrollContext` tracks scroll position across all pages. Pages must notify the context by calling `notifyScroll(scrollTop)` from their scroll container's `onScroll` handler. Failure to do this means `isAtTop` (the app header's background) never updates on that page. Scroll containers above the bottom bar use `pb-tabbar lg:pb-0` (safe-area + 96px) so nothing sits under it.
 
 **Required scroll container pattern** (copy from `GroupLayout` / `PersonalDashboard`):
 ```tsx
@@ -254,14 +254,14 @@ Current non-internal categories (as of 2026-05): `comida`, `supermercado`, `entr
 <div className="flex flex-col flex-1">
   {/* Inner div: the ONLY element with overflow-y-auto */}
   <div
-    className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
+    className="flex-1 overflow-y-auto overflow-x-hidden pb-tabbar lg:pb-0"
     onScroll={(e) => notifyScroll((e.target as HTMLDivElement).scrollTop)}
   >
     {/* Page content */}
   </div>
 </div>
 ```
-Never put `overflow-y-auto` on the same element as `flex flex-col flex-1` — that makes the content a flex child that shrinks instead of scrolling. `pb-24` provides clearance for the floating tab bar on mobile; `lg:pb-0` removes it on desktop.
+Never put `overflow-y-auto` on the same element as `flex flex-col flex-1` — that makes the content a flex child that shrinks instead of scrolling. `pb-tabbar` provides clearance for the bottom bar on mobile (safe-area + 96px); `lg:pb-0` removes it on desktop.
 
 ### Glass material (one recipe) and the shared floating pieces
 

@@ -81,7 +81,7 @@ export function PersonalDashboard() {
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col">
-        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-tabbar lg:pb-0" onScroll={handleScroll}>
           <div className="mx-auto max-w-5xl space-y-4 px-5 py-6">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-40 w-full rounded-card-lg" />
@@ -130,7 +130,7 @@ export function PersonalDashboard() {
             : `${months[month - 1] ?? ''} ${year}`,
         }}
       />
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-tabbar lg:pb-0" onScroll={handleScroll}>
         <div className="mx-auto w-full max-w-5xl px-5 py-5 lg:px-7 lg:py-6">
 
           {/* ── Encabezado: el saludo, y abajo el mes en su cápsula (V6.4) ────────── */}

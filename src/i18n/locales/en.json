@@ -994,5 +994,9 @@
     "add": "Add photo",
     "optional": "optional",
     "view": "View"
+  },
+  "tabBar": {
+    "label": "App sections",
+    "personal": "Your money"
   }
 }

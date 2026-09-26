@@ -34,7 +34,7 @@ export function PersonalChartsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-tabbar lg:pb-0"
         onScroll={handleScroll}
       >
         <div className="mx-auto w-full max-w-5xl space-y-5 px-5 py-6 lg:px-7">

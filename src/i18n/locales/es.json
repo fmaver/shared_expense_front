@@ -994,5 +994,9 @@
     "add": "Agregar foto",
     "optional": "opcional",
     "view": "Ver"
+  },
+  "tabBar": {
+    "label": "Secciones de la app",
+    "personal": "Tu plata"
   }
 }
