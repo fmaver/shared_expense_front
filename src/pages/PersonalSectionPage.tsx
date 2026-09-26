@@ -12,6 +12,7 @@ import { IncomesSection } from '@/components/personal/IncomesSection';
 import { PersonalExpensesSection } from '@/components/personal/PersonalExpensesSection';
 import { MirroredSharesSection } from '@/components/personal/MirroredSharesSection';
 import { PersonalAddLauncher } from '@/components/personal/PersonalAddLauncher';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 
 type Section = 'incomes' | 'expenses' | 'shares';
 
@@ -37,10 +38,12 @@ export function PersonalSectionPage({ section }: { section: Section }) {
       <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
         <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
           {/* Header: back link + title */}
+          <FloatingTopBar back={{ to: `/personal?year=${year}&month=${month}`, label: t('common.back') }} />
           <div>
+            <TopBarSpacer />
             <Link
               to={`/personal?year=${year}&month=${month}`}
-              className="inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-brand transition-colors"
+              className="hidden lg:inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-brand transition-colors"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               {t('common.back')}

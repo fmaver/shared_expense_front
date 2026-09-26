@@ -23,6 +23,7 @@ import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useSettlementActions } from '@/hooks/useSettlementActions';
 import type { DebtTransfer, ExpenseResponse } from '@/types/expense';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 
 /**
  * Saldando: cómo va la cosa, pago por pago.
@@ -146,9 +147,11 @@ export function SettleProgressPage() {
 
   return (
     <div className="mx-auto w-full max-w-lg px-5 py-6">
+      <FloatingTopBar back={{ to: backTo, label: group?.name ?? t('mobileNav.groups') }} />
+      <TopBarSpacer />
       <Link
         to={backTo}
-        className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
+        className="hidden lg:inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
         {group?.name ?? t('mobileNav.groups')}

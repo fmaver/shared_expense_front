@@ -11,13 +11,16 @@ import { cn } from '@/lib/utils';
 import { DueDateDialog } from '@/components/expenses/DueDateDialog';
 import { useGroup } from '@/hooks/useGroups';
 import { nextDueOccurrence } from '@/utils/dueDates';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 
 interface GroupDueDatesPageProps {
   /** El grupo personal no se navega como `/groups/:id`, así que se puede pasar explícito. */
   groupId?: number;
+  /** Fuera de un grupo (Vencimientos personales) la pantalla lleva el volver flotante. */
+  backTo?: string;
 }
 
-export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDueDatesPageProps = {}) {
+export default function GroupDueDatesPage({ groupId: explicitGroupId, backTo }: GroupDueDatesPageProps = {}) {
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = explicitGroupId ?? parseInt(gp!, 10);
   const { t, i18n } = useTranslation();
@@ -89,11 +92,13 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
 
   return (
     <div className="flex flex-col flex-1">
+      {backTo && <FloatingTopBar back={{ to: backTo, label: t('common.back') }} />}
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
         onScroll={(e) => notifyScroll((e.target as HTMLDivElement).scrollTop)}
       >
         <div className="mx-auto w-full max-w-2xl space-y-2.5 px-5 py-4 lg:px-7 lg:py-6">
+          {backTo && <TopBarSpacer />}
           {loading ? (
             <>
               <Skeleton className="h-16 w-full rounded-xl" />

@@ -706,7 +706,8 @@
     "collectFrom": "cobrás <0>{{amount}}</0> de {{group}}",
     "payTo": "pagás <0>{{amount}}</0> de {{group}}",
     "everyMonth": "Cada mes",
-    "dated": "Con fecha"
+    "dated": "Con fecha",
+    "bandLeft": "te quedan {{amount}}"
   },
   "dueDates": {
     "title": "Vencimientos",
@@ -965,5 +966,16 @@
     "duplicateSaveAnyway": "Guardar igual",
     "incomeTitle": "Ingreso",
     "incomeDesc": "Sueldo, freelance, un bono"
+  },
+  "groupMenu": {
+    "more": "Más opciones",
+    "invite": "Invitar gente",
+    "shareLink": "Compartir link",
+    "leave": "Salir del grupo",
+    "shareText": "Sumate a {{group}} en Jirens",
+    "shareFailed": "No se pudo compartir el link"
+  },
+  "search": {
+    "open": "Buscar"
   }
 }

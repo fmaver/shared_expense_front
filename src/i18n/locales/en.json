@@ -706,7 +706,8 @@
     "collectFrom": "you collect <0>{{amount}}</0> from {{group}}",
     "payTo": "you pay <0>{{amount}}</0> to {{group}}",
     "everyMonth": "Every month",
-    "dated": "Dated"
+    "dated": "Dated",
+    "bandLeft": "{{amount}} left"
   },
   "dueDates": {
     "title": "Due dates",
@@ -965,5 +966,16 @@
     "duplicateSaveAnyway": "Save anyway",
     "incomeTitle": "Income",
     "incomeDesc": "Salary, freelance, a bonus"
+  },
+  "groupMenu": {
+    "more": "More options",
+    "invite": "Invite people",
+    "shareLink": "Share link",
+    "leave": "Leave group",
+    "shareText": "Join {{group}} on Jirens",
+    "shareFailed": "Couldn't share the link"
+  },
+  "search": {
+    "open": "Search"
   }
 }

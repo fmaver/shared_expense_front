@@ -1,13 +1,17 @@
-import React, { useCallback } from 'react';
-import { Outlet, useParams, useLocation, Link } from 'react-router-dom';
+import React, { useCallback, useState } from 'react';
+import { Outlet, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useGroup } from '@/hooks/useGroups';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useScroll } from '@/contexts/ScrollContext';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SegmentedLinks } from '@/components/ui/Segmented';
+import { CapsuleSlot, GlassCapsule } from '@/components/ui/Glass';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
+import { GroupMoreMenu } from '@/components/layout/GroupMoreMenu';
+import { FEATURE_SEARCH } from '@/config/features';
 import { avatarBg, initials } from '@/utils/avatar';
 
 /** "Fran, Guada y Mati" — la lista de nombres como se dice en voz alta. */
@@ -25,6 +29,7 @@ export function GroupLayout() {
   const { t } = useTranslation();
   const { notifyScroll } = useScroll();
   const { year, month } = useMonthSearchParams();
+  const [titleEl, setTitleEl] = useState<HTMLHeadingElement | null>(null);
   const handleInnerScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
     notifyScroll((e.target as HTMLElement).scrollTop);
   }, [notifyScroll]);
@@ -79,34 +84,65 @@ export function GroupLayout() {
     return isOneTime ? people : joinNames(members.map(m => m.name), t('groups.and'));
   })();
 
+  const tabLinks = TABS.map(tab => ({
+    to: tab.path === ''
+      ? `/groups/${groupId}${monthQuery}`
+      : `/groups/${groupId}/${tab.path}${monthQuery}`,
+    label: tab.label,
+    end: tab.path === '',
+  }));
+  const tabs = (className?: string) => (
+    <SegmentedLinks
+      aria-label={t('groups.sections')}
+      className={cn('overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden', className)}
+      links={tabLinks}
+    />
+  );
+  /* La línea de contexto de la banda: el mes (si el grupo tiene meses) y lo de la pestaña. */
+  const bandContext = [isOneTime ? null : `${months[month - 1] ?? ''} ${year}`, subtitle]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <div className="flex flex-1 flex-col">
       {/*
-        Encabezado propio del grupo, persistente.
-        Reemplaza al menú de tres puntos: estar adentro de un grupo es un lugar, no un modo, y
-        "‹ Grupos" es la única salida — por eso la tab bar de la app se esconde acá (AppShell).
+        Arriba, en mobile, los controles flotantes (V6.2): volver a Grupos y la cápsula con
+        buscar y ⋯. Al scrollear pasado el nombre del grupo aparece la banda de vidrio con el
+        nombre compacto y las pestañas pegadas.
       */}
-      {/*
-        En desktop este encabezado no se dibuja: el sidebar ya trae el nombre del grupo, la
-        salida y las cinco secciones (§6.3). Dibujarlo igual era decir todo dos veces.
-      */}
-      <div className="shrink-0 border-b border-line bg-surface lg:hidden">
-        <div className="mx-auto w-full max-w-5xl px-5 pb-3 pt-3 lg:px-7 lg:pt-4">
-          <Link
-            to="/groups"
-            className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            {t('mobileNav.groups')}
-          </Link>
+      <FloatingTopBar
+        back={{ to: '/groups', label: t('mobileNav.groups') }}
+        right={
+          <GlassCapsule>
+            {FEATURE_SEARCH && (
+              <CapsuleSlot to={`/search?scope=group&groupId=${groupId}`} aria-label={t('search.open')}>
+                <Search className="h-[17px] w-[17px]" strokeWidth={2.4} />
+              </CapsuleSlot>
+            )}
+            <GroupMoreMenu groupId={groupId} groupName={group?.name ?? ''} />
+          </GlassCapsule>
+        }
+        band={{ watch: titleEl, title: group?.name ?? '', context: bandContext, below: tabs() }}
+      />
 
+      {/* Tab content: el encabezado scrollea con el contenido, así la banda tiene de qué salir. */}
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
+        onScroll={handleInnerScroll}
+      >
+        {/*
+          En desktop este encabezado no se dibuja: el sidebar ya trae el nombre del grupo, la
+          salida y las cinco secciones (§6.3). Dibujarlo igual era decir todo dos veces.
+        */}
+        <div className="mx-auto w-full max-w-5xl px-5 pb-1 pt-3 lg:hidden">
+          <TopBarSpacer />
           <div className="mt-1.5 flex items-end justify-between gap-3">
             <div className="min-w-0">
               {isLoading ? (
                 <Skeleton className="h-7 w-44" />
               ) : (
                 <div className="flex items-center gap-2">
-                  <h1 className="truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
+                  <h1 ref={setTitleEl} className="truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
                     {group?.name}
                   </h1>
                   {isOneTime && (
@@ -129,7 +165,7 @@ export function GroupLayout() {
                     key={m.memberId}
                     className={cn(
                       'flex h-[30px] w-[30px] select-none items-center justify-center rounded-full',
-                      'border-2 border-surface text-[11px] font-bold text-white',
+                      'border-2 border-background text-[11px] font-bold text-white',
                       avatarBg(m.memberId),
                       i > 0 && '-ml-[9px]',
                     )}
@@ -138,7 +174,7 @@ export function GroupLayout() {
                   </div>
                 ))}
                 {members.length > 4 && (
-                  <div className="-ml-[9px] flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-surface bg-surface-sunken text-[10px] font-bold text-muted-1">
+                  <div className="-ml-[9px] flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-background bg-surface-sunken text-[10px] font-bold text-muted-1">
                     +{members.length - 4}
                   </div>
                 )}
@@ -146,26 +182,9 @@ export function GroupLayout() {
             )}
           </div>
 
-          {/* Pestañas como segmentado (V6.3). Son cinco: si no entran, la fila scrollea. */}
-          <SegmentedLinks
-            aria-label={t('groups.sections')}
-            className="mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            links={TABS.map(tab => ({
-              to: tab.path === ''
-                ? `/groups/${groupId}${monthQuery}`
-                : `/groups/${groupId}/${tab.path}${monthQuery}`,
-              label: tab.label,
-              end: tab.path === '',
-            }))}
-          />
+          {tabs('mt-3')}
         </div>
-      </div>
 
-      {/* Tab content */}
-      <div
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
-        onScroll={handleInnerScroll}
-      >
         <Outlet />
       </div>
     </div>

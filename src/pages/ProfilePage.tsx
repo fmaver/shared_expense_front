@@ -14,6 +14,7 @@ import { useTheme, type ThemePreference } from '@/hooks/useTheme';
 import { avatarBg, initials } from '@/utils/avatar';
 import { normalizeArPhone, localArPhone } from '@/utils/phone';
 import { cn } from '@/lib/utils';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 
 /** Un bloque con su rótulo. Fuera del componente: adentro se remontaría en cada render. */
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -151,10 +152,12 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-5 px-5 py-6">
+      <FloatingTopBar back={{ onClick: () => navigate(-1), label: t('common.back') }} />
+      <TopBarSpacer />
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="inline-flex cursor-pointer items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
+        className="hidden lg:inline-flex cursor-pointer items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
         {t('common.back')}
