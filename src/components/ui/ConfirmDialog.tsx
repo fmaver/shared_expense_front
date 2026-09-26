@@ -55,7 +55,7 @@ export function ConfirmDialog({
             className={
               destructive
                 ? 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/30'
-                : 'bg-brand hover:bg-brand/90 text-white'
+                : 'bg-brand hover:bg-brand/90 text-primary-foreground'
             }
           >
             {loading ? t('common.loading') : (confirmLabel ?? t('common.confirm'))}

@@ -91,3 +91,60 @@ export function formatKeypadAmount(amount: number | null | undefined): string {
   if (amount == null || !Number.isFinite(amount) || amount === 0) return '';
   return Number.isInteger(amount) ? String(amount) : String(amount).replace('.', ',');
 }
+
+/**
+ * "VIERNES 12 JUL" — el encabezado de un día en la lista de gastos.
+ *
+ * Agrupar por día le da ritmo a la lista y evita repetir la fecha en cada fila.
+ */
+export function formatDayHeading(
+  date: string | Date,
+  monthsShort: string[],
+  weekdays: string[],
+): string {
+  const d = parseLocal(date);
+  const weekday = weekdays[d.getDay()] ?? '';
+  return `${weekday} ${d.getDate()} ${monthsShort[d.getMonth()] ?? ''}`.trim();
+}
+
+/**
+ * "Hoy 9:36" / "12 jul 9:36" — el sello de algo que pasó en este dispositivo.
+ *
+ * Lleva la hora porque marcar un pago es un acto puntual: "hoy" solo no distingue el pago que
+ * marcaste recién del que marcaste a la mañana.
+ */
+export function formatStamp(ts: number, monthsShort: string[], todayWord: string): string {
+  const d = new Date(ts);
+  const time = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const now = new Date();
+  const sameDay = d.getFullYear() === now.getFullYear()
+    && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate();
+  return sameDay ? `${todayWord} ${time}` : `${formatDayMonth(d, monthsShort)} ${time}`;
+}
+
+/** Días de calendario transcurridos desde `ts`. Hoy es 0, ayer 1. */
+export function daysSince(ts: number, now: number = Date.now()): number {
+  const a = new Date(ts); a.setHours(0, 0, 0, 0);
+  const b = new Date(now); b.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 86_400_000));
+}
+
+/**
+ * "$530k", "$1,2M" — el monto abreviado.
+ *
+ * Para cuando la cifra es una referencia y no el dato: en una fila de lista, seis dígitos
+ * compiten con el nombre que está al lado. Abajo de mil no se abrevia nada: "$840" ya es corto.
+ */
+export function formatCompactCurrency(amount: number, currency: string = 'ARS'): string {
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? '−' : '';
+  const symbol = currency === 'USD' ? 'US$' : '$';
+  if (abs >= 1_000_000) {
+    const millions = abs / 1_000_000;
+    const text = millions >= 10 ? Math.round(millions).toString() : millions.toFixed(1).replace('.', ',');
+    return `${sign}${symbol}${text}M`;
+  }
+  if (abs >= 1_000) return `${sign}${symbol}${Math.round(abs / 1_000)}k`;
+  return `${sign}${symbol}${Math.round(abs)}`;
+}

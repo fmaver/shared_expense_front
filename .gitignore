@@ -35,3 +35,4 @@ dist-ssr
 
 # Bundle de diseño: referencia, no código. Queda afuera del repo por peso (~300KB).
 design_handoff_jirens_redesign/
+.playwright-mcp/

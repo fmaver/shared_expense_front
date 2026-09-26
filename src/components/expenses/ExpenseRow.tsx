@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 import type { ExpenseResponse, Member } from '@/types/expense';
 import { ExpenseDetailDialog } from './ExpenseDetailDialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { avatarBg, initials } from '@/utils/avatar';
 import { computeSplit, isOutsider, netOf } from '@/utils/split';
 
 // Las categorías internas no las devuelve la API — sus emojis viven acá.
@@ -85,7 +84,7 @@ export function ExpenseRow({
 }: ExpenseRowProps) {
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, blueRate, displayMode } = useCurrency();
   const currentMember = useCurrentMember();
   const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
 
@@ -115,7 +114,15 @@ export function ExpenseRow({
   const showSplitInfo = !hideSplitBadge && variant === 'payer';
   const unevenSplit = showSplitInfo && !split.isEven;
 
-  /* ── Metadato: quién pagó · cómo se dividió (si no es lo normal) · cuándo ─────────── */
+  const percentageLabel = expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages
+    ? Object.values(expense.splitStrategy.percentages).map(p => Math.round(p ?? 0)).join('/')
+    : '';
+
+  /*
+    Metadato: quién pagó, y **un** calificador — el que más dice de este gasto.
+    La fecha ya la pone el encabezado del día, y el porcentaje ya lo dice su badge, así que
+    repetirlos acá sería llenar la línea con lo que el ojo ya leyó.
+  */
   const meta: string[] = [];
   if (variant === 'payer') {
     meta.push(
@@ -124,21 +131,20 @@ export function ExpenseRow({
         : t('expenses.paidBy', { name: memberName(members, expense.payerId) }),
     );
   }
-  if (unevenSplit) {
-    if (expense.splitStrategy.type === 'equal') {
-      meta.push(t('expenses.metaEqualAmong', { count: split.participantIds.length }));
-    } else if (expense.splitStrategy.type === 'percentage' && expense.splitStrategy.percentages) {
-      // "40/30/30" dice más que la palabra "porcentajes" y entra en el mismo espacio.
-      meta.push(
-        Object.values(expense.splitStrategy.percentages)
-          .map(p => Math.round(p ?? 0))
-          .join('/'),
-      );
-    } else {
-      meta.push(t('expenses.metaExact'));
+  const qualifier = (() => {
+    if (isUsd && displayMode === 'ars' && blueRate) {
+      return t('expenses.metaAtBlue', { rate: blueRate.toLocaleString('es-AR') });
     }
-  }
-  meta.push(formatDayMonth(expense.date, monthsShort));
+    if (hasInstallments) return t('expenses.metaCredit');
+    if (expense.splitStrategy.type === 'exact') return t('expenses.metaExactSplit');
+    if (expense.splitStrategy.type === 'percentage') return '';
+    return split.isEven
+      ? t('expenses.metaEqualAll', { count: split.participantIds.length })
+      : t('expenses.metaEqualSome', { count: split.participantIds.length });
+  })();
+  if (qualifier) meta.push(qualifier);
+  // En la lista personal no hay pagador ni división: ahí la fecha sigue siendo el dato.
+  if (variant === 'category') meta.push(formatDayMonth(expense.date, monthsShort));
 
   /* ── Tu parte: la única cifra de la fila que habla de vos ─────────────────────────── */
   const net = currentMember ? netOf(expense, split, currentMember.id) : 0;
@@ -175,36 +181,25 @@ export function ExpenseRow({
           isFlashing && 'bg-brand-wash',
         )}
       >
-        {variant === 'payer' ? (
-          <div
-            className={cn(
-              'flex h-[34px] w-[34px] shrink-0 select-none items-center justify-center rounded-full',
-              'text-[12px] font-bold text-white',
-              avatarBg(expense.payerId),
-            )}
-            aria-hidden="true"
-          >
-            {initials(memberName(members, expense.payerId))}
-          </div>
-        ) : (
-          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-surface-sunken">
-            {categoryEmoji
-              ? <span className="text-lg leading-none">{categoryEmoji}</span>
-              : <span className="text-[11px] font-bold uppercase text-muted-2">{expense.category.slice(0, 2)}</span>}
-          </div>
-        )}
+        <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] bg-surface-sunken">
+          {categoryEmoji
+            ? <span className="text-[19px] leading-none">{categoryEmoji}</span>
+            : <span className="text-[11px] font-bold uppercase text-muted-2">{expense.category.slice(0, 2)}</span>}
+        </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
+            {/* Las categorías internas traen su descripción ya armada ("Guada → Fran"), y
+                `capitalize` le bajaría la mayúscula al segundo nombre. */}
             <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
-              {capitalize(expense.description)}
+              {expense.category in INTERNAL_EMOJI ? expense.description : capitalize(expense.description)}
             </p>
             {/* El ícono de repetición se conserva (checklist §7), adentro del badge, porque
                 la palabra "recurrente" sale del copy de cara al usuario (§6.2). */}
             {isRecurring && (
               <ExceptionBadge tone="fixed">
                 <Repeat className="h-2.5 w-2.5" aria-hidden="true" />
-                {t('expenses.badgeFixed')}
+                {t('expenses.badgeRecurring2')}
               </ExceptionBadge>
             )}
             {hasInstallments && (
@@ -212,8 +207,19 @@ export function ExpenseRow({
                 {expense.installmentNo}/{expense.installments}
               </ExceptionBadge>
             )}
-            {isUsd && <ExceptionBadge tone="usd">USD</ExceptionBadge>}
-            {unevenSplit && <ExceptionBadge tone="split">{t('expenses.badgeSplit')}</ExceptionBadge>}
+            {/* El badge con el monto original sólo cuando la cifra grande está pasada a pesos;
+                viéndose en USD, decir "USD 120" al lado de "US$120" es decirlo dos veces. */}
+            {isUsd && displayMode === 'ars' && (
+              <ExceptionBadge tone="usd">
+                USD {Math.round(expense.amount).toLocaleString('es-AR')}
+              </ExceptionBadge>
+            )}
+            {unevenSplit && expense.splitStrategy.type === 'percentage' && (
+              <ExceptionBadge tone="split">{percentageLabel}</ExceptionBadge>
+            )}
+            {unevenSplit && expense.splitStrategy.type === 'exact' && (
+              <ExceptionBadge tone="split">{t('expenses.badgeExact')}</ExceptionBadge>
+            )}
           </div>
           <p className="mt-0.5 truncate text-[11.5px] font-medium leading-tight text-muted-2">
             {meta.join(' · ')}

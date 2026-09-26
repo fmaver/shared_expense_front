@@ -101,7 +101,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
       >
         <Link
           to="/groups"
-          className="flex h-12 w-full items-center justify-center rounded-[12px] bg-brand text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+          className="flex h-12 w-full items-center justify-center rounded-[12px] bg-brand text-[14px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
         >
           {t('invite.goToGroup')}
         </Link>
@@ -164,7 +164,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
               </p>
               <Button
                 type="submit"
-                className="w-full bg-brand hover:bg-brand/90 text-white"
+                className="w-full bg-brand hover:bg-brand/90 text-primary-foreground"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? t('invite.joining') : t('invite.join')}
@@ -238,7 +238,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
 
             <Button
               type="submit"
-              className="w-full bg-brand hover:bg-brand/90 text-white font-semibold"
+              className="w-full bg-brand hover:bg-brand/90 text-primary-foreground font-semibold"
               disabled={isSubmitting || !name.trim() || !email.trim() || !password}
             >
               {isSubmitting ? 'Joining…' : t('invite.createAndJoin')}

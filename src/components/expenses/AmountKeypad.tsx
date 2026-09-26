@@ -60,7 +60,8 @@ export function AmountKeypad({ value, onChange, disabled = false, className }: A
           aria-label={key === 'del' ? 'Borrar' : key}
           className={cn(
             'flex h-12 items-center justify-center rounded-[14px] text-[20px] font-bold tabular-nums',
-            'transition-colors select-none',
+            // Con borde y fondo de tarjeta: planas se leían como texto suelto y no como teclas.
+            'border border-line bg-surface transition-colors select-none',
             disabled
               ? 'cursor-default text-muted-3'
               : 'cursor-pointer text-foreground hover:bg-surface-sunken active:bg-line',

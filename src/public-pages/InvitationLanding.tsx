@@ -136,7 +136,7 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
               {t('invite.loginToAccept')}
             </p>
             <Button
-              className="w-full bg-brand hover:bg-brand/90 text-white font-semibold"
+              className="w-full bg-brand hover:bg-brand/90 text-primary-foreground font-semibold"
               onClick={() => navigate(`/login?redirect=/invite/${token}`)}
             >
               {t('invite.logInToAccept')}
@@ -160,7 +160,7 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
                   <span className="font-semibold text-foreground">{info.groupName}</span>.
                 </p>
                 <Button
-                  className="w-full bg-brand hover:bg-brand/90 text-white font-semibold"
+                  className="w-full bg-brand hover:bg-brand/90 text-primary-foreground font-semibold"
                   onClick={handleExistingAccept}
                   disabled={isSubmitting}
                 >
@@ -228,7 +228,7 @@ export function InvitationLanding({ onLoginSuccess }: Props) {
 
             <Button
               type="submit"
-              className="w-full bg-brand hover:bg-brand/90 text-white font-semibold"
+              className="w-full bg-brand hover:bg-brand/90 text-primary-foreground font-semibold"
               disabled={isSubmitting || !password}
             >
               {isSubmitting ? t('invite.creatingAccount') : t('invite.createAndJoin')}

@@ -36,8 +36,8 @@ export function LandingPage() {
       <nav className="sticky top-0 z-50 bg-ink">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 lg:px-7">
           <div className="flex items-center gap-2.5">
-            <JirensMark className="text-paper" size={28} />
-            <span className="font-display text-[19px] leading-none text-paper">Jirens</span>
+            <JirensMark tone="night" className="text-white" size={28} />
+            <span className="text-[19px] font-extrabold leading-none tracking-[-0.025em] text-paper">Jirens</span>
           </div>
           <div className="flex items-center gap-1.5">
             <button
@@ -57,7 +57,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="flex h-9 cursor-pointer items-center rounded-pill bg-brand px-4 text-[12.5px] font-bold text-white transition-opacity hover:opacity-90"
+              className="flex h-9 cursor-pointer items-center rounded-pill bg-brand px-4 text-[12.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
               {t('landing.nav.getStarted')}
             </button>
@@ -72,7 +72,7 @@ export function LandingPage() {
             {t('landing.hero.badge')}
           </span>
 
-          <h1 className="mt-8 font-display text-[40px] leading-[1.1] text-paper sm:text-[52px]">
+          <h1 className="mt-8 text-[36px] font-bold leading-[1.1] tracking-[-0.025em] text-paper sm:text-[46px]">
             {t('landing.hero.headline1')}{' '}
             <span className="text-brand-soft">{t('landing.hero.headline2')}</span>
           </h1>
@@ -85,7 +85,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
               {t('landing.hero.cta')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -104,7 +104,7 @@ export function LandingPage() {
       {/* ── Qué hace ────────────────────────────────────────────────────────────────── */}
       <section id="features" className="px-5 py-20 lg:px-7">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-center font-display text-[30px] leading-none text-foreground">
+          <h2 className="text-center text-[26px] font-bold leading-none tracking-[-0.025em] text-foreground">
             {t('landing.features.title')}
           </h2>
           <p className="mt-3 text-center text-[14px] font-medium text-muted-1">
@@ -128,14 +128,14 @@ export function LandingPage() {
       {/* ── Cómo funciona ───────────────────────────────────────────────────────────── */}
       <section id="how-it-works" className="bg-surface-sunken px-5 py-20 lg:px-7">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-center font-display text-[30px] leading-none text-foreground">
+          <h2 className="text-center text-[26px] font-bold leading-none tracking-[-0.025em] text-foreground">
             {t('landing.howItWorks.title')}
           </h2>
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
             {STEPS.map(({ n, title, desc }) => (
               <div key={n} className="text-center">
-                <p className="font-display text-[40px] leading-none tabular-nums text-brand-soft">{n}</p>
+                <p className="text-[40px] font-extrabold leading-none tracking-[-0.025em] tabular-nums text-brand-soft">{n}</p>
                 <h3 className="mt-3 text-[13.5px] font-bold text-foreground">{title}</h3>
                 <p className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-muted-1">{desc}</p>
               </div>
@@ -146,7 +146,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+              className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
               {t('landing.howItWorks.cta')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -159,8 +159,8 @@ export function LandingPage() {
       <footer className="bg-ink px-5 py-10 lg:px-7">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2.5">
-            <JirensMark className="text-paper" size={26} />
-            <span className="font-display text-[17px] leading-none text-paper">Jirens</span>
+            <JirensMark tone="night" className="text-white" size={26} />
+            <span className="text-[17px] font-extrabold leading-none tracking-[-0.025em] text-paper">Jirens</span>
           </div>
           <p className="flex items-center gap-1.5 text-[11.5px] font-medium text-muted-on-dark">
             <CheckCircle className="h-3.5 w-3.5 text-positive-on-dark" aria-hidden="true" />

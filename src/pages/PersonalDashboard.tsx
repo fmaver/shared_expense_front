@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useScroll } from '@/contexts/ScrollContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
@@ -16,13 +16,12 @@ import { cn } from '@/lib/utils';
 import { avatarBg, initials } from '@/utils/avatar';
 import { PersonalCharts } from '@/components/personal/PersonalCharts';
 import { BudgetBar } from '@/components/personal/BudgetBar';
-import { MovementsList } from '@/components/personal/MovementsList';
+import {
+  IncomeSection, OwnExpensesSection, GroupSharesSection,
+} from '@/components/personal/LedgerSections';
 import { SettleUpCard } from '@/components/personal/SettleUpCard';
 import { DueDatesSection } from '@/components/personal/DueDatesSection';
 import { PersonalAddLauncher } from '@/components/personal/PersonalAddLauncher';
-
-/** Movimientos que entran en el home; las listas completas viven en su pantalla. */
-const RECENT_LIMIT = 6;
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -49,7 +48,7 @@ export function PersonalDashboard() {
   const [trendRange, setTrendRange] = useState<3 | 6 | 12>(6);
   const { trendData, trendLoading, prevLedger } = usePersonalTrend(year, month, trendRange, ledger);
 
-  const { groups: pendingGroups, reload: reloadTransfers } = usePendingTransfers(
+  const { groups: pendingGroups } = usePendingTransfers(
     year, month, ledger?.groupBalances, currentMember?.id ?? null,
   );
 
@@ -95,6 +94,9 @@ export function PersonalDashboard() {
 
   const pending = ledger?.pendingSettlementsTotal ?? 0;
   const hasPending = Math.abs(pending) > 0.01;
+  const projectedDelta = ledger ? ledger.projectedBalance - ledger.currentBalance : 0;
+  const openGroupBalances = (ledger?.groupBalances ?? [])
+    .filter(g => !g.isSettled && Math.abs(g.netBalance) > 0.01);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -107,7 +109,7 @@ export function PersonalDashboard() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-2">
                 {months[month - 1]} {year}
               </p>
-              <h1 className="mt-1 truncate font-display text-[27px] leading-[1.1] text-foreground">
+              <h1 className="mt-1 truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
                 {t('personal.greeting', { name: currentMember?.name ?? '' })}
               </h1>
             </div>
@@ -120,17 +122,12 @@ export function PersonalDashboard() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
+              {/* Se puede ir al futuro: los fijos y las cuotas ya viven en los meses que vienen. */}
               <button
                 type="button"
                 onClick={() => goMonth(1)}
-                disabled={isCurrentMonth}
-                aria-label={isCurrentMonth ? t('monthPager.atCurrentMonth') : t('monthPager.next')}
-                className={cn(
-                  'flex h-[34px] w-[34px] items-center justify-center rounded-full border',
-                  isCurrentMonth
-                    ? 'cursor-default border-transparent bg-surface-sunken text-muted-3'
-                    : 'cursor-pointer border-line-strong text-foreground transition-colors hover:bg-surface-sunken',
-                )}
+                aria-label={t('monthPager.next')}
+                className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full border border-line-strong text-foreground transition-colors hover:bg-surface-sunken"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -156,23 +153,61 @@ export function PersonalDashboard() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[12px] font-semibold text-muted-1">{t('personal.leftThisMonth')}</p>
                   {isCurrentMonth && (
-                    <span className="shrink-0 rounded-pill bg-positive-wash px-2.5 py-1 text-[11px] font-bold text-positive">
+                    <span className="shrink-0 rounded-full bg-positive-wash px-2 py-1 text-[10.5px] font-bold uppercase tracking-[0.08em] text-positive">
                       {t('personal.inProgress')}
                     </span>
                   )}
                 </div>
 
-                <p className="mt-2 font-display text-[48px] leading-none tracking-[-0.02em] tabular-nums text-foreground">
+                <p className="mt-2.5 text-[40px] font-extrabold leading-none tracking-[-0.025em] tabular-nums text-foreground">
                   {formatCurrency(ledger.currentBalance)}
                 </p>
+                <p className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-muted-1">
+                  <Trans
+                    i18nKey="personal.todayOfIncome"
+                    values={{ income: formatCurrency(ledger.totalIncome) }}
+                    components={[<strong className="font-bold text-foreground" />]}
+                  />
+                </p>
 
+                {/* Proyectado: cómo queda el mes cuando se salden los grupos abiertos. */}
                 {hasPending && (
-                  <p className="mt-2.5 text-[12.5px] font-medium leading-[1.45] text-muted-1">
-                    {t(pending > 0 ? 'personal.afterCollecting' : 'personal.afterSettling', {
-                      projected: formatCurrency(ledger.projectedBalance),
-                      pending: formatCurrency(Math.abs(pending)),
-                    })}
-                  </p>
+                  <div className="mt-3.5 border-t border-dashed border-line-strong pt-[13px]">
+                    <div className="flex items-baseline justify-between gap-2.5">
+                      <span className="text-[12px] font-semibold text-muted-1">{t('personal.projected')}</span>
+                      <span className="flex items-baseline gap-[7px]">
+                        <span
+                          className={cn(
+                            'rounded-full px-[7px] py-0.5 text-[11px] font-bold tabular-nums',
+                            projectedDelta >= 0 ? 'bg-positive-wash text-positive' : 'bg-negative-wash text-negative',
+                          )}
+                        >
+                          {projectedDelta >= 0 ? '+' : '−'}{formatCurrency(Math.abs(projectedDelta))}
+                        </span>
+                        <span className="text-[20px] font-extrabold tracking-[-0.025em] tabular-nums text-foreground">
+                          {formatCurrency(ledger.projectedBalance)}
+                        </span>
+                      </span>
+                    </div>
+                    {openGroupBalances.length > 0 && (
+                      <p className="mt-[5px] text-[11.5px] font-medium leading-[1.5] text-muted-1">
+                        {t('personal.whenSettled', { month: (months[month - 1] ?? '').toLocaleLowerCase() })}{' '}
+                        {openGroupBalances.map((g, i) => (
+                          <React.Fragment key={g.sourceGroupId}>
+                            {i > 0 && (i === openGroupBalances.length - 1 ? ` ${t('groups.and')} ` : ', ')}
+                            <Trans
+                              i18nKey={g.netBalance > 0 ? 'personal.collectFrom' : 'personal.payTo'}
+                              values={{ amount: formatCurrency(Math.abs(g.netBalance)), group: g.sourceGroupName }}
+                              components={[
+                                <strong className={cn('font-bold tabular-nums', g.netBalance > 0 ? 'text-positive' : 'text-negative')} />,
+                              ]}
+                            />
+                          </React.Fragment>
+                        ))}
+                        .
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 <div className="mt-4">
@@ -188,34 +223,31 @@ export function PersonalDashboard() {
                 </div>
               </div>
 
-              {/* ── Movimientos ──────────────────────────────────────────────────── */}
-              <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                <div className="px-5 pb-3 pt-4">
-                  <h2 className="font-display text-[19px] leading-none text-foreground">
-                    {t('personal.movements')}
-                  </h2>
-                </div>
-                <MovementsList ledger={ledger} categories={categories} limit={RECENT_LIMIT} />
-                {/*
-                  Las tres listas completas siguen viviendo en su pantalla, con sus formularios
-                  de alta y edición: la vista unificada es un resumen, no un reemplazo.
-                */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-line px-5 py-3">
-                  {[
-                    { to: `/personal/incomes?year=${year}&month=${month}`, label: t('personal.seeIncomes') },
-                    { to: `/personal/expenses?year=${year}&month=${month}`, label: t('personal.seeExpenses') },
-                    { to: `/personal/shares?year=${year}&month=${month}`, label: t('personal.seeShares') },
-                  ].map(link => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className="text-[12px] font-bold text-brand-ink transition-opacity hover:opacity-70"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              {/*
+                Tres secciones, no una cronología. La lista unificada mezclaba plata que entró
+                con plata que salió y con lo que te toca de los grupos: para saber cuánto
+                gastaste había que sumar mentalmente salteándose filas. Cada sección tiene su
+                total arriba, y los tres cierran contra lo que entró (la nota al pie).
+              */}
+              <p className="px-1 pt-1 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+                {t('personal.scrollHint')}
+              </p>
+
+              <IncomeSection ledger={ledger} categories={categories} year={year} month={month} />
+              <OwnExpensesSection ledger={ledger} categories={categories} year={year} month={month} />
+              <GroupSharesSection ledger={ledger} categories={categories} year={year} month={month} />
+
+              {/* La cuenta que cierra: los tres totales contra el ingreso del mes. */}
+              {ledger.totalIncome > 0 && (
+                <p className="px-1 text-[11.5px] font-medium leading-[1.5] text-muted-2">
+                  {t('personal.closesAgainst', {
+                    own: formatCurrency(ledger.totalPersonalExpenses),
+                    groups: formatCurrency(groupShare),
+                    left: formatCurrency(Math.max(ledger.totalIncome - ledger.totalPersonalExpenses - groupShare, 0)),
+                    income: formatCurrency(ledger.totalIncome),
+                  })}
+                </p>
+              )}
 
               </div>
 
@@ -226,7 +258,8 @@ export function PersonalDashboard() {
                   key={group.groupId}
                   group={group}
                   currentMemberId={currentMember.id}
-                  onPaid={() => { refetch(); reloadTransfers(); }}
+                  year={year}
+                  month={month}
                 />
               ))}
 

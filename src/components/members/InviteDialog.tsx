@@ -161,7 +161,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: Inv
             </Button>
             <Button
               type="submit"
-              className="bg-brand hover:bg-brand/90 text-white"
+              className="bg-brand hover:bg-brand/90 text-primary-foreground"
               disabled={isLoading || !name.trim() || (!isNameOnly && !contact.trim())}
             >
               {isLoading

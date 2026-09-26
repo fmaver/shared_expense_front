@@ -9,9 +9,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // Manrope para todo; Instrument Serif SÓLO para cifras y títulos de display (§3).
+        // Manrope para todo, títulos y cifras incluidos: Instrument Serif salió con la piel
+        // violeta. Los títulos van en 700 y las cifras protagonistas en 800, con -.025em.
         sans: ['Manrope', 'system-ui', 'sans-serif'],
-        display: ['"Instrument Serif"', 'Georgia', 'serif'],
       },
       colors: {
         /* Superficies y tinta */

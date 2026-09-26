@@ -38,10 +38,15 @@ export function AppShell({ onLogout }: AppShellProps) {
     gente y pestañas) y todo lo personal (el saludo con el mes y el avatar). Dos barras
     apiladas con dos avatares es exactamente lo que el rediseño saca de encima.
   */
-  const ownsItsHeader = inGroup
-    || location.pathname.startsWith('/personal')
-    || location.pathname.startsWith('/profile')
-    || location.pathname.startsWith('/groups');
+  /*
+    Qué pantallas llevan la barra de la app.
+    La mayoría trae su propio encabezado —el grupo con su nombre y pestañas, el home personal
+    con el saludo y el avatar, las de detalle con su "‹ Volver"—. Las que no son los dos
+    destinos de la barra de tabs que no tienen dónde poner el avatar, y ahí la barra es la
+    única puerta al perfil.
+  */
+  const showsAppHeader = !inGroup
+    && (location.pathname === '/groups' || location.pathname === '/personal/charts');
 
   const { data: group } = useGroup(groupIdParam ?? 0);
   const groupName = groupIdParam !== null ? (group?.name ?? undefined) : undefined;
@@ -67,19 +72,15 @@ export function AppShell({ onLogout }: AppShellProps) {
           encabezado persistente con el nombre, la gente y las pestañas, y "‹ Grupos" es la
           salida (§6.3). Dos barras apiladas diciendo lo mismo era lo que el rediseño saca.
         */}
-        {!ownsItsHeader && (
-          <MobileHeader
-            onLogout={onLogout}
-            state={effectiveIslandState}
-            groupName={groupName}
-          />
+        {showsAppHeader && (
+          <MobileHeader state={effectiveIslandState} groupName={groupName} />
         )}
 
         {/* Main content — flex col so GroupLayout can flex-1 without overflowing */}
         <main
           className={cn(
             'flex flex-1 flex-col overflow-y-auto overflow-x-hidden touch-pan-y pb-24 lg:pb-0 lg:pt-0',
-            ownsItsHeader ? 'pt-0' : 'pt-12',
+            showsAppHeader ? 'pt-12' : 'pt-0',
           )}
           onScroll={handleMainScroll}
         >

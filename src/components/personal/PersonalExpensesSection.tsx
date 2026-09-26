@@ -65,7 +65,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
     (a, b) => b.date.localeCompare(a.date) || b.id - a.id,
   );
   const totalCount = recurring.length + sortedOneOffs.length;
-  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, totalCount);
+  const { visibleCount, hasMore, remaining, showAll } = useProgressiveReveal(limit, totalCount);
   const visibleRecurring = recurring.slice(0, visibleCount);
   const visibleOneOffs = sortedOneOffs.slice(0, Math.max(0, visibleCount - recurring.length));
 
@@ -143,10 +143,10 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={totalCount} />}
           {/* Mobile adds via the floating + dial; desktop keeps these buttons */}
           <div className="hidden lg:flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => personalActions?.addExpense()}>
+            <Button variant="outline" size="sm" onClick={() => personalActions?.pick('expense')}>
               <Plus className="h-3.5 w-3.5 mr-1" /><span>{t('expenses.add')}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => personalActions?.addRecurringExpense()}>
+            <Button variant="outline" size="sm" onClick={() => personalActions?.pick('fixed')}>
               <Repeat className="h-3.5 w-3.5 mr-1" /><span>{t('personal.addRecurringExpense')}</span>
             </Button>
           </div>
@@ -246,7 +246,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
                     </Select>
                     <div className="flex gap-1.5 justify-end">
                       <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingRecExpId(null)}>{t('common.cancel')}</Button>
-                      <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
+                      <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-primary-foreground"
                         disabled={savingEditRecExp} onClick={() => handleSaveEditRecurringExpense(instance)}>
                         {savingEditRecExp ? '…' : t('common.save')}
                       </Button>
@@ -285,7 +285,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
           ))}
           {hasMore && (
             <div className="px-4">
-              <ShowMoreButton remaining={remaining} onClick={showMore} />
+              <ShowMoreButton remaining={remaining} onClick={showAll} />
             </div>
           )}
         </div>

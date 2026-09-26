@@ -73,7 +73,7 @@ export function JoinLinkCard({ groupId }: JoinLinkCardProps) {
           </p>
           <Button
             size="sm"
-            className="bg-brand hover:bg-brand/90 text-white"
+            className="bg-brand hover:bg-brand/90 text-primary-foreground"
             onClick={handleGetLink}
             disabled={isLoading}
           >

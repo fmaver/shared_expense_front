@@ -3,7 +3,7 @@ import { NavLink, useLocation, useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
 import {
-  ArrowLeftRight, CalendarClock, PieChart, Plus, Repeat, TrendingDown, TrendingUp, User, Users,
+  ArrowLeftRight, PieChart, Plus, User, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
@@ -83,32 +83,12 @@ export function FloatingTabBar() {
         },
       ]
     : isPersonal
-    ? [
-        {
-          icon: TrendingUp,
-          label: t('personal.variableTitle'),
-          desc: t('personal.variableDesc'),
-          onClick: () => { closeDial(); personalActions?.addIncome('variable'); },
-        },
-        {
-          icon: CalendarClock,
-          label: t('personal.recurringTitle'),
-          desc: t('personal.recurringDesc'),
-          onClick: () => { closeDial(); personalActions?.addIncome('recurring'); },
-        },
-        {
-          icon: TrendingDown,
-          label: t('personal.oneOffExpense'),
-          desc: t('personal.oneOffExpenseDesc'),
-          onClick: () => { closeDial(); personalActions?.addExpense(); },
-        },
-        {
-          icon: Repeat,
-          label: t('personal.recurringExpense'),
-          desc: t('personal.recurringExpenseDesc'),
-          onClick: () => { closeDial(); personalActions?.addRecurringExpense(); },
-        },
-      ]
+    /*
+      En lo personal el "+" no abre un menú: abre la matriz. Eran cuatro entradas verticales que
+      decían lo mismo que las dos preguntas de la grilla, y un menú que lleva a un formulario
+      donde se puede cambiar la elección es un paso de más.
+    */
+    ? []
     : [
         {
           icon: Plus,
@@ -208,8 +188,8 @@ export function FloatingTabBar() {
                     className={cn(
                       'relative flex h-10 items-center justify-center overflow-hidden rounded-full',
                       isActive
-                        ? 'bg-white/30 text-brand dark:bg-white/15'
-                        : 'text-muted-1 hover:bg-white/20 hover:text-foreground dark:hover:bg-white/10',
+                        ? 'bg-surface-sunken text-brand-ink'
+                        : 'text-muted-1 hover:bg-surface-sunken/60 hover:text-foreground',
                       tabBarCollapsed
                         ? isActive ? 'w-10 opacity-100' : 'pointer-events-none w-0 opacity-0'
                         : 'w-14 opacity-100',
@@ -236,14 +216,17 @@ export function FloatingTabBar() {
           )}
           <button
             type="button"
-            onClick={() => setSpeedDialOpen(prev => !prev)}
+            onClick={() => {
+              if (isPersonal) { closeDial(); personalActions?.openMatrix(); return; }
+              setSpeedDialOpen(prev => !prev);
+            }}
             aria-label={t('fab.options')}
             className={cn(
               'flex h-14 w-14 items-center justify-center rounded-full',
               'cursor-pointer transition-transform duration-150 active:scale-95',
               viewedMonthSettled && inGroup
                 ? 'bg-surface-sunken text-muted-3'
-                : 'bg-brand text-white shadow-fab',
+                : 'bg-primary text-primary-foreground shadow-fab',
             )}
           >
             <Plus className={cn('h-6 w-6 transition-transform duration-200', speedDialOpen && 'rotate-45')} />

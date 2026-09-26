@@ -13,7 +13,7 @@ import { CategoryBarList } from '@/components/charts/CategoryBarList';
 import { MonthPager } from '@/components/expenses/MonthPager';
 import { getGroupTrend } from '@/api/shares';
 import type { MonthTrendPoint } from '@/api/shares';
-import { formatCurrency } from '@/utils/format';
+import { formatCompactCurrency, formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 
 /** Una categoría que se lleva más de esto es "casi todo"; por debajo, sólo "lo más grande". */
@@ -134,11 +134,23 @@ export function GroupChartsPage() {
 
   /* ── Barras de los últimos meses ──────────────────────────────────────────────────── */
   const trendMax = Math.max(...trend.map(p => p.total), 0);
+  /* El promedio es la referencia contra la que se lee cada barra; va en el encabezado. */
+  const trendMonths = trend.filter(p => p.total > 0);
+  const trendAverage = trendMonths.length > 0
+    ? trendMonths.reduce((s, p) => s + p.total, 0) / trendMonths.length
+    : 0;
   const noData = expenses.length === 0;
 
-  const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const Block = ({ title, note, children }: {
+    title: string; note?: string; children: React.ReactNode;
+  }) => (
     <div className="rounded-card border border-line bg-surface p-4 shadow-card">
-      <h2 className="mb-3 text-[13px] font-bold text-foreground">{title}</h2>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="min-w-0 truncate text-[13px] font-bold text-foreground">{title}</h2>
+        {note && (
+          <span className="shrink-0 text-[11.5px] font-medium tabular-nums text-muted-2">{note}</span>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -155,14 +167,17 @@ export function GroupChartsPage() {
       )}
 
       {/* La frase primero: una sola cifra protagonista por pantalla */}
-      <p className="font-display text-[20px] leading-[1.45] text-foreground">
+      <p className="text-[18px] font-bold leading-[1.45] tracking-[-0.025em] text-foreground">
         {summary}
         {categorySentence && <> {categorySentence}</>}
       </p>
 
       {/* Últimos meses — el mes visto en `brand`, el anterior en `brand-soft`, el resto apagado */}
       {!isOneTime && trend.length > 0 && (
-        <Block title={t('charts.lastMonths', { count: trend.length })}>
+        <Block
+          title={t('charts.lastMonths', { count: trend.length })}
+          note={trendAverage > 0 ? t('charts.average', { amount: formatCompactCurrency(trendAverage) }) : undefined}
+        >
           <div className="flex items-stretch justify-between gap-2" style={{ height: 140 }}>
             {trend.map(point => {
               const isViewed = point.year === year && point.month === month;
@@ -171,14 +186,8 @@ export function GroupChartsPage() {
               const heightPct = trendMax > 0 ? (point.total / trendMax) * 100 : 0;
               return (
                 <div key={`${point.year}-${point.month}`} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                  <span
-                    className={cn(
-                      'w-full text-center text-[10px] font-bold tabular-nums',
-                      isViewed ? 'text-foreground' : 'text-muted-2',
-                    )}
-                  >
-                    {point.total > 0 ? Math.round(point.total / 1000) + 'k' : ''}
-                  </span>
+                  {/* Sin etiqueta encima: la barra compara, y para el número exacto está el mes
+                      abierto. Doce cifras chiquitas hacían ruido sobre la forma. */}
                   <div className="flex w-full flex-1 items-end">
                     <div
                       className={cn(
@@ -203,8 +212,11 @@ export function GroupChartsPage() {
         </Block>
       )}
 
-      {/* Categorías */}
-      <Block title={t('charts.categoryBreakdown')}>
+      {/* ── En qué se fue ───────────────────────────────────────────────────────────── */}
+      <p className="px-1 pt-1 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+        {t('charts.whereItWent')}
+      </p>
+      <div className="rounded-card border border-line bg-surface p-4 shadow-card">
         {noData ? (
           <p className="text-[12.5px] text-muted-2">{t('charts.noData')}</p>
         ) : (
@@ -217,7 +229,7 @@ export function GroupChartsPage() {
             formatValue={formatCurrency}
           />
         )}
-      </Block>
+      </div>
 
       {/*
         Quién puso cuánto y en qué forma.

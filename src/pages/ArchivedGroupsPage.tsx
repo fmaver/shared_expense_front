@@ -51,7 +51,7 @@ export function ArchivedGroupsPage() {
         <ChevronLeft className="h-3.5 w-3.5" />
         {t('mobileNav.groups')}
       </Link>
-      <h1 className="mt-1.5 font-display text-[26px] leading-none text-foreground">
+      <h1 className="mt-1.5 text-[22px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
         {t('groups.archivedTitle')}
       </h1>
 
@@ -108,7 +108,7 @@ export function ArchivedGroupsPage() {
                   <button
                     type="button"
                     onClick={() => handleUnarchive(group.id)}
-                    className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-pill bg-ink text-[12px] font-bold text-paper transition-opacity hover:opacity-90 dark:bg-paper dark:text-ink"
+                    className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-pill bg-primary text-[12px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
                   >
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                     {t('groups.unarchive')}

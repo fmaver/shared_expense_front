@@ -112,8 +112,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       <div className="mx-auto w-full max-w-md">
         {mode === 'login' ? (
           <div className="pt-6">
-            <JirensMark className="text-paper" size={44} />
-            <h1 className="mt-6 whitespace-pre-line font-display text-[34px] leading-[1.15] text-paper">
+            <JirensMark tone="night" className="text-white" size={44} />
+            <h1 className="mt-6 whitespace-pre-line text-[29px] font-bold leading-[1.15] tracking-[-0.025em] text-paper">
               {t('auth.heroTitle')}
             </h1>
             <p className="mt-3 text-[15px] font-medium leading-[1.5] text-muted-on-dark">
@@ -130,13 +130,13 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <ChevronLeft className="h-4 w-4" />
               {t('auth.backToLogin')}
             </button>
-            <JirensMark className="text-paper" size={30} />
+            <JirensMark tone="night" className="text-white" size={30} />
           </div>
         )}
 
         {mode === 'register' && (
           <div className="mt-4">
-            <h1 className="font-display text-[30px] leading-none text-paper">{t('auth.registerTitle')}</h1>
+            <h1 className="text-[26px] font-bold leading-none tracking-[-0.025em] text-paper">{t('auth.registerTitle')}</h1>
             <p className="mt-2.5 text-[14px] font-medium leading-[1.45] text-muted-on-dark">
               {t('auth.registerSubtitle')}
             </p>
@@ -144,7 +144,9 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         )}
 
         {/* ── La tarjeta ────────────────────────────────────────────────────────────── */}
-        <div className="mt-6 rounded-[24px] bg-paper p-5">
+        {/* La tarjeta sigue al tema: sus campos usan `surface`, que en oscuro se oscurece, así que
+            un fondo fijo claro dejaba campos oscuros sobre una tarjeta clara. */}
+        <div className="mt-6 rounded-[24px] bg-paper p-5 dark:bg-background">
           {error && (
             <p className="mb-3 rounded-[12px] border border-negative-wash-line bg-negative-wash px-3 py-2 text-[12.5px] font-semibold text-negative-ink">
               {error}
@@ -157,7 +159,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <button
                 type="button"
                 onClick={() => toast.info(t('auth.googleSoon'))}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[12px] border border-line-strong bg-surface text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[12px] border border-line-strong bg-surface text-[15px] font-semibold text-foreground transition-colors hover:bg-surface-sunken"
               >
                 <GoogleMark />
                 {t('auth.continueWithGoogleShort')}
@@ -193,7 +195,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {isLoading ? t('auth.signingIn') : t('auth.enter')}
               </button>
@@ -272,7 +274,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
               </button>

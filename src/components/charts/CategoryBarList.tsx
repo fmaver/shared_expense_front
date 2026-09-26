@@ -27,16 +27,16 @@ export function CategoryBarList({ items, formatValue, className }: CategoryBarLi
     <div className={cn('space-y-2.5', className)}>
       {sorted.map(item => (
         <div key={item.name}>
-          <div className="flex items-baseline justify-between gap-2 text-xs mb-1">
-            <span className="text-foreground font-medium truncate">
+          <div className="mb-1 flex items-baseline justify-between gap-2">
+            <span className="truncate text-[12.5px] font-semibold text-foreground">
               {item.emoji ? `${item.emoji} ` : ''}
               {item.name}
             </span>
-            <span className="text-muted-foreground tabular-nums shrink-0">
+            <span className="shrink-0 text-[12px] font-bold tabular-nums text-muted-1">
               {formatValue(item.value)}
             </span>
           </div>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
             <div
               className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out"
               style={{ width: `${(item.value / max) * 100}%` }}

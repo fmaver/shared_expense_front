@@ -53,7 +53,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
 
   // Incomes carry no date — instance ids increase with creation order, so id desc = latest first
   const sortedIncomes = [...ledger.incomes].sort((a, b) => b.id - a.id);
-  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, sortedIncomes.length);
+  const { visibleCount, hasMore, remaining, showAll } = useProgressiveReveal(limit, sortedIncomes.length);
   const visibleIncomes = sortedIncomes.slice(0, visibleCount);
 
   // Shared save used by both the desktop inline editor and the detail sheet.
@@ -128,7 +128,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={ledger.incomes.length} />}
           {/* Mobile adds via the floating + dial; desktop keeps this button */}
           <Button variant="outline" size="sm" className="hidden lg:inline-flex"
-            onClick={() => personalActions?.addIncome()}>
+            onClick={() => personalActions?.pick('extra')}>
             <Plus className="h-3.5 w-3.5 mr-1" /><span>{t('personal.add')}</span>
           </Button>
         </div>
@@ -185,7 +185,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
                   </div>
                   <div className="flex gap-1.5 justify-end">
                     <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingIncomeId(null)}>{t('common.cancel')}</Button>
-                    <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
+                    <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-primary-foreground"
                       disabled={savingEditIncome} onClick={() => handleSaveInlineEdit(income)}>
                       {savingEditIncome ? '…' : t('common.save')}
                     </Button>
@@ -194,7 +194,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
               )}
             </div>
           ))}
-          {hasMore && <ShowMoreButton remaining={remaining} onClick={showMore} />}
+          {hasMore && <ShowMoreButton remaining={remaining} onClick={showAll} />}
         </div>
       )}
 

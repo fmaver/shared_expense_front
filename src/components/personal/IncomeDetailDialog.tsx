@@ -91,7 +91,7 @@ export function IncomeDetailDialog({
               </Button>
               <Button
                 size="sm"
-                className="bg-brand hover:bg-brand/90 text-white"
+                className="bg-brand hover:bg-brand/90 text-primary-foreground"
                 disabled={saving || !label || !amount}
                 onClick={handleSave}
               >
