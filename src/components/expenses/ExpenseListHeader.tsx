@@ -11,12 +11,11 @@ type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'pay
 type SortOrder = 'asc' | 'desc';
 
 /**
- * Los tres chips de alcance dentro del mes.
- *
- * "Todo el mes" reemplaza al viejo "Todos", que se leía como "todos los gastos de la historia":
- * el mes ya es el alcance, y el chip sólo filtra adentro (principio 3).
+ * Los filtros dentro del mes: dos toggles independientes, "Sin saldar" y "Míos". Sin ninguno
+ * activo se ve el mes entero, así que no hace falta un chip "Todo el mes" (ADDENDUM-violeta.md
+ * §5): el mes ya es el alcance, y los toggles sólo recortan adentro (principio 3).
  */
-type Scope = 'all' | 'unsettled' | 'mine';
+type Filter = 'unsettled' | 'mine';
 
 /** Las categorías internas son plata que ya se movió, no gasto pendiente. */
 const INTERNAL_CATEGORIES = new Set(['balance', 'prestamo']);
@@ -42,7 +41,12 @@ export function ExpenseListHeader({
   const { displayMode, setDisplayMode, blueRate } = useCurrency();
   const currentMember = useCurrentMember();
 
-  const [scope, setScope] = useState<Scope>('all');
+  const [filters, setFilters] = useState<Set<Filter>>(new Set());
+  const toggleFilter = (f: Filter) => setFilters(prev => {
+    const next = new Set(prev);
+    if (next.has(f)) next.delete(f); else next.add(f);
+    return next;
+  });
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [sortOpen, setSortOpen] = useState(false);
@@ -62,8 +66,8 @@ export function ExpenseListHeader({
 
   const sorted = useMemo(() => {
     const filtered = expenses.filter(e => {
-      if (scope === 'unsettled' && INTERNAL_CATEGORIES.has(e.category)) return false;
-      if (scope === 'mine' && currentMember && e.payerId !== currentMember.id) return false;
+      if (filters.has('unsettled') && INTERNAL_CATEGORIES.has(e.category)) return false;
+      if (filters.has('mine') && currentMember && e.payerId !== currentMember.id) return false;
       return true;
     });
 
@@ -81,14 +85,13 @@ export function ExpenseListHeader({
       return sortOrder === 'asc' ? cmp : -cmp;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenses, sortField, sortOrder, scope, currentMember]);
+  }, [expenses, sortField, sortOrder, filters, currentMember]);
 
   // Agrupar por día sólo tiene sentido ordenando por fecha: con cualquier otro orden los
   // encabezados quedarían salteados y repetidos.
   useEffect(() => { onSorted(sorted, sortField === 'date'); }, [sorted, sortField, onSorted]);
 
-  const CHIPS: { value: Scope; label: string }[] = [
-    { value: 'all',       label: t('expenses.chipAll') },
+  const CHIPS: { value: Filter; label: string }[] = [
     { value: 'unsettled', label: t('expenses.chipUnsettled') },
     { value: 'mine',      label: t('expenses.chipMine') },
   ];
@@ -145,10 +148,11 @@ export function ExpenseListHeader({
             <button
               key={chip.value}
               type="button"
-              onClick={() => setScope(chip.value)}
+              onClick={() => toggleFilter(chip.value)}
+              aria-pressed={filters.has(chip.value)}
               className={cn(
                 'h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[11.5px] font-bold transition-colors',
-                scope === chip.value
+                filters.has(chip.value)
                   ? 'bg-primary text-primary-foreground'
                   : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
               )}

@@ -28,9 +28,8 @@ import { useIsland } from '@/contexts/IslandContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { useSettlementActions } from '@/hooks/useSettlementActions';
-import { formatCurrency, formatDayHeading } from '@/utils/format';
-import { shareReminder } from '@/utils/remind';
-import { logReminded, settleScope } from '@/utils/settleLog';
+import { formatDayHeading } from '@/utils/format';
+import { settleScope } from '@/utils/settleLog';
 import { cn } from '@/lib/utils';
 
 export function ExpensesDashboard() {
@@ -205,25 +204,6 @@ export function ExpensesDashboard() {
     else setShowSettle(true);
   };
 
-  /**
-   * Avisarles a todos de una.
-   *
-   * Un solo mensaje que nombra cada pago pendiente, por la hoja nativa de compartir. No hay
-   * endpoint de aviso todavía; esto funciona hoy y no miente sobre lo que hace.
-   */
-  const remindEveryone = async () => {
-    const pending = (monthlyData?.transfers ?? []).filter(tr => tr.toMemberId === currentMemberId);
-    if (pending.length === 0) return;
-    const lines = pending.map(tr => {
-      const name = members.find(m => m.id === tr.fromMemberId)?.name ?? '';
-      return `${name}: ${formatCurrency(tr.amount)}`;
-    });
-    const text = `${group?.name ?? ''} — ${monthName.toLocaleLowerCase()}\n${lines.join('\n')}`;
-    if (await shareReminder(text)) logReminded(scope, pending.map(tr => tr.fromMemberId));
-  };
-
-
-
   const handleSorted = useCallback((s: ExpenseResponse[], byDate: boolean) => {
     setSortedExpenses(s);
     setGroupByDate(byDate);
@@ -271,14 +251,10 @@ export function ExpensesDashboard() {
         ) : (
           <GroupBalanceCard
             isOneTime={isOneTime}
-            groupName={group?.name ?? ''}
+            monthName={monthName.toLocaleLowerCase()}
             balances={monthlyData.balances}
-            transfers={monthlyData.transfers ?? []}
-            expenses={expenses}
-            members={members}
             currentMemberId={currentMemberId}
             onOpenSettle={openSettle}
-            onRemind={remindEveryone}
           />
         )
       )}
