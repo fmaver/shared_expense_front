@@ -112,7 +112,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       <div className="mx-auto w-full max-w-md">
         {mode === 'login' ? (
           <div className="pt-6">
-            <JirensMark className="text-paper" size={44} />
+            <JirensMark tone="night" className="text-white" size={44} />
             <h1 className="mt-6 whitespace-pre-line text-[29px] font-bold leading-[1.15] tracking-[-0.025em] text-paper">
               {t('auth.heroTitle')}
             </h1>
@@ -130,7 +130,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <ChevronLeft className="h-4 w-4" />
               {t('auth.backToLogin')}
             </button>
-            <JirensMark className="text-paper" size={30} />
+            <JirensMark tone="night" className="text-white" size={30} />
           </div>
         )}
 

@@ -36,7 +36,7 @@ export function LandingPage() {
       <nav className="sticky top-0 z-50 bg-ink">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 lg:px-7">
           <div className="flex items-center gap-2.5">
-            <JirensMark className="text-paper" size={28} />
+            <JirensMark tone="night" className="text-white" size={28} />
             <span className="text-[19px] font-extrabold leading-none tracking-[-0.025em] text-paper">Jirens</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -159,7 +159,7 @@ export function LandingPage() {
       <footer className="bg-ink px-5 py-10 lg:px-7">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2.5">
-            <JirensMark className="text-paper" size={26} />
+            <JirensMark tone="night" className="text-white" size={26} />
             <span className="text-[17px] font-extrabold leading-none tracking-[-0.025em] text-paper">Jirens</span>
           </div>
           <p className="flex items-center gap-1.5 text-[11.5px] font-medium text-muted-on-dark">

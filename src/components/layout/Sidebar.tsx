@@ -82,7 +82,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
         onClick={() => { navigate('/groups'); onNavigate?.(); }}
         className="flex cursor-pointer items-center gap-2.5 px-4 pb-4 pt-5 text-left"
       >
-        <JirensMark className="text-paper" size={30} />
+        <JirensMark tone="night" className="text-white" size={30} />
         <span className="text-[19px] font-extrabold leading-none tracking-[-0.025em] text-paper">Jirens</span>
       </button>
 

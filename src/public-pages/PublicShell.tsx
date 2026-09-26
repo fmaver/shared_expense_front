@@ -18,7 +18,7 @@ export function PublicShell({
   return (
     <div className="min-h-screen bg-ink px-5 py-10">
       <div className="mx-auto w-full max-w-md">
-        <JirensMark className="text-paper" size={40} />
+        <JirensMark tone="night" className="text-white" size={40} />
         {title && (
           <h1 className="mt-5 text-[26px] font-bold leading-[1.15] tracking-[-0.025em] text-paper">{title}</h1>
         )}
