@@ -167,7 +167,8 @@
     "balanceLabel": "Your balance in groups",
     "inFavour": "in your favour",
     "toPay": "to pay",
-    "moneyLeft": "left"
+    "moneyLeft": "left",
+    "sections": "Group sections"
   },
   "tabs": {
     "expenses": "Expenses",

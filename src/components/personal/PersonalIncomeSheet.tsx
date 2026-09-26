@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Segmented } from '@/components/ui/Segmented';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { AmountInput } from '@/components/expenses/AmountInput';
 import { ContextCard, ContextRow } from '@/components/expenses/ContextRows';
@@ -138,24 +139,14 @@ export function PersonalIncomeSheet({
         </div>
 
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
-          <div className="flex gap-1 rounded-[14px] bg-line-soft p-1">
-            {([
-              { value: 'extra' as const, label: t('personalAdd.segmentExtra') },
-              { value: 'salary' as const, label: t('personalAdd.segmentSalary') },
-            ]).map(option => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setKind(option.value)}
-                className={cn(
-                  'h-[34px] flex-1 cursor-pointer rounded-[11px] text-[12.5px] font-bold transition-colors',
-                  kind === option.value ? 'bg-primary text-primary-foreground' : 'text-muted-1',
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: 'extra', label: t('personalAdd.segmentExtra') },
+              { value: 'salary', label: t('personalAdd.segmentSalary') },
+            ]}
+          />
 
           <div className="pt-5 text-center">
             <AmountInput value={amountText} onChange={setAmountText} tone="positive" />

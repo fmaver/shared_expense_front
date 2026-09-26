@@ -167,7 +167,8 @@
     "balanceLabel": "Tu saldo en grupos",
     "inFavour": "a favor",
     "toPay": "a pagar",
-    "moneyLeft": "te quedan"
+    "moneyLeft": "te quedan",
+    "sections": "Secciones del grupo"
   },
   "tabs": {
     "expenses": "Gastos",

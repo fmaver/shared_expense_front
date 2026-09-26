@@ -5,6 +5,7 @@ import { ChevronLeft, ImagePlus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Segmented } from '@/components/ui/Segmented';
 import { useCategories } from '@/hooks/useCategories';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { parseExpenseImage } from '@/api/expenses';
@@ -370,28 +371,14 @@ export function AddExpenseDialog({
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
           {/* ── Segmented: qué estás anotando ──────────────────────────────────────── */}
           {canPickMode && (
-            <div className="flex gap-1 rounded-pill bg-surface-sunken p-1">
-              {([
-                { value: 'expense' as const, label: t('expenseForm.modeExpense') },
-                { value: 'loan' as const, label: t('expenseForm.modeLoan') },
-              ]).map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setMode(option.value)}
-                  className={cn(
-                    'h-8 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
-                    mode === option.value
-                      ? option.value === 'expense'
-                        ? 'bg-negative text-white dark:text-ink'
-                        : 'bg-primary text-primary-foreground'
-                      : 'text-muted-1',
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <Segmented
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'expense', label: t('expenseForm.modeExpense') },
+                { value: 'loan', label: t('expenseForm.modeLoan') },
+              ]}
+            />
           )}
 
           {/* ── El monto, que es de lo que se trata la pantalla ────────────────────── */}

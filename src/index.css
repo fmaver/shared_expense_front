@@ -211,6 +211,38 @@
   box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.40);
 }
 
+/* ── Segmentado — pestañas del grupo y "Una vez / Cada mes" (V6.3) ──────────
+   Una sola pieza para toda elección excluyente de pocas opciones. El riel es un
+   lavanda translúcido y la opción activa, una pastilla blanca que flota apenas.
+   -------------------------------------------------------------------------- */
+.segmented {
+  background: rgba(108, 90, 192, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+.dark .segmented {
+  background: rgba(169, 155, 234, 0.12);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.segmented-item {
+  color: #57526E;
+}
+.dark .segmented-item {
+  color: hsl(var(--muted-1));
+}
+.segmented-item[data-active='true'],
+.segmented-item[aria-current='page'] {
+  background: #FFFFFF;
+  color: #4A3C96;
+  box-shadow:
+    0 2px 8px -2px rgba(30, 27, 46, 0.20),
+    0 0 0 1px rgba(108, 90, 192, 0.10);
+}
+.dark .segmented-item[data-active='true'],
+.dark .segmented-item[aria-current='page'] {
+  background: #2E2856;
+  color: #F1EEFA;
+}
+
 /* ── Savings hatch — budget bar "projected savings" zone ───────────────────
    A diagonal two-tone stripe reads as "projected / what you keep", distinct
    from the solid committed zones (spent + pending group costs). Los tonos

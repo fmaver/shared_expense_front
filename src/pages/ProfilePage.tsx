@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PushCard } from '@/components/ui/PushCard';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Segmented } from '@/components/ui/Segmented';
 import { ConfigSheet } from '@/components/layout/ConfigSheet';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
 import { avatarBg, initials } from '@/utils/avatar';
@@ -231,7 +231,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         <PushCard />
         <div className="mt-3 rounded-card border border-line bg-surface p-4 shadow-card">
           <p className="text-[12.5px] font-bold text-foreground">{t('profile.fallbackChannel')}</p>
-          <SegmentedControl
+          <Segmented
             className="mt-2.5"
             aria-label={t('profile.fallbackChannel')}
             value={channel}
@@ -262,7 +262,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
           <Row
             label={t('profile.language')}
             control={
-              <SegmentedControl
+              <Segmented
                 className="w-[96px] shrink-0"
                 aria-label={t('profile.language')}
                 value={currentLang}
@@ -279,7 +279,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
           <Row
             label={t('profile.theme')}
             control={
-              <SegmentedControl
+              <Segmented
                 className="w-[180px] shrink-0"
                 aria-label={t('profile.theme')}
                 value={theme}

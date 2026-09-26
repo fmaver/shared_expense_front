@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ImagePlus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Segmented } from '@/components/ui/Segmented';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { AmountInput } from '@/components/expenses/AmountInput';
@@ -257,24 +258,14 @@ export function PersonalExpenseSheet({
 
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
           {/* ── Una vez, o todos los meses ─────────────────────────────────────────── */}
-          <div className="flex gap-1 rounded-[14px] bg-line-soft p-1">
-            {([
-              { value: 'expense' as const, label: t('personalAdd.segmentOnce') },
-              { value: 'fixed' as const, label: t('personalAdd.segmentFixed') },
-            ]).map(option => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setKind(option.value)}
-                className={cn(
-                  'h-[34px] flex-1 cursor-pointer rounded-[11px] text-[12.5px] font-bold transition-colors',
-                  kind === option.value ? 'bg-primary text-primary-foreground' : 'text-muted-1',
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: 'expense', label: t('personalAdd.segmentOnce') },
+              { value: 'fixed', label: t('personalAdd.segmentFixed') },
+            ]}
+          />
 
           {/* ── El monto ───────────────────────────────────────────────────────────── */}
           <div className="pt-5 text-center">

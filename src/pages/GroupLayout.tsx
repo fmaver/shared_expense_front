@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Outlet, NavLink, useParams, useLocation, Link } from 'react-router-dom';
+import { Outlet, useParams, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react';
 import { useGroup } from '@/hooks/useGroups';
@@ -7,6 +7,7 @@ import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useScroll } from '@/contexts/ScrollContext';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SegmentedLinks } from '@/components/ui/Segmented';
 import { avatarBg, initials } from '@/utils/avatar';
 
 /** "Fran, Guada y Mati" — la lista de nombres como se dice en voz alta. */
@@ -90,7 +91,7 @@ export function GroupLayout() {
         salida y las cinco secciones (§6.3). Dibujarlo igual era decir todo dos veces.
       */}
       <div className="shrink-0 border-b border-line bg-surface lg:hidden">
-        <div className="mx-auto w-full max-w-5xl px-5 pt-3 lg:px-7 lg:pt-4">
+        <div className="mx-auto w-full max-w-5xl px-5 pb-3 pt-3 lg:px-7 lg:pt-4">
           <Link
             to="/groups"
             className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
@@ -145,26 +146,18 @@ export function GroupLayout() {
             )}
           </div>
 
-          {/* Strip de pestañas — siempre visible, en mobile y en desktop */}
-          <nav className="-mb-px mt-3 flex gap-4 overflow-x-auto">
-            {TABS.map(tab => (
-              <NavLink
-                key={tab.label}
-                to={tab.path === ''
-                  ? `/groups/${groupId}${monthQuery}`
-                  : `/groups/${groupId}/${tab.path}${monthQuery}`}
-                end={tab.path === ''}
-                className={({ isActive }) => cn(
-                  'shrink-0 whitespace-nowrap border-b-2 pb-2.5 transition-colors',
-                  isActive
-                    ? 'border-brand text-[12.5px] font-bold text-foreground'
-                    : 'border-transparent text-[12.5px] font-semibold text-muted-2 hover:text-foreground',
-                )}
-              >
-                {tab.label}
-              </NavLink>
-            ))}
-          </nav>
+          {/* Pestañas como segmentado (V6.3). Son cinco: si no entran, la fila scrollea. */}
+          <SegmentedLinks
+            aria-label={t('groups.sections')}
+            className="mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            links={TABS.map(tab => ({
+              to: tab.path === ''
+                ? `/groups/${groupId}${monthQuery}`
+                : `/groups/${groupId}/${tab.path}${monthQuery}`,
+              label: tab.label,
+              end: tab.path === '',
+            }))}
+          />
         </div>
       </div>
 
