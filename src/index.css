@@ -167,12 +167,13 @@
   /* App, no documento: la página nunca se arrastra de costado ni se aleja con dos dedos.
      `pan-x pan-y` deja scrollear en las dos direcciones (las filas de chips con scroll propio
      siguen andando) pero no incluye `pinch-zoom`, así que el pellizco no hace nada. `clip` en
-     lugar de `hidden` corta el desborde lateral sin crear un contenedor de scroll, y el
-     overscroll horizontal no rebota. */
+     lugar de `hidden` corta el desborde lateral sin crear un contenedor de scroll.
+     Sin `overscroll-behavior-x: none` a propósito: esa propiedad existe justamente para cortar
+     la navegación por deslizamiento lateral, y se comía el gesto de volver del borde. El
+     paneo lateral ya lo impide `clip`. */
   html,
   body {
     overflow-x: clip;
-    overscroll-behavior-x: none;
     touch-action: pan-x pan-y;
   }
   body {
