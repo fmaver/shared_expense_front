@@ -92,8 +92,12 @@ export function GroupLayout() {
     end: tab.path === '',
   }));
   const tabs = (className?: string) => (
-    /* Las cinco entran sin scroll lateral (ver `fit` en Segmented). */
-    <SegmentedLinks aria-label={t('groups.sections')} className={className} links={tabLinks} fit />
+    /*
+      Las cinco entran sin scroll lateral (ver `fit` en Segmented), y cambiar de pestaña no suma
+      historial: deslizar para volver sale del grupo, igual que la flecha, en vez de ir a la
+      pestaña anterior.
+    */
+    <SegmentedLinks aria-label={t('groups.sections')} className={className} links={tabLinks} fit replace />
   );
   /* La línea de contexto de la banda: el mes (si el grupo tiene meses) y lo de la pestaña. */
   const bandContext = [isOneTime ? null : `${months[month - 1] ?? ''} ${year}`, subtitle]

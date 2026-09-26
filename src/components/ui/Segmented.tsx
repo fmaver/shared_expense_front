@@ -73,16 +73,22 @@ const FIT_ITEM = cn(
 );
 
 /** La misma pieza, con links: las pestañas de una sección. */
-export function SegmentedLinks({ links, className, fit = false, 'aria-label': ariaLabel }: {
+export function SegmentedLinks({ links, className, fit = false, replace = false, 'aria-label': ariaLabel }: {
   links: SegmentedLink[];
   className?: string;
   fit?: boolean;
+  /**
+   * Cambiar de opción reemplaza la entrada del historial en vez de sumar una. Para pestañas de
+   * una misma pantalla: así el "atrás" (el gesto de iOS o el del navegador) sale de la
+   * pantalla, como la flecha, en vez de recorrer las pestañas que fuiste tocando.
+   */
+  replace?: boolean;
   'aria-label'?: string;
 }) {
   return (
     <nav aria-label={ariaLabel} className={cn(TRACK, className)}>
       {links.map(link => (
-        <NavLink key={link.to} to={link.to} end={link.end} className={cn(ITEM, fit && FIT_ITEM)}>
+        <NavLink key={link.to} to={link.to} end={link.end} replace={replace} className={cn(ITEM, fit && FIT_ITEM)}>
           {link.label}
         </NavLink>
       ))}
