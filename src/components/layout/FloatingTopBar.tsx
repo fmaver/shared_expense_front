@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlassButton } from '@/components/ui/Glass';
@@ -36,7 +37,20 @@ interface FloatingTopBarProps {
  * título no quede debajo de los botones.
  */
 export function FloatingTopBar({ back, right, tone = 'app', band }: FloatingTopBarProps) {
+  const navigate = useNavigate();
   const [bandVisible, setBandVisible] = useState(false);
+
+  /*
+    La flecha hace lo mismo que el gesto de volver de iOS: un paso atrás en el historial. Si
+    fuera un link a `back.to`, sumaría una entrada, y deslizar después te devolvería adentro
+    de la pantalla de la que saliste. Sólo cuando no hay adónde volver (se entró por un
+    deep-link o una notificación) va a `back.to`, reemplazando la entrada.
+  */
+  const goBack = (to: string) => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (idx > 0) navigate(-1);
+    else navigate(to, { replace: true });
+  };
   const el = band?.watch ?? null;
 
   useEffect(() => {
@@ -77,7 +91,7 @@ export function FloatingTopBar({ back, right, tone = 'app', band }: FloatingTopB
       {back && (
         <div className="fixed left-4 z-40" style={{ top: TOP }}>
           {'to' in back ? (
-            <GlassButton to={back.to} tone={tone} aria-label={back.label}>
+            <GlassButton onClick={() => goBack(back.to)} tone={tone} aria-label={back.label}>
               <ChevronLeft className="h-[17px] w-[17px]" strokeWidth={2.4} />
             </GlassButton>
           ) : (
