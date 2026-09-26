@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowDownUp, FileDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,8 @@ const INTERNAL_CATEGORIES = new Set(['balance', 'prestamo']);
 interface ExpenseListHeaderProps {
   expenses: ExpenseResponse[];
   members: Member[];
-  onSorted: (sorted: ExpenseResponse[]) => void;
+  /** El segundo argumento dice si el orden actual permite agrupar por día. */
+  onSorted: (sorted: ExpenseResponse[], groupByDate: boolean) => void;
   /** Nombre del mes en curso, para el conteo en palabras. */
   monthLabel: string;
   /** Un grupo de evento no tiene meses: el conteo lo dice de otra manera. */
@@ -82,7 +83,9 @@ export function ExpenseListHeader({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expenses, sortField, sortOrder, scope, currentMember]);
 
-  useEffect(() => { onSorted(sorted); }, [sorted, onSorted]);
+  // Agrupar por día sólo tiene sentido ordenando por fecha: con cualquier otro orden los
+  // encabezados quedarían salteados y repetidos.
+  useEffect(() => { onSorted(sorted, sortField === 'date'); }, [sorted, sortField, onSorted]);
 
   const CHIPS: { value: Scope; label: string }[] = [
     { value: 'all',       label: t('expenses.chipAll') },
@@ -92,17 +95,17 @@ export function ExpenseListHeader({
 
   return (
     <div className="border-b border-line px-5 pb-3 pt-4">
-      {/* Conteo: dice el alcance en palabras, y por eso cuenta el mes entero y no el filtro. */}
+      {/* El conteo dice el alcance en palabras, y por eso cuenta el mes entero y no el filtro. */}
       <div className="flex items-center justify-between gap-2">
-        <h2 className="min-w-0 truncate text-[13px] font-bold text-foreground">
+        <h2 className="min-w-0 truncate text-[14px] font-bold text-foreground">
           {isOneTime
             ? t('expenses.countInEvent', { count: expenses.length })
             : t('expenses.countInMonth', { count: expenses.length, month: monthLabel.toLowerCase() })}
         </h2>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           {isSettled && (
-            <span className="mr-1 shrink-0 rounded-pill bg-positive-wash px-2.5 py-1 text-[11px] font-bold text-positive">
+            <span className="rounded-pill bg-positive-wash px-2.5 py-1 text-[11px] font-bold text-positive">
               {t('settle.settledPill')}
             </span>
           )}
@@ -111,7 +114,7 @@ export function ExpenseListHeader({
               type="button"
               onClick={() => setDisplayMode(displayMode === 'original' ? 'ars' : 'original')}
               className={cn(
-                'h-7 cursor-pointer rounded-pill px-2.5 text-[11.5px] font-bold transition-colors',
+                'h-8 cursor-pointer rounded-pill px-2.5 text-[11.5px] font-bold transition-colors',
                 displayMode === 'ars'
                   ? 'bg-brand-wash text-brand-ink'
                   : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
@@ -120,20 +123,42 @@ export function ExpenseListHeader({
               {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
             </button>
           )}
-
           {onExportPdf && (
             <button
               type="button"
               onClick={onExportPdf}
               title={t('expenses.exportPdfTitle')}
-              aria-label={t('expenses.exportPdf')}
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-pill border border-line-strong px-3 text-[11.5px] font-bold text-foreground transition-colors hover:bg-surface-sunken"
             >
-              <FileDown className="h-4 w-4" />
+              <FileDown className="h-3.5 w-3.5" />
+              {isOneTime ? 'PDF' : t('expenses.pdfOfMonth')}
             </button>
           )}
+        </div>
+      </div>
 
-          {/* Orden: el control vive al lado del conteo (checklist §7). */}
+      {/* Los chips filtran adentro del mes. El orden y la moneda los acompañan a la derecha:
+          son ajustes de cómo se lee la lista, no del alcance que el conteo acaba de decir. */}
+      <div className="mt-2.5 flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
+          {CHIPS.map(chip => (
+            <button
+              key={chip.value}
+              type="button"
+              onClick={() => setScope(chip.value)}
+              className={cn(
+                'h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[11.5px] font-bold transition-colors',
+                scope === chip.value
+                  ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
+                  : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
+              )}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
           <Select
             value={sortField}
             onValueChange={v => setSortField(v as SortField)}
@@ -142,7 +167,7 @@ export function ExpenseListHeader({
           >
             <SelectTrigger
               aria-label={t('expenses.sortLabel')}
-              className="h-7 w-auto gap-1 rounded-pill border-line-strong bg-transparent px-2.5 text-[11.5px] font-semibold text-muted-1 hover:bg-surface-sunken"
+              className="h-8 w-auto gap-1 rounded-pill border-line-strong bg-transparent px-2.5 text-[11.5px] font-semibold text-muted-1 hover:bg-surface-sunken"
             >
               <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label}</span>
             </SelectTrigger>
@@ -156,31 +181,11 @@ export function ExpenseListHeader({
             type="button"
             onClick={() => setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'))}
             aria-label={t('expenses.sortLabel')}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
           >
             <ArrowDownUp className={cn('h-3.5 w-3.5 transition-transform', sortOrder === 'asc' && 'rotate-180')} />
           </button>
         </div>
-      </div>
-
-      {/* Chips — recién debajo del conteo, nunca por encima */}
-      <div className="mt-2.5 flex gap-1.5 overflow-x-auto">
-        {CHIPS.map(chip => (
-          <button
-            key={chip.value}
-            type="button"
-            onClick={() => setScope(chip.value)}
-            className={cn(
-              'h-7 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[11.5px] font-bold transition-colors',
-              scope === chip.value
-                // En oscuro se invierte: lo seleccionado tiene que ser lo más brillante.
-                ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
-                : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
-            )}
-          >
-            {chip.label}
-          </button>
-        ))}
       </div>
     </div>
   );

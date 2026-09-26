@@ -1,44 +1,60 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { JirensMark } from '@/components/brand/JirensMark';
 import { DynamicIsland } from './DynamicIsland';
-import { AccountMenu } from './AccountMenu';
+import { JirensMark } from '@/components/brand/JirensMark';
 import { useScroll } from '@/contexts/ScrollContext';
+import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { avatarBg, initials } from '@/utils/avatar';
 import type { IslandState } from '@/contexts/IslandContext';
 
 interface MobileHeaderProps {
-  onLogout: () => void;
   state: IslandState | 'group';
   groupName?: string;
 }
 
-export function MobileHeader({ onLogout, state, groupName }: MobileHeaderProps) {
+/**
+ * La barra de la app: marca a la izquierda, avatar a la derecha.
+ *
+ * El avatar es la entrada al perfil. Antes abría una hoja de cuenta con tema, idioma y cerrar
+ * sesión — las mismas cosas que ahora tiene la pantalla de Perfil, así que la hoja era una
+ * segunda versión del mismo lugar.
+ */
+export function MobileHeader({ state, groupName }: MobileHeaderProps) {
   const { isAtTop } = useScroll();
+  const { t } = useTranslation();
+  const currentMember = useCurrentMember();
 
   return (
     <header
       className={cn(
-        // Mobile: fixed overlay; Desktop: hidden
-        'lg:hidden fixed top-0 inset-x-0 z-30',
-        'h-12 flex items-center justify-between px-3',
+        'fixed inset-x-0 top-0 z-30 lg:hidden',
+        'flex h-12 items-center justify-between px-4',
         'transition-colors duration-500 ease-out',
         isAtTop
-          ? 'bg-background/95 backdrop-blur-sm border-b border-border/50'
-          : 'bg-transparent border-b border-transparent',
+          ? 'border-b border-line/60 bg-background/95 backdrop-blur-sm'
+          : 'border-b border-transparent bg-transparent',
       )}
     >
-      {/* Left: brand mark — flex-1 so it mirrors the right side width */}
-      <div className="flex-1 flex items-center gap-2">
-        <JirensMark className="text-foreground" size={24} />
-        <span className="font-display text-[15px] leading-none text-foreground">Jirens</span>
+      {/* Izquierda: la marca. `flex-1` a los dos lados para que la isla quede centrada. */}
+      <div className="flex flex-1 items-center">
+        <JirensMark className="text-foreground" size={26} />
       </div>
 
-      {/* Center: Dynamic Island — truly centered because both sides are flex-1 */}
       <DynamicIsland state={state} groupName={groupName} />
 
-      {/* Right: Avatar / Account menu — flex-1 + justify-end mirrors the left */}
-      <div className="flex-1 flex justify-end">
-        <AccountMenu onLogout={onLogout} />
+      <div className="flex flex-1 justify-end">
+        <Link
+          to="/profile"
+          aria-label={t('nav.profile')}
+          className={cn(
+            'flex h-8 w-8 select-none items-center justify-center rounded-full',
+            'text-[11px] font-bold text-white transition-opacity hover:opacity-90',
+            avatarBg(currentMember?.id ?? 1),
+          )}
+        >
+          {initials(currentMember?.name ?? '?')}
+        </Link>
       </div>
     </header>
   );

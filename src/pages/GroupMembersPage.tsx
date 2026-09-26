@@ -20,7 +20,7 @@ import { useGroupMembers } from '@/hooks/useMembers';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
-import { useSettlementActions } from '@/hooks/useSettlementActions';
+import { settleScope } from '@/utils/settleLog';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import type { GroupMember, Invitation } from '@/types/expense';
 
@@ -49,7 +49,7 @@ export function GroupMembersPage() {
   const isOneTime = group?.groupType === 'one_time';
 
   const { data: memberList = [] } = useGroupMembers(groupId);
-  const { data: monthlyData, refetch } = useMonthlyBalance(
+  const { data: monthlyData, refetch: reloadMonth } = useMonthlyBalance(
     groupId, year, month, isOneTime, groupTypeKnown,
   );
   const currentMember = useCurrentMember();
@@ -75,9 +75,19 @@ export function GroupMembersPage() {
     return () => setViewedMonthState({ isSettled: false, yourBalance: null });
   }, [monthlyData, currentMember, setViewedMonthState]);
 
-  const { settle, unsettle, exportPdf } = useSettlementActions({
-    groupId, groupName: group?.name ?? '', year, month, isOneTime, groupTypeKnown, refetch,
-  });
+  const expensesPath = `/groups/${groupId}?year=${year}&month=${month}`;
+  const settleProgressPath = `/groups/${groupId}/settle?year=${year}&month=${month}`;
+
+  /*
+    Saldar se entra desde acá, pero no vive acá. El plan es una hoja, el progreso una pantalla
+    y el cierre una tarjeta en Gastos: este botón sólo sabe a cuál de los tres te toca ir.
+  */
+  const openSettle = () => {
+    if (monthlyData?.isSettled) { navigate(expensesPath); return; }
+    const started = (monthlyData?.expenses ?? []).some(e => e.category === 'prestamo');
+    if (started) navigate(settleProgressPath);
+    else setShowSettle(true);
+  };
 
   const loadMembers = useCallback(async () => {
     setMembersLoading(true);
@@ -146,6 +156,7 @@ export function GroupMembersPage() {
       {/* ── Cómo viene cada uno ─────────────────────────────────────────────────────── */}
       {monthlyData ? (
         <BalancePanel
+          groupId={groupId}
           isOneTime={isOneTime}
           balances={monthlyData.balances}
           transfers={monthlyData.transfers ?? []}
@@ -154,7 +165,9 @@ export function GroupMembersPage() {
           expenses={monthlyData.expenses}
           currentMemberId={currentMember?.id ?? null}
           stubMemberIds={stubMemberIds}
-          onOpenSettle={() => setShowSettle(true)}
+          scope={settleScope(groupId, isOneTime, year, month)}
+          onOpenSettle={openSettle}
+          onChanged={reloadMonth}
         />
       ) : (
         <Skeleton className="h-64 w-full rounded-card" />
@@ -234,22 +247,19 @@ export function GroupMembersPage() {
         onMemberAdded={reload}
       />
 
-      {monthlyData && (
+      {monthlyData && !monthlyData.isSettled && (
         <SettleSheet
           open={showSettle}
           onOpenChange={setShowSettle}
-          groupId={groupId}
           groupName={group?.name ?? ''}
           month={month}
+          isOneTime={isOneTime}
           members={memberList}
           transfers={monthlyData.transfers ?? []}
           expenses={monthlyData.expenses}
-          isSettled={monthlyData.isSettled}
           currentMemberId={currentMember?.id ?? null}
-          onSettle={settle}
-          onReopen={unsettle}
-          onExportPdf={exportPdf}
-          onChanged={refetch}
+          scope={settleScope(groupId, isOneTime, year, month)}
+          onMarkOneByOne={() => { setShowSettle(false); navigate(settleProgressPath); }}
         />
       )}
 

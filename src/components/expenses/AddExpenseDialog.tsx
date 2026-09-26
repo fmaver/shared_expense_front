@@ -14,6 +14,9 @@ import {
 } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { AmountKeypad } from './AmountKeypad';
+import { CategoryChips } from './CategoryChips';
+import { ContextCard, ContextRow } from './ContextRows';
+import { DatePicker, PaymentPicker } from './ContextPickers';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '@/types/expense';
 
 /** Qué se está cargando. Un préstamo es un gasto con otra categoría y otro reparto. */
@@ -286,9 +289,11 @@ export function AddExpenseDialog({
   const dateLabel = (() => {
     const today = formatDate(new Date());
     const yesterday = formatDate(new Date(Date.now() - 86400e3));
-    if (form.date === today) return t('expenseForm.pillToday');
-    if (form.date === yesterday) return t('expenseForm.pillYesterday');
-    return formatDayMonth(form.date, monthsShort);
+    // "Hoy · 12 jul": la palabra ubica, el día confirma — la fila tiene lugar para las dos.
+    const dayMonth = formatDayMonth(form.date, monthsShort);
+    if (form.date === today) return `${t('expenseForm.pillToday')} · ${dayMonth}`;
+    if (form.date === yesterday) return `${t('expenseForm.pillYesterday')} · ${dayMonth}`;
+    return dayMonth;
   })();
 
   const splitLabel = (() => {
@@ -315,21 +320,6 @@ export function AddExpenseDialog({
   const showContext = !hidePayerAndSplit;
   const showPayment = showContext && mode === 'expense' && !isOneTimeGroup && !isRecurring;
   const canPickMode = !isEdit && !hidePayerAndSplit && members.length > 1;
-
-  const Pill = ({ label, onClick }: { label: string; onClick: () => void }) => (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'h-9 shrink-0 rounded-pill border border-line-strong bg-surface px-3',
-        'text-[12px] font-bold text-foreground transition-colors',
-        disabled ? 'cursor-default opacity-50' : 'cursor-pointer hover:bg-surface-sunken',
-      )}
-    >
-      {label} <span className="text-muted-2">▾</span>
-    </button>
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -393,7 +383,7 @@ export function AddExpenseDialog({
                     'h-8 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
                     mode === option.value
                       ? option.value === 'expense'
-                        ? 'bg-negative text-white'
+                        ? 'bg-negative text-white dark:text-ink'
                         : 'bg-ink text-paper dark:bg-paper dark:text-ink'
                       : 'text-muted-1',
                   )}
@@ -454,41 +444,56 @@ export function AddExpenseDialog({
 
           {/* ── Categorías ─────────────────────────────────────────────────────────── */}
           {mode === 'expense' && (
-            <div className="-mx-5 mt-4 flex gap-1.5 overflow-x-auto px-5 pb-1">
-              {categories.map(category => (
-                <button
-                  key={category.name}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => set({ category: category.name })}
-                  className={cn(
-                    'h-9 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[12px] font-bold transition-colors',
-                    form.category === category.name
-                      ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
-                      : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
-                  )}
-                >
-                  {category.emoji} {t(`categories.${category.name}`, { defaultValue: category.name })}
-                </button>
-              ))}
-            </div>
+            <CategoryChips
+              className="mt-4"
+              categories={categories}
+              value={form.category}
+              onChange={name => set({ category: name })}
+              disabled={disabled}
+            />
           )}
 
-          {/* ── Contexto: una pastilla por decisión, cada una con su selector ──────── */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {showContext && <Pill label={payerLabel} onClick={() => setPicker('payer')} />}
+          {/* ── Contexto: una fila por decisión, cada una con su selector ──────────── */}
+          <ContextCard className="mt-3">
+            {showContext && (
+              <ContextRow
+                label={t('expenseForm.rowPayer')}
+                value={payerLabel}
+                onClick={() => setPicker('payer')}
+                disabled={disabled}
+              />
+            )}
             {showContext && mode === 'loan' && (
-              <Pill
-                label={form.loanTargetId ? `→ ${memberName(form.loanTargetId)}` : t('expenseForm.chooseLoanTarget')}
+              <ContextRow
+                label={t('expenseForm.rowLoanTarget')}
+                value={form.loanTargetId ? memberName(form.loanTargetId) : t('expenseForm.rowChoose')}
                 onClick={() => setPicker('loanTarget')}
+                disabled={disabled}
               />
             )}
             {showContext && mode === 'expense' && (
-              <Pill label={splitLabel} onClick={() => setPicker('split')} />
+              <ContextRow
+                label={t('expenseForm.rowSplit')}
+                value={splitLabel}
+                onClick={() => setPicker('split')}
+                disabled={disabled}
+              />
             )}
-            <Pill label={dateLabel} onClick={() => setPicker('date')} />
-            {showPayment && <Pill label={paymentLabel} onClick={() => setPicker('payment')} />}
-          </div>
+            <ContextRow
+              label={t('expenseForm.rowWhen')}
+              value={dateLabel}
+              onClick={() => setPicker('date')}
+              disabled={disabled}
+            />
+            {showPayment && (
+              <ContextRow
+                label={t('expenseForm.rowPayment')}
+                value={paymentLabel}
+                onClick={() => setPicker('payment')}
+                disabled={disabled}
+              />
+            )}
+          </ContextCard>
 
           {/* ── Se repite cada mes ─────────────────────────────────────────────────── */}
           {!isEdit && showContext && !isOneTimeGroup && mode === 'expense' && (
@@ -625,56 +630,15 @@ export function AddExpenseDialog({
               )}
 
               {picker === 'date' && (
-                <Input
-                  type="date"
-                  value={form.date}
-                  onChange={e => set({ date: e.target.value })}
-                  className="text-base"
-                />
+                <DatePicker value={form.date} onChange={date => set({ date })} />
               )}
 
               {picker === 'payment' && (
-                <div className="space-y-3">
-                  <div className="flex gap-1.5">
-                    {(['debit', 'credit'] as const).map(type => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => set({
-                          paymentType: type,
-                          installments: type === 'debit' ? 1 : Math.max(form.installments, 2),
-                        })}
-                        className={cn(
-                          'h-9 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
-                          form.paymentType === type
-                            ? 'bg-ink text-paper dark:bg-paper dark:text-ink'
-                            : 'border border-line-strong text-muted-1',
-                        )}
-                      >
-                        {t(type === 'debit' ? 'expenseForm.debit' : 'expenseForm.credit')}
-                      </button>
-                    ))}
-                  </div>
-                  {form.paymentType === 'credit' && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {[2, 3, 6, 9, 12, 18, 24].map(n => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => set({ installments: n })}
-                          className={cn(
-                            'h-9 w-11 cursor-pointer rounded-pill text-[12.5px] font-bold tabular-nums transition-colors',
-                            form.installments === n
-                              ? 'bg-brand text-white'
-                              : 'border border-line-strong text-muted-1',
-                          )}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <PaymentPicker
+                  paymentType={form.paymentType}
+                  installments={form.installments}
+                  onChange={next => set(next)}
+                />
               )}
 
               {picker === 'split' && (

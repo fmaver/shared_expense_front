@@ -128,7 +128,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={ledger.incomes.length} />}
           {/* Mobile adds via the floating + dial; desktop keeps this button */}
           <Button variant="outline" size="sm" className="hidden lg:inline-flex"
-            onClick={() => personalActions?.addIncome()}>
+            onClick={() => personalActions?.pick('extra')}>
             <Plus className="h-3.5 w-3.5 mr-1" /><span>{t('personal.add')}</span>
           </Button>
         </div>

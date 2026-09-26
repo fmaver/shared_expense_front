@@ -3,7 +3,7 @@ import { NavLink, useLocation, useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
 import {
-  ArrowLeftRight, CalendarClock, PieChart, Plus, Repeat, TrendingDown, TrendingUp, User, Users,
+  ArrowLeftRight, PieChart, Plus, User, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
@@ -83,32 +83,12 @@ export function FloatingTabBar() {
         },
       ]
     : isPersonal
-    ? [
-        {
-          icon: TrendingUp,
-          label: t('personal.variableTitle'),
-          desc: t('personal.variableDesc'),
-          onClick: () => { closeDial(); personalActions?.addIncome('variable'); },
-        },
-        {
-          icon: CalendarClock,
-          label: t('personal.recurringTitle'),
-          desc: t('personal.recurringDesc'),
-          onClick: () => { closeDial(); personalActions?.addIncome('recurring'); },
-        },
-        {
-          icon: TrendingDown,
-          label: t('personal.oneOffExpense'),
-          desc: t('personal.oneOffExpenseDesc'),
-          onClick: () => { closeDial(); personalActions?.addExpense(); },
-        },
-        {
-          icon: Repeat,
-          label: t('personal.recurringExpense'),
-          desc: t('personal.recurringExpenseDesc'),
-          onClick: () => { closeDial(); personalActions?.addRecurringExpense(); },
-        },
-      ]
+    /*
+      En lo personal el "+" no abre un menú: abre la matriz. Eran cuatro entradas verticales que
+      decían lo mismo que las dos preguntas de la grilla, y un menú que lleva a un formulario
+      donde se puede cambiar la elección es un paso de más.
+    */
+    ? []
     : [
         {
           icon: Plus,
@@ -236,7 +216,10 @@ export function FloatingTabBar() {
           )}
           <button
             type="button"
-            onClick={() => setSpeedDialOpen(prev => !prev)}
+            onClick={() => {
+              if (isPersonal) { closeDial(); personalActions?.openMatrix(); return; }
+              setSpeedDialOpen(prev => !prev);
+            }}
             aria-label={t('fab.options')}
             className={cn(
               'flex h-14 w-14 items-center justify-center rounded-full',

@@ -16,13 +16,12 @@ import { cn } from '@/lib/utils';
 import { avatarBg, initials } from '@/utils/avatar';
 import { PersonalCharts } from '@/components/personal/PersonalCharts';
 import { BudgetBar } from '@/components/personal/BudgetBar';
-import { MovementsList } from '@/components/personal/MovementsList';
+import {
+  IncomeSection, OwnExpensesSection, GroupSharesSection,
+} from '@/components/personal/LedgerSections';
 import { SettleUpCard } from '@/components/personal/SettleUpCard';
 import { DueDatesSection } from '@/components/personal/DueDatesSection';
 import { PersonalAddLauncher } from '@/components/personal/PersonalAddLauncher';
-
-/** Movimientos que entran en el home; las listas completas viven en su pantalla. */
-const RECENT_LIMIT = 6;
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -49,7 +48,7 @@ export function PersonalDashboard() {
   const [trendRange, setTrendRange] = useState<3 | 6 | 12>(6);
   const { trendData, trendLoading, prevLedger } = usePersonalTrend(year, month, trendRange, ledger);
 
-  const { groups: pendingGroups, reload: reloadTransfers } = usePendingTransfers(
+  const { groups: pendingGroups } = usePendingTransfers(
     year, month, ledger?.groupBalances, currentMember?.id ?? null,
   );
 
@@ -120,17 +119,12 @@ export function PersonalDashboard() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
+              {/* Se puede ir al futuro: los fijos y las cuotas ya viven en los meses que vienen. */}
               <button
                 type="button"
                 onClick={() => goMonth(1)}
-                disabled={isCurrentMonth}
-                aria-label={isCurrentMonth ? t('monthPager.atCurrentMonth') : t('monthPager.next')}
-                className={cn(
-                  'flex h-[34px] w-[34px] items-center justify-center rounded-full border',
-                  isCurrentMonth
-                    ? 'cursor-default border-transparent bg-surface-sunken text-muted-3'
-                    : 'cursor-pointer border-line-strong text-foreground transition-colors hover:bg-surface-sunken',
-                )}
+                aria-label={t('monthPager.next')}
+                className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full border border-line-strong text-foreground transition-colors hover:bg-surface-sunken"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -188,34 +182,31 @@ export function PersonalDashboard() {
                 </div>
               </div>
 
-              {/* ── Movimientos ──────────────────────────────────────────────────── */}
-              <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                <div className="px-5 pb-3 pt-4">
-                  <h2 className="font-display text-[19px] leading-none text-foreground">
-                    {t('personal.movements')}
-                  </h2>
-                </div>
-                <MovementsList ledger={ledger} categories={categories} limit={RECENT_LIMIT} />
-                {/*
-                  Las tres listas completas siguen viviendo en su pantalla, con sus formularios
-                  de alta y edición: la vista unificada es un resumen, no un reemplazo.
-                */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-line px-5 py-3">
-                  {[
-                    { to: `/personal/incomes?year=${year}&month=${month}`, label: t('personal.seeIncomes') },
-                    { to: `/personal/expenses?year=${year}&month=${month}`, label: t('personal.seeExpenses') },
-                    { to: `/personal/shares?year=${year}&month=${month}`, label: t('personal.seeShares') },
-                  ].map(link => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className="text-[12px] font-bold text-brand-ink transition-opacity hover:opacity-70"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              {/*
+                Tres secciones, no una cronología. La lista unificada mezclaba plata que entró
+                con plata que salió y con lo que te toca de los grupos: para saber cuánto
+                gastaste había que sumar mentalmente salteándose filas. Cada sección tiene su
+                total arriba, y los tres cierran contra lo que entró (la nota al pie).
+              */}
+              <p className="px-1 pt-1 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+                {t('personal.scrollHint')}
+              </p>
+
+              <IncomeSection ledger={ledger} categories={categories} year={year} month={month} />
+              <OwnExpensesSection ledger={ledger} categories={categories} year={year} month={month} />
+              <GroupSharesSection ledger={ledger} categories={categories} year={year} month={month} />
+
+              {/* La cuenta que cierra: los tres totales contra el ingreso del mes. */}
+              {ledger.totalIncome > 0 && (
+                <p className="px-1 text-[11.5px] font-medium leading-[1.5] text-muted-2">
+                  {t('personal.closesAgainst', {
+                    own: formatCurrency(ledger.totalPersonalExpenses),
+                    groups: formatCurrency(groupShare),
+                    left: formatCurrency(Math.max(ledger.totalIncome - ledger.totalPersonalExpenses - groupShare, 0)),
+                    income: formatCurrency(ledger.totalIncome),
+                  })}
+                </p>
+              )}
 
               </div>
 
@@ -226,7 +217,8 @@ export function PersonalDashboard() {
                   key={group.groupId}
                   group={group}
                   currentMemberId={currentMember.id}
-                  onPaid={() => { refetch(); reloadTransfers(); }}
+                  year={year}
+                  month={month}
                 />
               ))}
 

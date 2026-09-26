@@ -39,9 +39,9 @@ export function BudgetBar({
 
   const left = Math.max(totalIncome - totalExpenses - groupShare, 0);
   const segments: Segment[] = [
-    { key: 'own',    label: t('personal.legendOwn'),    value: totalExpenses, bar: 'bg-negative', dot: 'bg-negative' },
-    { key: 'groups', label: t('personal.legendGroups'), value: groupShare,    bar: 'bg-brand',    dot: 'bg-brand' },
-    { key: 'left',   label: t('personal.legendLeft'),   value: left,          bar: 'bg-positive', dot: 'bg-positive' },
+    { key: 'own',    label: t('personal.legendOwnShort'),    value: totalExpenses, bar: 'bg-negative', dot: 'bg-negative' },
+    { key: 'groups', label: t('personal.legendGroupsShort'), value: groupShare,    bar: 'bg-brand',    dot: 'bg-brand' },
+    { key: 'left',   label: t('personal.legendLeftShort'),   value: left,          bar: 'bg-positive', dot: 'bg-positive' },
   ].filter(s => s.value > 0);
 
   // Los porcentajes se calculan sobre el total de los segmentos y no sobre el ingreso: si te
@@ -75,15 +75,22 @@ export function BudgetBar({
         ))}
       </div>
 
-      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
+      {/*
+        La leyenda dice porcentaje, no monto: la barra ya es una proporción, y el monto exacto
+        de cada parte lo dice su sección más abajo. Repetirlo acá era decirlo dos veces.
+      */}
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
         {segments.map(seg => (
-          <div key={seg.key} className="flex items-center gap-1.5">
+          <span
+            key={seg.key}
+            className="inline-flex items-center gap-1.5 rounded-pill bg-surface-sunken px-2.5 py-1"
+          >
             <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', seg.dot)} aria-hidden="true" />
-            <span className="text-[11.5px] font-medium text-muted-2">{seg.label}</span>
+            <span className="text-[11.5px] font-medium text-muted-1">{seg.label}</span>
             <span className="text-[11.5px] font-bold tabular-nums text-foreground">
-              {formatAmt(seg.value)}
+              {Math.round((seg.value / denominator) * 100)}%
             </span>
-          </div>
+          </span>
         ))}
       </div>
 

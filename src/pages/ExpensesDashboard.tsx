@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
@@ -13,6 +13,8 @@ import {
 import { getCurrentUser } from '@/api/auth';
 import { MonthPager } from '@/components/expenses/MonthPager';
 import { SettleSheet } from '@/components/expenses/SettleSheet';
+import { GroupBalanceCard } from '@/components/expenses/GroupBalanceCard';
+import { SettledMonthCard } from '@/components/expenses/SettledMonthCard';
 import { ExpenseListHeader } from '@/components/expenses/ExpenseListHeader';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
@@ -26,11 +28,15 @@ import { useIsland } from '@/contexts/IslandContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { useSettlementActions } from '@/hooks/useSettlementActions';
+import { formatCurrency, formatDayHeading } from '@/utils/format';
+import { shareReminder } from '@/utils/remind';
+import { logReminded, settleScope } from '@/utils/settleLog';
 import { cn } from '@/lib/utils';
 
 export function ExpensesDashboard() {
   const { t } = useTranslation();
   const island = useIsland();
+  const navigate = useNavigate();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
@@ -51,6 +57,7 @@ export function ExpensesDashboard() {
   const [pendingExpense, setPendingExpense] = useState<ExpenseCreate | null>(null);
   const [duplicates, setDuplicates] = useState<ExpenseResponse[]>([]);
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
+  const [groupByDate, setGroupByDate] = useState(true);
   const [showSettle, setShowSettle] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
@@ -170,7 +177,7 @@ export function ExpensesDashboard() {
 
 
   // Cerrar, reabrir y exportar: una sola implementación, compartida con la pantalla de Gente.
-  const { settle: handleSettle, unsettle: handleUnsettle, exportPdf: handleExportPDF } =
+  const { unsettle: handleUnsettle, exportPdf: handleExportPDF } =
     useSettlementActions({
       groupId,
       groupName: group?.name ?? '',
@@ -182,8 +189,64 @@ export function ExpensesDashboard() {
     });
 
   const monthName = (t('months', { returnObjects: true }) as string[])[month - 1];
+  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
+  const weekdaysLong = t('weekdaysLong', { returnObjects: true }) as string[];
+  /* Los pagos ya marcados son los movimientos `prestamo`: no hay flag y no hace falta. */
+  const paidMoves = expenses.filter(e => e.category === 'prestamo');
+  const scope = settleScope(groupId, isOneTime, year, month);
+  const settleProgressPath = `/groups/${groupId}/settle?year=${year}&month=${month}`;
 
-  const handleSorted = useCallback((s: ExpenseResponse[]) => setSortedExpenses(s), []);
+  /*
+    Saldar entra por el plan, salvo que ya lo hayas arrancado: con un pago marcado el plan es
+    pasado y lo que se quiere ver es cómo va la cosa.
+  */
+  const openSettle = () => {
+    if (paidMoves.length > 0) navigate(settleProgressPath);
+    else setShowSettle(true);
+  };
+
+  /**
+   * Avisarles a todos de una.
+   *
+   * Un solo mensaje que nombra cada pago pendiente, por la hoja nativa de compartir. No hay
+   * endpoint de aviso todavía; esto funciona hoy y no miente sobre lo que hace.
+   */
+  const remindEveryone = async () => {
+    const pending = (monthlyData?.transfers ?? []).filter(tr => tr.toMemberId === currentMemberId);
+    if (pending.length === 0) return;
+    const lines = pending.map(tr => {
+      const name = members.find(m => m.id === tr.fromMemberId)?.name ?? '';
+      return `${name}: ${formatCurrency(tr.amount)}`;
+    });
+    const text = `${group?.name ?? ''} — ${monthName.toLocaleLowerCase()}\n${lines.join('\n')}`;
+    if (await shareReminder(text)) logReminded(scope, pending.map(tr => tr.fromMemberId));
+  };
+
+
+
+  const handleSorted = useCallback((s: ExpenseResponse[], byDate: boolean) => {
+    setSortedExpenses(s);
+    setGroupByDate(byDate);
+  }, []);
+
+  /*
+    Los gastos partidos por día. Con cualquier orden que no sea por fecha se devuelve un solo
+    bloque sin encabezado: agrupar ahí daría títulos salteados y repetidos.
+  */
+  const days = (() => {
+    if (!groupByDate) return [{ key: 'all', heading: null, expenses: sortedExpenses }];
+    const buckets: { key: string; heading: string; expenses: ExpenseResponse[] }[] = [];
+    for (const expense of sortedExpenses) {
+      const last = buckets[buckets.length - 1];
+      if (last && last.key === expense.date) { last.expenses.push(expense); continue; }
+      buckets.push({
+        key: expense.date,
+        heading: formatDayHeading(expense.date, monthsShort, weekdaysLong),
+        expenses: [expense],
+      });
+    }
+    return buckets;
+  })();
 
   if (loadingMembers) {
     return <div className="p-6 space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>;
@@ -191,10 +254,45 @@ export function ExpensesDashboard() {
 
   return (
     <div className="relative mx-auto w-full max-w-5xl space-y-4 px-5 py-4 lg:px-7 lg:py-6">
+      {/*
+        Lo primero: cómo venís vos. La lista sola no contesta "¿tengo a favor o debo?".
+        Con el mes cerrado la pregunta ya no existe, y el lugar lo ocupa el cierre.
+      */}
+      {monthlyData && (
+        isSettled ? (
+          <SettledMonthCard
+            isOneTime={isOneTime}
+            groupName={group?.name ?? ''}
+            month={month}
+            expenses={expenses}
+            onExportPdf={handleExportPDF}
+            onReopen={handleUnsettle}
+          />
+        ) : (
+          <GroupBalanceCard
+            isOneTime={isOneTime}
+            groupName={group?.name ?? ''}
+            balances={monthlyData.balances}
+            transfers={monthlyData.transfers ?? []}
+            expenses={expenses}
+            members={members}
+            currentMemberId={currentMemberId}
+            onOpenSettle={openSettle}
+            onRemind={remindEveryone}
+          />
+        )
+      )}
+
       {/* A one-time group ignores months entirely, so there is nothing to navigate. */}
       {!isOneTime && (
-        <div className="flex items-center justify-center gap-2">
-          <MonthPager year={year} month={month} onNavigate={setYearMonth} isSettled={isSettled} />
+        <div className="relative flex items-center gap-2">
+          <MonthPager
+            className="flex-1"
+            year={year}
+            month={month}
+            onNavigate={setYearMonth}
+            isSettled={isSettled}
+          />
           {/* Alta y transferencia en desktop; en mobile viven en el FAB. */}
           <div className="hidden shrink-0 items-center gap-2 lg:absolute lg:right-0 lg:flex">
             <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
@@ -240,20 +338,30 @@ export function ExpensesDashboard() {
               <div className="py-10 text-center text-[12.5px] text-muted-2">{t('expenses.noMatches')}</div>
             ) : (
               <div>
-                {sortedExpenses.map(e => (
-                  <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
-                    autoOpenDetail={e.id === deepLinkedExpenseId}
-                    highlight={e.id === highlightId}
-                    groupId={groupId}
-                    groupName={group?.name}
-                    isOneTimeGroup={isOneTime}
-                    viewedYear={year}
-                    viewedMonth={month}
-                    onEdit={exp => { setEditingExpense(exp); setShowAdd(true); }}
-                    onDelete={handleDelete}
-                    onRecurringDelete={templateId => setRecurringDeleteTarget(templateId)}
-                    onRecurringEdit={exp => { setRecurringEditTarget(exp); setShowAdd(true); }}
-                  />
+                {days.map(day => (
+                  <div key={day.key}>
+                    {/* El encabezado del día le da ritmo a la lista y saca la fecha de cada fila. */}
+                    {day.heading && (
+                      <p className="border-b border-line bg-surface-sunken/40 px-5 py-2 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+                        {day.heading}
+                      </p>
+                    )}
+                    {day.expenses.map(e => (
+                      <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
+                        autoOpenDetail={e.id === deepLinkedExpenseId}
+                        highlight={e.id === highlightId}
+                        groupId={groupId}
+                        groupName={group?.name}
+                        isOneTimeGroup={isOneTime}
+                        viewedYear={year}
+                        viewedMonth={month}
+                        onEdit={exp => { setEditingExpense(exp); setShowAdd(true); }}
+                        onDelete={handleDelete}
+                        onRecurringDelete={templateId => setRecurringDeleteTarget(templateId)}
+                        onRecurringEdit={exp => { setRecurringEditTarget(exp); setShowAdd(true); }}
+                      />
+                    ))}
+                  </div>
                 ))}
               </div>
             )}
@@ -344,23 +452,26 @@ export function ExpensesDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Saldar: el plan, el progreso y el mes cerrado, en su propia hoja (§6.6) */}
-      {monthlyData && (
+      {isOneTime && (
+        <p className="px-1 text-[11.5px] font-medium leading-[1.45] text-muted-2">
+          {t('expenses.eventFooter')}
+        </p>
+      )}
+
+      {/* El plan. Marcar los pagos es otra pantalla; el cierre, la tarjeta de arriba. */}
+      {monthlyData && !isSettled && (
         <SettleSheet
           open={showSettle}
           onOpenChange={setShowSettle}
-          groupId={groupId}
           groupName={group?.name ?? ''}
           month={month}
+          isOneTime={isOneTime}
           members={members}
           transfers={monthlyData.transfers ?? []}
           expenses={expenses}
-          isSettled={isSettled}
           currentMemberId={currentMemberId}
-          onSettle={handleSettle}
-          onReopen={handleUnsettle}
-          onExportPdf={handleExportPDF}
-          onChanged={refetch}
+          scope={scope}
+          onMarkOneByOne={() => { setShowSettle(false); navigate(settleProgressPath); }}
         />
       )}
 

@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-/** Add-entry actions for the personal area, registered by PersonalAddLauncher. */
+/**
+ * El alta de tu plata, registrada por `PersonalAddLauncher`.
+ *
+ * El "+" flotante vive en otro árbol del DOM que las pantallas personales, así que no puede
+ * abrir sus hojas directamente: el launcher publica acá cómo hacerlo.
+ */
 export interface PersonalAddActions {
-  /** Open the income dialog; omit `type` to start at the type picker. */
-  addIncome: (type?: 'recurring' | 'variable') => void;
-  addExpense: () => void;
-  addRecurringExpense: () => void;
+  /** Abre "¿Qué anotamos?": las cuatro opciones en una grilla. */
+  openMatrix: () => void;
+  /** Salta la matriz y abre una de las cuatro directamente. */
+  pick: (kind: 'expense' | 'fixed' | 'extra' | 'salary') => void;
 }
 
 interface FabActionsContextValue {

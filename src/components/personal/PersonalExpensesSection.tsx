@@ -143,10 +143,10 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
           {hasMore && viewAllTo && <ViewAllLink to={viewAllTo} count={totalCount} />}
           {/* Mobile adds via the floating + dial; desktop keeps these buttons */}
           <div className="hidden lg:flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => personalActions?.addExpense()}>
+            <Button variant="outline" size="sm" onClick={() => personalActions?.pick('expense')}>
               <Plus className="h-3.5 w-3.5 mr-1" /><span>{t('expenses.add')}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => personalActions?.addRecurringExpense()}>
+            <Button variant="outline" size="sm" onClick={() => personalActions?.pick('fixed')}>
               <Repeat className="h-3.5 w-3.5 mr-1" /><span>{t('personal.addRecurringExpense')}</span>
             </Button>
           </div>

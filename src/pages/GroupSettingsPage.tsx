@@ -12,6 +12,9 @@ import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { archiveGroup, leaveGroup, updateGroupName } from '@/api/groups';
+import { getDueDates } from '@/api/dueDates';
+import { nextDueOccurrence } from '@/utils/dueDates';
+import type { DueDate } from '@/types/expense';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +30,19 @@ export function GroupSettingsPage() {
   const isOneTime = group?.groupType === 'one_time';
   const { data: monthlyData } = useMonthlyBalance(groupId, year, month, isOneTime, groupTypeKnown);
   const currentMember = useCurrentMember();
+
+  /*
+    Cuántos vencimientos hay y cuándo cae el próximo. La fila decía "los que se repiten"; el
+    número y la fecha dicen si vale la pena entrar, que es lo que uno quiere saber desde acá.
+  */
+  const [dueDates, setDueDates] = useState<DueDate[]>([]);
+  useEffect(() => {
+    let alive = true;
+    getDueDates(groupId)
+      .then(list => { if (alive) setDueDates(list); })
+      .catch(() => { /* la fila cae a su texto genérico */ });
+    return () => { alive = false; };
+  }, [groupId]);
 
   const { setViewedMonthState } = useSettlementState();
   useEffect(() => {
@@ -120,6 +136,21 @@ export function GroupSettingsPage() {
     </p>
   ) : null;
 
+  const { i18n } = useTranslation();
+  const dueDatesHint = (() => {
+    if (dueDates.length === 0) return t('settings.dueDatesRowHint');
+    const today = new Date();
+    const next = dueDates
+      .map(d => nextDueOccurrence(d, today))
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    return t('settings.dueDatesRowCount', {
+      count: dueDates.length,
+      date: next.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-AR', {
+        day: 'numeric', month: 'long',
+      }),
+    });
+  })();
+
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-5xl space-y-3 px-5 py-4 lg:px-7 lg:py-6">
@@ -162,7 +193,7 @@ export function GroupSettingsPage() {
         <CalendarClock className="h-4 w-4 shrink-0 text-muted-1" aria-hidden="true" />
         <span className="min-w-0 flex-1">
           <span className="block text-[13px] font-bold text-foreground">{t('settings.dueDatesRow')}</span>
-          <span className="block text-[11.5px] font-medium text-muted-2">{t('settings.dueDatesRowHint')}</span>
+          <span className="block text-[11.5px] font-medium text-muted-2">{dueDatesHint}</span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-3" aria-hidden="true" />
       </Link>
@@ -171,37 +202,49 @@ export function GroupSettingsPage() {
       <PushCard />
 
       {/* ── Archivar ────────────────────────────────────────────────────────────────── */}
-      <div className="rounded-card border border-line bg-surface p-4 shadow-card">
-        <h2 className="text-[13px] font-bold text-foreground">{t('groups.archive')}</h2>
-        <p className="mt-1 text-[11.5px] font-medium leading-[1.45] text-muted-2">
-          {t('settings.archiveHint2')}
-        </p>
+      <div className="flex items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[13px] font-bold text-foreground">{t('groups.archive')}</h2>
+          <p className="mt-1 text-[11.5px] font-medium leading-[1.45] text-muted-2">
+            {t('settings.archiveHint2')}
+          </p>
+        </div>
+        {/* El botón a la derecha de su explicación: de ancho completo pesaba como si fuera
+            la acción de la pantalla, y archivar es una salida, no un destino. */}
         <button
           type="button"
           disabled={isArchiving}
           onClick={handleArchive}
-          className="mt-3 flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[12px] border border-line-strong text-[12.5px] font-bold text-foreground transition-colors hover:bg-surface-sunken disabled:opacity-50"
+          className="flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-pill border border-line-strong px-3.5 text-[12px] font-bold text-foreground transition-colors hover:bg-surface-sunken disabled:opacity-50"
         >
-          <Archive className="h-4 w-4" aria-hidden="true" />
+          <Archive className="h-3.5 w-3.5" aria-hidden="true" />
           {t('groups.archive')}
         </button>
       </div>
 
       {/* ── Salir ───────────────────────────────────────────────────────────────────── */}
       <div className="rounded-card border border-line bg-surface p-4 shadow-card">
-        <button
-          type="button"
-          disabled={isLeaving}
-          onClick={handleLeave}
-          className={cn(
-            'flex h-10 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[12px]',
-            'text-[12.5px] font-bold text-muted-3 transition-colors hover:bg-surface-sunken hover:text-muted-1',
-            'disabled:opacity-50',
-          )}
-        >
-          <LogOut className="h-4 w-4" aria-hidden="true" />
-          {isLeaving ? t('members.leaving') : t('members.leaveGroup')}
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[13px] font-bold text-foreground">{t('members.leaveGroup')}</h2>
+            <p className="mt-1 text-[11.5px] font-medium leading-[1.45] text-muted-2">
+              {t('members.leaveGroupHint')}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={isLeaving}
+            onClick={handleLeave}
+            className={cn(
+              'flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-pill px-3.5',
+              'border border-line-strong text-[12px] font-bold text-muted-1 transition-colors',
+              'hover:bg-surface-sunken hover:text-foreground disabled:opacity-50',
+            )}
+          >
+            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+            {isLeaving ? t('members.leaving') : t('common.leave')}
+          </button>
+        </div>
         {blockedReason && (
           <div className="mt-3 border-t border-line pt-3">{blockedReason}</div>
         )}

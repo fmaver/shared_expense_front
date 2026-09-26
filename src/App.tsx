@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AppShell } from './components/layout/AppShell';
 import { useKeyboardInset } from './hooks/useKeyboardInset';
 import { GroupSelectorPage } from './pages/GroupSelectorPage';
+import { SettleProgressPage } from '@/pages/SettleProgressPage';
 import { ArchivedGroupsPage } from './pages/ArchivedGroupsPage';
 import { GroupLayout } from './pages/GroupLayout';
 import { ExpensesDashboard } from './pages/ExpensesDashboard';
@@ -104,6 +105,12 @@ function App() {
               <Route path="charts" element={<GroupChartsPage />} />
         <Route path="due-dates" element={<GroupDueDatesPage />} />
             </Route>
+            {/*
+              Saldar lleva días: se marca un pago hoy y el otro el martes. Por eso el progreso
+              es una pantalla con URL propia —fuera de las pestañas, con su "‹ Casa"— y no una
+              hoja que se cierra de un manotazo y no deja dónde volver.
+            */}
+            <Route path="/groups/:groupId/settle" element={<SettleProgressPage />} />
             <Route path="/personal" element={<PersonalDashboard />} />
             <Route path="/personal/charts" element={<PersonalChartsPage />} />
             <Route path="/personal/incomes" element={<PersonalSectionPage section="incomes" />} />

@@ -1,17 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { usePersonalContext } from '@/hooks/usePersonalContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
-import { AddIncomeDialog } from './AddIncomeDialog';
-import { AddRecurringExpenseDialog } from './AddRecurringExpenseDialog';
-import { checkSimilarExpenses } from '@/api/expenses';
-import type { ExpenseCreate, ExpenseResponse, PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
+import { PersonalAddMatrix, type PersonalEntryKind } from './PersonalAddMatrix';
+import { PersonalExpenseSheet } from './PersonalExpenseSheet';
+import { PersonalIncomeSheet } from './PersonalIncomeSheet';
+import type { PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
 
 interface PersonalAddLauncherProps {
   ledger: PersonalLedgerResponse | null;
@@ -22,123 +16,89 @@ interface PersonalAddLauncherProps {
 }
 
 /**
- * Owns the personal-group add dialogs (income, one-off expense, recurring
- * expense) and registers their openers with the FAB actions context, so the
- * floating + dial and the desktop header buttons share one implementation.
- * Mounted by PersonalDashboard and PersonalSectionPage.
+ * El alta de tu plata: la matriz y las dos hojas que salen de ella.
+ *
+ * Vive acá y no en cada pantalla porque el "+" flotante está en otro árbol del DOM: el launcher
+ * registra sus aperturas en el contexto del FAB y así la barra flotante y los botones de
+ * escritorio abren exactamente lo mismo. Lo montan el home personal y las pantallas de sección.
  */
 export function PersonalAddLauncher({ ledger, year, month, categories, refetch }: PersonalAddLauncherProps) {
   const { t } = useTranslation();
   const island = useIsland();
   const { registerPersonalActions } = useFabActions();
-  const { formatAmount } = useCurrency();
-  const { personalGroupId, currentMemberId } = usePersonalContext();
 
-  const [incomeDialog, setIncomeDialog] = useState<{ open: boolean; preset?: 'recurring' | 'variable' }>({ open: false });
-  const [expenseOpen, setExpenseOpen] = useState(false);
-  const [recurringExpenseOpen, setRecurringExpenseOpen] = useState(false);
+  const [matrixOpen, setMatrixOpen] = useState(false);
+  const [expenseKind, setExpenseKind] = useState<'expense' | 'fixed' | null>(null);
+  const [incomeKind, setIncomeKind] = useState<'extra' | 'salary' | null>(null);
 
-  // One-off expense duplicate detection
-  const [pendingExpenseData, setPendingExpenseData] = useState<ExpenseCreate | null>(null);
-  const [expenseDuplicates, setExpenseDuplicates] = useState<ExpenseResponse[]>([]);
+  const months = t('months', { returnObjects: true }) as string[];
+  const monthLabel = (months[month - 1] ?? '').toLocaleLowerCase();
 
-  const addIncome = useCallback((type?: 'recurring' | 'variable') => setIncomeDialog({ open: true, preset: type }), []);
-  const addExpense = useCallback(() => setExpenseOpen(true), []);
-  const addRecurringExpense = useCallback(() => setRecurringExpenseOpen(true), []);
+  const openMatrix = useCallback(() => {
+    setExpenseKind(null);
+    setIncomeKind(null);
+    setMatrixOpen(true);
+  }, []);
+
+  const pick = useCallback((kind: PersonalEntryKind) => {
+    setMatrixOpen(false);
+    if (kind === 'expense' || kind === 'fixed') setExpenseKind(kind);
+    else setIncomeKind(kind);
+  }, []);
 
   useEffect(() => {
-    registerPersonalActions({ addIncome, addExpense, addRecurringExpense });
+    registerPersonalActions({ openMatrix, pick });
     return () => registerPersonalActions(null);
-  }, [registerPersonalActions, addIncome, addExpense, addRecurringExpense]);
-
-  const doCreatePersonalExpense = async (data: ExpenseCreate) => {
-    if (!personalGroupId || !currentMemberId) return;
-    const { createExpense } = await import('@/api/expenses');
-    const result = await createExpense(personalGroupId, { ...data, payerId: currentMemberId, splitStrategy: { type: 'equal' } });
-    if (result.error) { toast.error(result.error); return; }
-    toast.success(t('toasts.expenseAdded'));
-    setPendingExpenseData(null);
-    setExpenseDuplicates([]);
-    setExpenseOpen(false);
-    refetch();
-    island.success();
-  };
-
-  const handleSubmitExpense = async (data: ExpenseCreate) => {
-    if (!personalGroupId || !currentMemberId) return;
-    const [y, m] = data.date.split('-').map(Number);
-    const { data: similar } = await checkSimilarExpenses(personalGroupId, y, m, data.amount, data.description, data.date);
-    if (similar && similar.length > 0) {
-      setPendingExpenseData(data);
-      setExpenseDuplicates(similar);
-      return;
-    }
-    await doCreatePersonalExpense(data);
-  };
+  }, [registerPersonalActions, openMatrix, pick]);
 
   const handleSaved = () => {
     refetch();
     island.success();
   };
 
+  /* "Cambiar" cierra la hoja y devuelve a la matriz, sin perder de vista dónde estás. */
+  const backToMatrix = () => {
+    setExpenseKind(null);
+    setIncomeKind(null);
+    setMatrixOpen(true);
+  };
+
   return (
     <>
-      <AddIncomeDialog
-        open={incomeDialog.open}
-        onOpenChange={open => setIncomeDialog(d => ({ ...d, open }))}
-        presetType={incomeDialog.preset}
-        year={year}
-        month={month}
-        existingIncomes={ledger?.incomes ?? []}
-        onSaved={handleSaved}
+      <PersonalAddMatrix
+        open={matrixOpen}
+        onOpenChange={setMatrixOpen}
+        onPick={pick}
+        monthLabel={monthLabel}
       />
 
-      <AddRecurringExpenseDialog
-        open={recurringExpenseOpen}
-        onOpenChange={setRecurringExpenseOpen}
-        year={year}
-        month={month}
-        categories={categories}
-        existingRecurring={ledger?.recurringPersonalExpenses ?? []}
-        onSaved={handleSaved}
-      />
-
-      {expenseOpen && personalGroupId && currentMemberId && (
-        <AddExpenseDialog
-          open={expenseOpen}
-          onOpenChange={setExpenseOpen}
-          onSubmit={handleSubmitExpense}
-          members={[{ id: currentMemberId, name: 'Me', telephone: '' }]}
-          isSettled={false}
-          hidePayerAndSplit
+      {expenseKind && (
+        <PersonalExpenseSheet
+          open
+          onOpenChange={open => { if (!open) setExpenseKind(null); }}
+          initialKind={expenseKind}
+          year={year}
+          month={month}
+          categories={categories}
+          existingRecurring={ledger?.recurringPersonalExpenses ?? []}
+          onBack={backToMatrix}
+          onSaved={handleSaved}
         />
       )}
 
-      {/* Duplicate expense dialog */}
-      <Dialog open={expenseDuplicates.length > 0} onOpenChange={isOpen => { if (!isOpen) { setPendingExpenseData(null); setExpenseDuplicates([]); } }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>{t('expenses.duplicateTitle')}</DialogTitle></DialogHeader>
-          <div className="text-sm space-y-1 text-muted-foreground">
-            <p>{t('expenses.duplicateDesc')}</p>
-            {expenseDuplicates[0] && (
-              <div className="mt-2 bg-muted rounded-lg p-3 text-foreground space-y-0.5">
-                <p className="font-medium">{expenseDuplicates[0].description}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatAmount(expenseDuplicates[0].amount, expenseDuplicates[0].currency)} · {expenseDuplicates[0].date}
-                </p>
-              </div>
-            )}
-            <p className="mt-2">{t('expenses.addAnywayQuestion')}</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setPendingExpenseData(null); setExpenseDuplicates([]); }}>{t('expenses.cancel')}</Button>
-            <Button className="bg-brand hover:bg-brand/90 text-white"
-              onClick={async () => { if (pendingExpenseData) await doCreatePersonalExpense(pendingExpenseData); }}>
-              {t('expenses.addAnyway')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {incomeKind && (
+        <PersonalIncomeSheet
+          open
+          onOpenChange={open => { if (!open) setIncomeKind(null); }}
+          initialKind={incomeKind}
+          year={year}
+          month={month}
+          existingIncomes={ledger?.incomes ?? []}
+          currentBalance={ledger?.currentBalance ?? 0}
+          onBack={backToMatrix}
+          onSaved={handleSaved}
+        />
+      )}
     </>
   );
 }

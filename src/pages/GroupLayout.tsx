@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Outlet, NavLink, useParams, Link } from 'react-router-dom';
+import { Outlet, NavLink, useParams, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react';
 import { useGroup } from '@/hooks/useGroups';
@@ -20,6 +20,7 @@ export function GroupLayout() {
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
   const { data: group, isLoading } = useGroup(groupId);
+  const location = useLocation();
   const { t } = useTranslation();
   const { notifyScroll } = useScroll();
   const { year, month } = useMonthSearchParams();
@@ -37,6 +38,7 @@ export function GroupLayout() {
   ];
 
   const members = group?.members ?? [];
+  const isOneTime = group?.groupType === 'one_time';
 
   /*
     Las pestañas se llevan el mes puesto.
@@ -45,6 +47,36 @@ export function GroupLayout() {
     de un solo uso, del deep-link de una notificación.
   */
   const monthQuery = `?year=${year}&month=${month}`;
+
+  /*
+    El subtítulo cambia con la pestaña.
+    Los nombres del grupo sólo importan en Gastos, donde uno lee filas de gente; en Gente eso
+    se repetiría contra la lista de abajo, y en Números o Vencimientos no dice nada del
+    contenido de la pantalla. Cada una dice lo suyo con lo que el layout ya tiene a mano.
+  */
+  const months = t('months', { returnObjects: true }) as string[];
+  const subtitle = (() => {
+    const section = location.pathname.split('/')[3] ?? '';
+    const people = t('groups.peopleCount', { count: members.length });
+
+    if (section === 'members') {
+      const since = group?.createdAt
+        ? `${months[new Date(group.createdAt).getMonth()] ?? ''} ${new Date(group.createdAt).getFullYear()}`
+        : null;
+      return since
+        ? `${people} · ${t('groups.sinceWhen', { when: since.toLocaleLowerCase() })}`
+        : people;
+    }
+    if (section === 'charts') {
+      return isOneTime ? people : `${months[month - 1] ?? ''} ${year}`;
+    }
+    if (section === 'due-dates') return t('dueDates.headerSubtitle');
+    if (section === 'settings') return t('settings.headerSubtitle');
+
+    // Gastos: quiénes están. En un evento son demasiados para nombrarlos.
+    if (members.length === 0) return '';
+    return isOneTime ? people : joinNames(members.map(m => m.name), t('groups.and'));
+  })();
 
   return (
     <div className="flex flex-1 flex-col">
@@ -72,14 +104,19 @@ export function GroupLayout() {
               {isLoading ? (
                 <Skeleton className="h-7 w-44" />
               ) : (
-                <h1 className="truncate font-display text-[26px] leading-none text-foreground">
-                  {group?.name}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="truncate font-display text-[26px] leading-none text-foreground">
+                    {group?.name}
+                  </h1>
+                  {isOneTime && (
+                    <span className="shrink-0 rounded-chip bg-tag-split-wash px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-tag-split">
+                      {t('expenses.badgeEvent')}
+                    </span>
+                  )}
+                </div>
               )}
-              {members.length > 0 && (
-                <p className="mt-1.5 truncate text-[12px] font-medium text-muted-2">
-                  {joinNames(members.map(m => m.name), t('groups.and'))}
-                </p>
+              {subtitle && (
+                <p className="mt-1.5 truncate text-[12px] font-medium text-muted-2">{subtitle}</p>
               )}
             </div>
 

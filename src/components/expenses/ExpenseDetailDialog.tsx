@@ -114,12 +114,22 @@ export function ExpenseDetailDialog({
   /* ── Tu posición en este gasto ────────────────────────────────────────────────────── */
   const net = currentMember ? netOf(expense, split, currentMember.id) : 0;
   const showYourBox = currentMember != null && Math.abs(net) > 0.01;
+  const yourShare = currentMember ? shareOf(split, currentMember.id) : 0;
 
   /* ── Reparto, con plegado para grupos grandes ─────────────────────────────────────── */
-  const splitRows = split.participantIds.map(id => ({
+  /*
+    Cada fila dice la **posición neta** de esa persona en el gasto, no su parte: quien puso la
+    plata aparece con lo que le deben (`+$840.000`) y el resto con lo que debe (`−$120.000`).
+    La parte de cada uno se dice una sola vez, en el encabezado de la tarjeta.
+
+    El pagador entra aunque no participe del reparto: puso la plata, así que tiene posición.
+  */
+  const splitMemberIds = [...new Set([expense.payerId, ...split.participantIds])];
+  const splitRows = splitMemberIds.map(id => ({
     id,
     name: id === currentMember?.id ? t('expenseDetail.splitYou') : memberName(members, id),
     amount: shareOf(split, id),
+    net: netOf(expense, split, id),
   }));
 
   const splitTitle = (() => {
@@ -132,19 +142,26 @@ export function ExpenseDetailDialog({
     return t('expenseDetail.splitEqual');
   })();
 
+  /** Cuánto le tocó a cada uno, cuando a todos les tocó lo mismo. */
+  const evenShare = (() => {
+    const shares = split.participantIds.map(id => shareOf(split, id));
+    if (shares.length === 0) return null;
+    return shares.every(v => Math.abs(v - shares[0]) < 0.01) ? shares[0] : null;
+  })();
+
   const shouldFold = splitRows.length > FOLD_THRESHOLD && !expandedSplit;
   // Se muestran siempre los extremos: vos, quien pagó y quien más debe. El resto se pliega.
   const anchorIds = new Set<number>();
   if (shouldFold) {
     if (currentMember) anchorIds.add(currentMember.id);
     anchorIds.add(expense.payerId);
-    const biggest = [...splitRows].sort((a, b) => b.amount - a.amount)[0];
+    const biggest = [...splitRows].sort((a, b) => a.net - b.net)[0];
     if (biggest) anchorIds.add(biggest.id);
   }
   const shownRows = shouldFold ? splitRows.filter(r => anchorIds.has(r.id)) : splitRows;
   const foldedRows = shouldFold ? splitRows.filter(r => !anchorIds.has(r.id)) : [];
   const foldedAreEqual = foldedRows.length > 0
-    && foldedRows.every(r => Math.abs(r.amount - foldedRows[0].amount) < 0.01);
+    && foldedRows.every(r => Math.abs(r.net - foldedRows[0].net) < 0.01);
 
   /* ── Acciones ─────────────────────────────────────────────────────────────────────── */
   const handleEdit = () => {
@@ -229,10 +246,23 @@ export function ExpenseDetailDialog({
 
           <div className="mt-4 flex gap-2">
             <DarkBox
-              label={hasInstallments ? t('expenseDetail.thisInstallment') : t('expenseDetail.amount')}
+              label={hasInstallments
+                ? t('expenseDetail.thisInstallment')
+                : isOneTimeGroup ? t('expenseDetail.expenseBox') : t('expenseDetail.amount')}
               value={formatAmount(expense.amount, expense.currency)}
             />
-            {showYourBox && (
+            {/*
+              En un evento la pregunta no es "cuánto te deben" sino "cuánto me tocó": el saldo
+              corre hasta que cierren el grupo, así que lo accionable es tu parte.
+            */}
+            {isOneTimeGroup ? (
+              yourShare > 0.01 && (
+                <DarkBox
+                  label={t('expenseDetail.yourPartBox')}
+                  value={formatAmount(yourShare, expense.currency)}
+                />
+              )
+            ) : showYourBox && (
               <DarkBox
                 label={net > 0 ? t('expenseDetail.theyOwe') : t('expenseDetail.youOwe')}
                 value={formatAmount(Math.abs(net), expense.currency)}
@@ -273,7 +303,12 @@ export function ExpenseDetailDialog({
               <div className="flex items-baseline justify-between gap-2">
                 <p className="truncate text-[13px] font-bold text-foreground">{splitTitle}</p>
                 <p className="shrink-0 text-[11.5px] font-medium text-muted-2">
-                  {t('expenseDetail.splitCount', { count: splitRows.length })}
+                  {evenShare != null
+                    ? t('expenseDetail.splitCountEach', {
+                        count: split.participantIds.length,
+                        amount: formatAmount(evenShare, expense.currency),
+                      })
+                    : t('expenseDetail.splitCount', { count: split.participantIds.length })}
                 </p>
               </div>
               <div className="mt-3 space-y-2">
@@ -290,9 +325,17 @@ export function ExpenseDetailDialog({
                     </div>
                     <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-foreground">
                       {row.name}
+                      {row.id === expense.payerId && (
+                        <span className="text-muted-2"> · {t('expenseDetail.putItIn')}</span>
+                      )}
                     </span>
-                    <span className="shrink-0 text-[12.5px] font-bold tabular-nums text-foreground">
-                      {formatAmount(row.amount, expense.currency)}
+                    <span className={cn(
+                      'shrink-0 text-[12.5px] font-bold tabular-nums',
+                      Math.abs(row.net) <= 0.01 ? 'text-muted-2'
+                        : row.net > 0 ? 'text-positive' : 'text-negative',
+                    )}>
+                      {row.net > 0 ? '+' : row.net < 0 ? '−' : ''}
+                      {formatAmount(Math.abs(row.net), expense.currency)}
                     </span>
                   </div>
                 ))}
@@ -317,7 +360,7 @@ export function ExpenseDetailDialog({
                       {foldedAreEqual
                         ? t('expenseDetail.foldedEven', {
                             count: foldedRows.length,
-                            amount: formatAmount(foldedRows[0].amount, expense.currency),
+                            amount: formatAmount(Math.abs(foldedRows[0].net), expense.currency),
                           })
                         : t('expenseDetail.folded', { count: foldedRows.length })}
                     </span>

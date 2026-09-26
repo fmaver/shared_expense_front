@@ -6,37 +6,11 @@ import { CalendarClock, Plus, Trash2 } from 'lucide-react';
 import { deleteDueDate, getDueDates } from '@/api/dueDates';
 import type { DueDate } from '@/types/expense';
 import { useScroll } from '@/contexts/ScrollContext';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { DueDateDialog } from '@/components/expenses/DueDateDialog';
 import { useGroup } from '@/hooks/useGroups';
-
-/**
- * La misma regla que calcula las fechas en el backend, para poder mostrar el próximo
- * vencimiento sin pedirlo. Es la información que la persona quiere ver — "vence el 9 de
- * octubre" — en vez de los parámetros con los que se cargó.
- */
-function nextOccurrence(d: DueDate, from: Date): Date {
-  const anchor = d.anchorYear * 12 + d.anchorMonth;
-  let year = from.getFullYear();
-  let month = from.getMonth() + 1;
-
-  for (let i = 0; i < 14 + d.everyNMonths; i += 1) {
-    const offset = year * 12 + month - anchor;
-    if (offset >= 0 && offset % d.everyNMonths === 0) {
-      const lastDay = new Date(year, month, 0).getDate();
-      const candidate = new Date(year, month - 1, Math.min(d.dayOfMonth, lastDay));
-      if (candidate >= new Date(from.getFullYear(), from.getMonth(), from.getDate())) return candidate;
-    }
-    month += 1;
-    if (month === 13) {
-      year += 1;
-      month = 1;
-    }
-  }
-  return from;
-}
+import { nextDueOccurrence } from '@/utils/dueDates';
 
 interface GroupDueDatesPageProps {
   /** El grupo personal no se navega como `/groups/:id`, así que se puede pasar explícito. */
@@ -87,14 +61,14 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
   const sorted = useMemo(
     () =>
       [...dueDates].sort(
-        (a, b) => nextOccurrence(a, today).getTime() - nextOccurrence(b, today).getTime(),
+        (a, b) => nextDueOccurrence(a, today).getTime() - nextDueOccurrence(b, today).getTime(),
       ),
     [dueDates, today],
   );
 
   /** Cuántos días faltan y la fecha en palabras: lo que se lee de un vencimiento. */
   const describe = (d: DueDate) => {
-    const next = nextOccurrence(d, today);
+    const next = nextDueOccurrence(d, today);
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const days = Math.round((next.getTime() - startOfToday.getTime()) / 86400000);
     const date = next.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-AR', {
@@ -126,16 +100,22 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
               <Skeleton className="h-16 w-full rounded-xl" />
             </>
           ) : sorted.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-16 px-6">
-              <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-4">
-                <CalendarClock className="h-7 w-7 text-muted-foreground" />
-              </div>
-              <p className="font-medium text-foreground">{t('dueDates.emptyTitle')}</p>
-              <p className="text-sm text-muted-foreground mt-1 max-w-xs">{t('dueDates.empty')}</p>
-              <Button onClick={() => setAdding(true)} className="mt-5">
-                <Plus className="h-4 w-4 mr-1.5" />
+            <div className="px-1 py-10 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-sunken">
+                <CalendarClock className="h-7 w-7 text-muted-2" aria-hidden="true" />
+              </span>
+              <p className="mt-4 text-[14px] font-bold text-foreground">{t('dueDates.emptyTitle')}</p>
+              <p className="mx-auto mt-1.5 max-w-[32ch] text-[12.5px] font-medium leading-[1.5] text-muted-1">
+                {t('dueDates.empty')}
+              </p>
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="mt-6 flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[14px] bg-brand text-[13.5px] font-bold text-white transition-opacity hover:opacity-90"
+              >
+                <Plus className="h-4 w-4" />
                 {t('dueDates.add')}
-              </Button>
+              </button>
             </div>
           ) : (
             <>
@@ -185,10 +165,11 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
                   </div>
                 );
               })}
+              {/* Naranja y de ancho completo: es la única acción de la pantalla. */}
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-card border border-dashed border-line-strong py-3 text-[12.5px] font-bold text-foreground transition-colors hover:bg-surface-sunken"
+                className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[14px] bg-brand text-[13.5px] font-bold text-white transition-opacity hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
                 {t('dueDates.add')}
