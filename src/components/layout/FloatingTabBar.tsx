@@ -188,6 +188,8 @@ export function FloatingTabBar() {
         Barra inferior (V7): de borde a borde, la pastilla ocupa el ancho y el "+" va a la
         derecha, los dos de 62px. Adentro de un grupo no hay pastilla (el grupo tiene sus
         pestañas y el volver): queda sólo el "+", en el mismo lugar y del mismo tamaño.
+        Ya no se achica al scrollear: es una decisión abierta, documentada con cómo volver
+        a ponerlo en docs/superpowers/specs/2026-09-26-barra-inferior-colapso.md.
       */}
       <div
         className="fixed left-3 right-3 z-40 flex items-center justify-end gap-2.5 lg:hidden"

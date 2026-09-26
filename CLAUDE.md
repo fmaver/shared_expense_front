@@ -45,7 +45,7 @@ The app serves two distinct experiences from the same codebase, gated by the `lg
 | Layer | Desktop (`lg:`) | Mobile (default) |
 |---|---|---|
 | **Shell** | `AppShell` — fixed left `Sidebar` + main content area | `AppShell` — no sidebar; `MobileHeader` fixed at top + `FloatingTabBar` fixed at bottom |
-| **Navigation** | `Sidebar` — vertical nav list with group links | `FloatingTabBar` — edge-to-edge glass bar (icon + label tabs, 62px "+" on the right); inside a group only the "+" |
+| **Navigation** | `Sidebar` — vertical nav list with group links | `FloatingTabBar` — edge-to-edge glass bar (icon + label tabs, 62px "+" on the right); inside a group only the "+". It no longer collapses on scroll — open decision, see `docs/superpowers/specs/2026-09-26-barra-inferior-colapso.md` |
 | **Header** | None (sidebar has branding) | `FloatingTopBar` (glass back button + right capsule, band on scroll) on group/personal/detail screens; `MobileHeader` (brand · `DynamicIsland` · avatar) only on `/groups` and `/personal/charts` |
 | **Add expense** | Inline button in group header | FAB (plus button) in `FloatingTabBar` → speed-dial or direct group launcher |
 | **Forms / dialogs** | Centered modal (zoom in/out) | Bottom sheet (slides up from bottom, drag down to dismiss) |
