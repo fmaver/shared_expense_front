@@ -115,7 +115,7 @@ export function FloatingTabBar() {
       <div
         className={cn(
           'fixed right-5 z-40 w-80 max-w-[calc(100vw-2.5rem)] lg:hidden',
-          'liquid-glass rounded-2xl p-2',
+          'glass rounded-2xl p-2',
           'origin-bottom-right transition-all duration-200 ease-out',
           speedDialOpen
             ? 'translate-y-0 scale-100 opacity-100'
@@ -159,7 +159,7 @@ export function FloatingTabBar() {
       >
         {!inGroup && (
           <nav
-            className="liquid-glass relative flex items-center overflow-hidden rounded-full"
+            className="glass relative flex items-center overflow-hidden rounded-full"
             style={{
               padding: tabBarCollapsed ? '4px' : '8px',
               transition: 'padding 220ms ease-out',
@@ -210,7 +210,7 @@ export function FloatingTabBar() {
         */}
         <div className="relative shrink-0">
           {viewedMonthSettled && inGroup && (
-            <span className="liquid-glass absolute bottom-[3.75rem] right-0 w-44 rounded-2xl px-3 py-2 text-[10.5px] font-semibold leading-[1.4] text-muted-1">
+            <span className="glass absolute bottom-[3.75rem] right-0 w-44 rounded-2xl px-3 py-2 text-[10.5px] font-semibold leading-[1.4] text-muted-1">
               {t('settle.fabNote')}
             </span>
           )}
