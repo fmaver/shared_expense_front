@@ -46,7 +46,7 @@ The app serves two distinct experiences from the same codebase, gated by the `lg
 |---|---|---|
 | **Shell** | `AppShell` — fixed left `Sidebar` + main content area | `AppShell` — no sidebar; `MobileHeader` fixed at top + `FloatingTabBar` fixed at bottom |
 | **Navigation** | `Sidebar` — vertical nav list with group links | `FloatingTabBar` — floating pill that collapses to active-tab circle on scroll |
-| **Header** | None (sidebar has branding) | `MobileHeader` — brand mark · `DynamicIsland` (centered) · `AccountMenu` |
+| **Header** | None (sidebar has branding) | `FloatingTopBar` (glass back button + right capsule, band on scroll) on group/personal/detail screens; `MobileHeader` (brand · `DynamicIsland` · avatar) only on `/groups` and `/personal/charts` |
 | **Add expense** | Inline button in group header | FAB (plus button) in `FloatingTabBar` → speed-dial or direct group launcher |
 | **Forms / dialogs** | Centered modal (zoom in/out) | Bottom sheet (slides up from bottom, drag down to dismiss) |
 
@@ -263,16 +263,24 @@ Current non-internal categories (as of 2026-05): `comida`, `supermercado`, `entr
 ```
 Never put `overflow-y-auto` on the same element as `flex flex-col flex-1` — that makes the content a flex child that shrinks instead of scrolling. `pb-24` provides clearance for the floating tab bar on mobile; `lg:pb-0` removes it on desktop.
 
-### Liquid Glass material
+### Glass material (one recipe) and the shared floating pieces
 
-The `.liquid-glass` CSS class (defined in `src/index.css`) implements the iOS 26 "Liquid Glass" frosted material used on `FloatingTabBar` and any surface that should float above the content:
+`src/index.css` defines the only floating material: `.glass` (light + `.dark`), `.glass-night`
+for the night surfaces (login/register), and `.glass-band` for the band that appears on scroll.
+Use them on things that float over content — never on cards or inline elements. Build with the
+components instead of re-styling:
 
-```css
-.liquid-glass { /* heavy backdrop blur, subtle white tint, inset highlights */ }
-.dark .liquid-glass { /* same with purple-shifted tint for dark mode */ }
-```
+| Piece | File | Use |
+|---|---|---|
+| `GlassButton`, `GlassCapsule`, `CapsuleSlot` | `components/ui/Glass.tsx` | 36px floating controls with a 44px hit area |
+| `FloatingTopBar`, `TopBarSpacer` | `components/layout/FloatingTopBar.tsx` | Mobile back button + right capsule + scroll band. Pages leave a `<TopBarSpacer />` above the big title and pass the title element (callback ref) as `band.watch` |
+| `Segmented`, `SegmentedLinks` | `components/ui/Segmented.tsx` | Every few-option exclusive choice, including the group tabs (colors in `.segmented*` in index.css) |
+| `MonthPager` | `components/expenses/MonthPager.tsx` | The month capsule `‹ Julio 2026 ▼ ›` |
+| `AmountInput` | `components/expenses/AmountInput.tsx` | The big amount: a real `<input inputMode="decimal">` (the custom keypad is gone) |
+| `useScanPicker`, `useReceiptScan`, `ScanReview` | `components/expenses/`, `hooks/` | Receipt scan from the "+": native file input, draft review with "de la foto" pills |
 
-Use it on floating pills/panels that sit over content. Do not use it on cards or inline elements.
+Search and receipts have no backend yet: they sit behind `FEATURE_SEARCH` / `FEATURE_RECEIPTS`
+(`src/config/features.ts`, off unless `VITE_FEATURE_SEARCH=true` / `VITE_FEATURE_RECEIPTS=true`).
 
 ### Bottom sheet dialogs + drag-to-dismiss
 

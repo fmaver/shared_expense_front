@@ -167,7 +167,8 @@
     "balanceLabel": "Tu saldo en grupos",
     "inFavour": "a favor",
     "toPay": "a pagar",
-    "moneyLeft": "te quedan"
+    "moneyLeft": "te quedan",
+    "sections": "Secciones del grupo"
   },
   "tabs": {
     "expenses": "Gastos",
@@ -192,7 +193,8 @@
     "members_one": "{{count}} miembro",
     "members_other": "{{count}} miembros",
     "addExpenseDesc": "Sumá un gasto compartido",
-    "transferDesc": "Registrá un pago entre miembros"
+    "transferDesc": "Registrá un pago entre miembros",
+    "addByHand": "Cargar a mano"
   },
   "charts": {
     "title": "Gráficos",
@@ -368,11 +370,8 @@
     "recurringEditNote": "Los cambios se aplicarán a este mes y a todas las ocurrencias futuras.",
     "categoryRequired": "Elegí una categoría",
     "submitFailed": "No se pudo guardar el gasto",
-    "scanImage": "Escanear foto",
     "scanning": "Leyendo la imagen…",
     "scanHint": "Subí o pegá un ticket o captura de pago.",
-    "scanLowConfidence": "Revisá estos valores — la imagen costó leerla.",
-    "scanFilled": "Campos completados desde la imagen. Revisá antes de guardar.",
     "whatWasIt": "¿Qué fue?",
     "saveExpense": "Guardar gasto",
     "saveLoan": "Guardar préstamo",
@@ -705,7 +704,8 @@
     "collectFrom": "cobrás <0>{{amount}}</0> de {{group}}",
     "payTo": "pagás <0>{{amount}}</0> de {{group}}",
     "everyMonth": "Cada mes",
-    "dated": "Con fecha"
+    "dated": "Con fecha",
+    "bandLeft": "te quedan {{amount}}"
   },
   "dueDates": {
     "title": "Vencimientos",
@@ -964,5 +964,35 @@
     "duplicateSaveAnyway": "Guardar igual",
     "incomeTitle": "Ingreso",
     "incomeDesc": "Sueldo, freelance, un bono"
+  },
+  "groupMenu": {
+    "more": "Más opciones",
+    "invite": "Invitar gente",
+    "shareLink": "Compartir link",
+    "leave": "Salir del grupo",
+    "shareText": "Sumate a {{group}} en Jirens",
+    "shareFailed": "No se pudo compartir el link"
+  },
+  "search": {
+    "open": "Buscar",
+    "title": "Buscar",
+    "inPersonal": "Buscar en tu plata",
+    "placeholderPersonal": "Buscar en tu plata",
+    "placeholderGroup": "Buscar en {{group}}",
+    "comingSoon": "Pronto vas a poder buscar gastos por nombre, monto o quién pagó."
+  },
+  "scan": {
+    "menuTitle": "Escanear ticket",
+    "menuDesc": "Sacale una foto o elegí una de la galería",
+    "fromPhoto": "de la foto",
+    "reading": "Leyendo el ticket…",
+    "read": "<0>Leímos el ticket.</0> Chequeá lo marcado “de la foto” antes de guardar.",
+    "lowConfidence": "No pudimos leer todo: completá lo que falta.",
+    "thumbnailAlt": "Foto del ticket"
+  },
+  "receipt": {
+    "add": "Agregar foto",
+    "optional": "opcional",
+    "view": "Ver"
   }
 }

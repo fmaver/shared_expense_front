@@ -6,6 +6,7 @@ import axios from 'axios';
 import { ArrowDown, ChevronLeft } from 'lucide-react';
 import { login, register } from '@/api/auth';
 import { FieldBox } from '@/components/ui/FieldBox';
+import { GlassButton } from '@/components/ui/Glass';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { JirensMark } from '@/components/brand/JirensMark';
 import { normalizeArPhone } from '@/utils/phone';
@@ -122,14 +123,14 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </div>
         ) : (
           <div className="flex items-center justify-between gap-3 pt-2">
-            <button
-              type="button"
+            {/* Volver en vidrio oscuro (V6.2): el ingreso es una superficie noche. */}
+            <GlassButton
+              tone="night"
               onClick={() => { reset(); setMode('login'); }}
-              className="flex cursor-pointer items-center gap-0.5 text-[14px] font-medium text-muted-on-dark hover:text-paper"
+              aria-label={t('auth.backToLogin')}
             >
-              <ChevronLeft className="h-4 w-4" />
-              {t('auth.backToLogin')}
-            </button>
+              <ChevronLeft className="h-[17px] w-[17px]" strokeWidth={2.4} />
+            </GlassButton>
             <JirensMark tone="night" className="text-white" size={30} />
           </div>
         )}

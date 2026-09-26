@@ -5,8 +5,9 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Segmented } from '@/components/ui/Segmented';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { AmountKeypad } from '@/components/expenses/AmountKeypad';
+import { AmountInput } from '@/components/expenses/AmountInput';
 import { ContextCard, ContextRow } from '@/components/expenses/ContextRows';
 import { PickerOverlay, StartMonthPicker } from '@/components/expenses/ContextPickers';
 import { formatCurrency, parseKeypadAmount } from '@/utils/format';
@@ -137,34 +138,18 @@ export function PersonalIncomeSheet({
           </button>
         </div>
 
-        <div className="max-h-[calc(88dvh-3rem)] overflow-y-auto px-5 pb-5">
-          <div className="flex gap-1 rounded-[14px] bg-line-soft p-1">
-            {([
-              { value: 'extra' as const, label: t('personalAdd.segmentExtra') },
-              { value: 'salary' as const, label: t('personalAdd.segmentSalary') },
-            ]).map(option => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setKind(option.value)}
-                className={cn(
-                  'h-[34px] flex-1 cursor-pointer rounded-[11px] text-[12.5px] font-bold transition-colors',
-                  kind === option.value ? 'bg-primary text-primary-foreground' : 'text-muted-1',
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+        <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
+          <Segmented
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: 'extra', label: t('personalAdd.segmentExtra') },
+              { value: 'salary', label: t('personalAdd.segmentSalary') },
+            ]}
+          />
 
           <div className="pt-5 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-[22px] font-semibold text-muted-2">$</span>
-              <span className="text-[52px] font-bold leading-none tracking-[-0.035em] tabular-nums text-positive">
-                {amountText || '0'}
-              </span>
-              <span className="h-[46px] w-[2px] animate-pulse bg-brand" aria-hidden="true" />
-            </div>
+            <AmountInput value={amountText} onChange={setAmountText} tone="positive" />
 
             <div className="mt-2.5 flex justify-center gap-1.5">
               {(['ARS', 'USD'] as const).map(c => (
@@ -258,18 +243,19 @@ export function PersonalIncomeSheet({
             </p>
           )}
 
-          <AmountKeypad className="mt-4" value={amountText} onChange={setAmountText} />
-
-          <button
-            type="button"
-            onClick={() => save()}
-            disabled={saving || duplicate !== null}
-            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-primary text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {saving
-              ? t('expenseForm.saving')
-              : t(kind === 'salary' ? 'personalAdd.saveSalary' : 'personalAdd.saveExtra')}
-          </button>
+          {/* Pegado abajo: con el teclado del celular abierto, "Guardar" sigue a la vista. */}
+          <div className="sticky bottom-0 -mx-5 mt-3 bg-popover px-5 pb-1 pt-2">
+            <button
+              type="button"
+              onClick={() => save()}
+              disabled={saving || duplicate !== null}
+              className="h-12 w-full cursor-pointer rounded-[14px] bg-primary text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {saving
+                ? t('expenseForm.saving')
+                : t(kind === 'salary' ? 'personalAdd.saveSalary' : 'personalAdd.saveExtra')}
+            </button>
+          </div>
         </div>
 
         {pickerOpen && (

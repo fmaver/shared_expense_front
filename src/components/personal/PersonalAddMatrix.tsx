@@ -1,5 +1,5 @@
 import { useTranslation, Trans } from 'react-i18next';
-import { ChevronRight } from 'lucide-react';
+import { Camera, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
  * los accesos directos (el "Agregar fijo" de la lista de gastos), que abren la hoja ya en
  * "Cada mes".
  */
-export type PersonalEntryKind = 'expense' | 'fixed' | 'extra' | 'salary';
+export type PersonalEntryKind = 'expense' | 'fixed' | 'extra' | 'salary' | 'scan';
 
 interface PersonalAddMatrixProps {
   open: boolean;
@@ -18,7 +18,7 @@ interface PersonalAddMatrixProps {
 }
 
 /**
- * "¿Qué anotamos?" — dos opciones: sale o entra (ADDENDUM-violeta.md §4).
+ * "¿Qué anotamos?" — Gasto, Escanear ticket e Ingreso, las tres con el mismo peso (V6.6).
  *
  * Eran cuatro, una grilla con "sale/entra" contra "una vez/cada mes". La segunda pregunta pasó
  * adentro del formulario como un segmentado que no borra lo cargado, así que acá queda sólo la
@@ -27,7 +27,7 @@ interface PersonalAddMatrixProps {
 export function PersonalAddMatrix({ open, onOpenChange, onPick }: PersonalAddMatrixProps) {
   const { t } = useTranslation();
 
-  const option = (kind: 'expense' | 'extra', tone: 'out' | 'in') => (
+  const option = (kind: 'expense' | 'extra' | 'scan', tone: 'out' | 'in' | 'scan') => (
     <button
       type="button"
       onClick={() => onPick(kind)}
@@ -36,18 +36,20 @@ export function PersonalAddMatrix({ open, onOpenChange, onPick }: PersonalAddMat
       <span
         className={cn(
           'flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-[20px] font-extrabold leading-none',
-          tone === 'out' ? 'bg-negative-wash text-negative' : 'bg-positive-wash text-positive',
+          tone === 'out' && 'bg-negative-wash text-negative',
+          tone === 'in' && 'bg-positive-wash text-positive',
+          tone === 'scan' && 'bg-surface-sunken text-brand-ink',
         )}
         aria-hidden="true"
       >
-        {tone === 'out' ? '−' : '+'}
+        {tone === 'scan' ? <Camera className="h-5 w-5" /> : tone === 'out' ? '−' : '+'}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-bold text-foreground">
-          {t(kind === 'expense' ? 'personalAdd.expenseTitle' : 'personalAdd.incomeTitle')}
+          {t(kind === 'expense' ? 'personalAdd.expenseTitle' : kind === 'scan' ? 'scan.menuTitle' : 'personalAdd.incomeTitle')}
         </span>
         <span className="mt-[3px] block text-[11.5px] font-medium leading-[1.4] text-muted-1">
-          {t(kind === 'expense' ? 'personalAdd.expenseDesc' : 'personalAdd.incomeDesc')}
+          {t(kind === 'expense' ? 'personalAdd.expenseDesc' : kind === 'scan' ? 'scan.menuDesc' : 'personalAdd.incomeDesc')}
         </span>
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
@@ -65,6 +67,7 @@ export function PersonalAddMatrix({ open, onOpenChange, onPick }: PersonalAddMat
 
           <div className="mt-5 flex flex-col gap-2.5">
             {option('expense', 'out')}
+            {option('scan', 'scan')}
             {option('extra', 'in')}
           </div>
 

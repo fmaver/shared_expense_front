@@ -14,7 +14,7 @@ export function DynamicIsland({ state, groupName }: DynamicIslandProps) {
   return (
     <div
       className={cn(
-        'liquid-glass text-foreground rounded-full px-4 py-1.5',
+        'glass text-foreground rounded-full px-4 py-1.5',
         'flex items-center justify-center gap-1.5',
         'h-8 transition-all duration-300 ease-out overflow-hidden',
         state === 'idle' ? 'min-w-0 opacity-0' : isExpanded ? 'min-w-[160px]' : 'min-w-[120px]',

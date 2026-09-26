@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PushCard } from '@/components/ui/PushCard';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Segmented } from '@/components/ui/Segmented';
 import { ConfigSheet } from '@/components/layout/ConfigSheet';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
 import { avatarBg, initials } from '@/utils/avatar';
 import { normalizeArPhone, localArPhone } from '@/utils/phone';
 import { cn } from '@/lib/utils';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 
 /** Un bloque con su rótulo. Fuera del componente: adentro se remontaría en cada render. */
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -151,10 +152,12 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-5 px-5 py-6">
+      <FloatingTopBar back={{ onClick: () => navigate(-1), label: t('common.back') }} />
+      <TopBarSpacer />
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="inline-flex cursor-pointer items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
+        className="hidden lg:inline-flex cursor-pointer items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
         {t('common.back')}
@@ -231,7 +234,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         <PushCard />
         <div className="mt-3 rounded-card border border-line bg-surface p-4 shadow-card">
           <p className="text-[12.5px] font-bold text-foreground">{t('profile.fallbackChannel')}</p>
-          <SegmentedControl
+          <Segmented
             className="mt-2.5"
             aria-label={t('profile.fallbackChannel')}
             value={channel}
@@ -262,7 +265,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
           <Row
             label={t('profile.language')}
             control={
-              <SegmentedControl
+              <Segmented
                 className="w-[96px] shrink-0"
                 aria-label={t('profile.language')}
                 value={currentLang}
@@ -279,7 +282,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
           <Row
             label={t('profile.theme')}
             control={
-              <SegmentedControl
+              <Segmented
                 className="w-[180px] shrink-0"
                 aria-label={t('profile.theme')}
                 value={theme}

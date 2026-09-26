@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useScroll } from '@/contexts/ScrollContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { usePersonalTrend } from '@/hooks/usePersonalTrend';
@@ -11,6 +11,10 @@ import { getPersonalGroup } from '@/api/personal';
 import { useCategories } from '@/hooks/useCategories';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MonthPager } from '@/components/expenses/MonthPager';
+import { CapsuleSlot, GlassCapsule } from '@/components/ui/Glass';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
+import { FEATURE_SEARCH } from '@/config/features';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import { avatarBg, initials } from '@/utils/avatar';
@@ -35,6 +39,7 @@ export function PersonalDashboard() {
   const { data: categories } = useCategories();
   const currentMember = useCurrentMember();
   const [personalGroupId, setPersonalGroupId] = useState<number | null>(null);
+  const [titleEl, setTitleEl] = useState<HTMLHeadingElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,10 +77,6 @@ export function PersonalDashboard() {
   const today = new Date();
   const isCurrentMonth = year === today.getFullYear() && month === today.getMonth() + 1;
 
-  const goMonth = (delta: number) => {
-    const next = new Date(year, month - 1 + delta, 1);
-    setYearMonth(next.getFullYear(), next.getMonth() + 1);
-  };
 
   if (isLoading) {
     return (
@@ -100,49 +101,70 @@ export function PersonalDashboard() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
-        <div className="mx-auto w-full max-w-5xl px-5 py-5 lg:px-7 lg:py-6">
-
-          {/* ── Encabezado: el mes como eyebrow, el saludo como título ──────────────── */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-2">
-                {months[month - 1]} {year}
-              </p>
-              <h1 className="mt-1 truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
-                {t('personal.greeting', { name: currentMember?.name ?? '' })}
-              </h1>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => goMonth(-1)}
-                aria-label={t('monthPager.previous')}
-                className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full border border-line-strong text-foreground transition-colors hover:bg-surface-sunken"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {/* Se puede ir al futuro: los fijos y las cuotas ya viven en los meses que vienen. */}
-              <button
-                type="button"
-                onClick={() => goMonth(1)}
-                aria-label={t('monthPager.next')}
-                className="flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full border border-line-strong text-foreground transition-colors hover:bg-surface-sunken"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              <Link
-                to="/profile"
-                aria-label={t('nav.profile')}
+      {/* Mobile: la cápsula flotante con buscar y el avatar, y la banda al scrollear (V6.2). */}
+      <FloatingTopBar
+        right={
+          <GlassCapsule>
+            {FEATURE_SEARCH && (
+              <CapsuleSlot to="/search?scope=personal" aria-label={t('search.open')}>
+                <Search className="h-[17px] w-[17px]" strokeWidth={2.4} />
+              </CapsuleSlot>
+            )}
+            <CapsuleSlot to="/profile" aria-label={t('nav.profile')}>
+              <span
                 className={cn(
-                  'flex h-9 w-9 select-none items-center justify-center rounded-full text-[12px] font-bold text-white',
+                  'flex h-[30px] w-[30px] select-none items-center justify-center rounded-full text-[11px] font-bold text-white',
                   avatarBg(currentMember?.id ?? 1),
                 )}
               >
                 {initials(currentMember?.name ?? '?')}
+              </span>
+            </CapsuleSlot>
+          </GlassCapsule>
+        }
+        band={{
+          watch: titleEl,
+          title: t('groups.yourMoney'),
+          context: ledger
+            ? `${months[month - 1] ?? ''} ${year} · ${t('personal.bandLeft', { amount: formatCurrency(ledger.currentBalance) })}`
+            : `${months[month - 1] ?? ''} ${year}`,
+        }}
+      />
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
+        <div className="mx-auto w-full max-w-5xl px-5 py-5 lg:px-7 lg:py-6">
+
+          {/* ── Encabezado: el saludo, y abajo el mes en su cápsula (V6.4) ────────── */}
+          <TopBarSpacer />
+          <div className="flex items-start justify-between gap-3">
+            <h1 ref={setTitleEl} className="min-w-0 truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
+              {t('personal.greeting', { name: currentMember?.name ?? '' })}
+            </h1>
+            <div className="flex shrink-0 items-center gap-2.5">
+            {/* Desktop: la búsqueda como cápsula con texto (V6.5). En mobile es la lupa de arriba. */}
+            {FEATURE_SEARCH && (
+              <Link
+                to="/search?scope=personal"
+                className="glass hidden h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[12.5px] font-semibold text-muted-1 transition-opacity hover:opacity-80 lg:flex"
+              >
+                <Search className="h-4 w-4" aria-hidden="true" />
+                {t('search.inPersonal')}
+                <kbd className="rounded-[6px] bg-surface-sunken px-1.5 py-0.5 font-sans text-[10.5px] font-bold text-muted-1">⌘K</kbd>
               </Link>
+            )}
+            {/* En mobile el avatar vive en la cápsula flotante; acá queda para desktop. */}
+            <Link
+              to="/profile"
+              aria-label={t('nav.profile')}
+              className={cn(
+                'hidden h-9 w-9 shrink-0 select-none items-center justify-center rounded-full text-[12px] font-bold text-white lg:flex',
+                avatarBg(currentMember?.id ?? 1),
+              )}
+            >
+              {initials(currentMember?.name ?? '?')}
+            </Link>
             </div>
           </div>
+          <MonthPager className="mt-3.5" year={year} month={month} onNavigate={setYearMonth} />
 
           {/*
             Columnas con mínimo 0, y no el `auto` de una columna implícita: con `auto` la columna

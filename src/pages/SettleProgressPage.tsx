@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ArrowRight, Check, ChevronLeft, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MonthPager } from '@/components/expenses/MonthPager';
 import { avatarBg, initials } from '@/utils/avatar';
 import { buildTransferExpense } from '@/utils/transfer';
 import { shareReminder } from '@/utils/remind';
@@ -22,6 +23,7 @@ import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useSettlementActions } from '@/hooks/useSettlementActions';
 import type { DebtTransfer, ExpenseResponse } from '@/types/expense';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 
 /**
  * Saldando: cómo va la cosa, pago por pago.
@@ -40,7 +42,7 @@ export function SettleProgressPage() {
   const { groupId: groupIdParam } = useParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam!, 10);
 
-  const { year, month } = useMonthSearchParams();
+  const { year, month, setYearMonth } = useMonthSearchParams();
   const { data: group, isLoading: loadingGroup } = useGroup(groupId);
   const groupTypeKnown = !loadingGroup && group !== undefined;
   const isOneTime = group?.groupType === 'one_time';
@@ -145,9 +147,11 @@ export function SettleProgressPage() {
 
   return (
     <div className="mx-auto w-full max-w-lg px-5 py-6">
+      <FloatingTopBar back={{ to: backTo, label: group?.name ?? t('mobileNav.groups') }} />
+      <TopBarSpacer />
       <Link
         to={backTo}
-        className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
+        className="hidden lg:inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
         {group?.name ?? t('mobileNav.groups')}
@@ -160,7 +164,17 @@ export function SettleProgressPage() {
         })}
       </h1>
 
-      <p className="mt-2 text-[12.5px] font-medium text-muted-1">
+      {!isOneTime && (
+        <MonthPager
+          className="mt-4"
+          year={year}
+          month={month}
+          onNavigate={setYearMonth}
+          isSettled={monthlyData?.isSettled ?? false}
+        />
+      )}
+
+      <p className="mt-3 text-[12.5px] font-medium text-muted-1">
         {transfers.length === 0
           ? t('settle.allMarked')
           : t('settle.progressCount', { count: transfers.length, total })}

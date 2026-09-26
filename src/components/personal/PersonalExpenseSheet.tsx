@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ImagePlus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Segmented } from '@/components/ui/Segmented';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
-import { AmountKeypad } from '@/components/expenses/AmountKeypad';
+import { AmountInput } from '@/components/expenses/AmountInput';
+import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
+import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
+import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from '@/components/expenses/CategoryChips';
 import { ContextCard, ContextRow } from '@/components/expenses/ContextRows';
 import {
@@ -16,7 +20,7 @@ import {
 import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
 } from '@/utils/format';
-import { checkSimilarExpenses, createExpense, parseExpenseImage } from '@/api/expenses';
+import { checkSimilarExpenses, createExpense } from '@/api/expenses';
 import { createRecurringPersonalExpense } from '@/api/personal';
 import type {
   CategoryWithEmoji, ExpenseResponse, RecurringPersonalExpenseInstanceResponse,
@@ -37,6 +41,8 @@ interface PersonalExpenseSheetProps {
   /** Vuelve a la matriz: lo que se eligió ahí se puede cambiar sin cerrar todo. */
   onBack: () => void;
   onSaved: () => void;
+  /** Una foto de ticket elegida desde el "+" (V6.6): la hoja abre leyéndola. */
+  scanFile?: File | null;
 }
 
 /**
@@ -49,7 +55,7 @@ interface PersonalExpenseSheetProps {
  */
 export function PersonalExpenseSheet({
   open, onOpenChange, initialKind, year, month, categories,
-  existingRecurring, onBack, onSaved,
+  existingRecurring, onBack, onSaved, scanFile = null,
 }: PersonalExpenseSheetProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -73,8 +79,12 @@ export function PersonalExpenseSheet({
   const [duplicate, setDuplicate] = useState<ExpenseResponse | 'fixed' | null>(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [scanNote, setScanNote] = useState<string | null>(null);
+  const scan = useReceiptScan(personalGroupId);
+  /*
+    La foto que llegó desde el "+", esperando al grupo personal: la hoja puede abrir antes de
+    que `usePersonalContext` lo resuelva, y sin grupo no hay contra quién leer el ticket.
+  */
+  const [pendingScan, setPendingScan] = useState<File | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -90,8 +100,17 @@ export function PersonalExpenseSheet({
     setPicker(null);
     setDuplicate(null);
     setError('');
-    setScanNote(null);
+    scan.reset();
+    setPendingScan(scanFile);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialKind, year, month]);
+
+  useEffect(() => {
+    if (!open || !pendingScan || !personalGroupId) return;
+    setPendingScan(null);
+    scanImage(pendingScan);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pendingScan, personalGroupId]);
 
   /* Las categorías llegan por red: sin esto el guardado se traba en una validación invisible. */
   useEffect(() => {
@@ -109,29 +128,32 @@ export function PersonalExpenseSheet({
    * y la categoría.
    */
   const scanImage = async (file: File) => {
-    if (!personalGroupId || scanning) return;
-    setScanning(true);
-    setScanNote(null);
+    if (!personalGroupId || scan.scanning) return;
     setError('');
     try {
-      const draft = await parseExpenseImage(personalGroupId, file);
-      if (draft.amount != null) setAmountText(formatKeypadAmount(draft.amount));
-      setDescription(draft.description);
-      setCategory(draft.category);
-      setCurrency(draft.currency === 'USD' ? 'USD' : 'ARS');
-      if (kind === 'expense') {
-        setDate(draft.date);
-        setPaymentType(draft.paymentType);
-        setInstallments(draft.installments);
-      }
-      setScanNote(draft.confidence === 'low'
-        ? t('expenseForm.scanLowConfidence')
-        : t('expenseForm.scanFilled'));
+      await scan.scan(file, draft => {
+        if (draft.amount != null) setAmountText(formatKeypadAmount(draft.amount));
+        setDescription(draft.description);
+        setCategory(draft.category);
+        setCurrency(draft.currency === 'USD' ? 'USD' : 'ARS');
+        // Un gasto fijo no tiene fecha ni cuotas: de la foto se queda con monto, nombre y rubro.
+        if (kind === 'expense') {
+          setDate(draft.date);
+          setPaymentType(draft.paymentType);
+          setInstallments(draft.installments);
+        }
+        const fields = draftFields(draft, { payment: kind === 'expense' });
+        return kind === 'expense' ? fields : fields.filter(f => f !== 'date');
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.scanFailed'));
-    } finally {
-      setScanning(false);
     }
+  };
+
+  // Pegar una captura escanea, igual que en la hoja del grupo.
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const image = Array.from(e.clipboardData.files).find(f => f.type.startsWith('image/'));
+    if (image) { e.preventDefault(); scanImage(image); }
   };
 
   const dateLabel = (() => {
@@ -208,7 +230,7 @@ export function PersonalExpenseSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 rounded-t-sheet" showCloseButton={false}>
+      <DialogContent className="gap-0 overflow-hidden p-0 rounded-t-sheet" showCloseButton={false} onPaste={handlePaste}>
         {/* ── Barra superior: qué estás cargando, y cómo volver a elegir ────────────── */}
         <div className="flex items-center justify-between gap-2 px-5 pb-2 pt-1">
           <div className="flex items-center gap-1">
@@ -225,26 +247,6 @@ export function PersonalExpenseSheet({
             </DialogTitle>
           </div>
           <div className="flex items-center gap-1">
-            <label
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full text-muted-1',
-                scanning ? 'opacity-50' : 'cursor-pointer hover:bg-surface-sunken hover:text-foreground',
-              )}
-              title={t('expenseForm.scanImage')}
-            >
-              <ImagePlus className="h-4 w-4" />
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                disabled={scanning}
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  e.target.value = '';
-                  if (file) scanImage(file);
-                }}
-              />
-            </label>
             <button
               type="button"
               onClick={onBack}
@@ -255,36 +257,24 @@ export function PersonalExpenseSheet({
           </div>
         </div>
 
-        <div className="max-h-[calc(88dvh-3rem)] overflow-y-auto px-5 pb-5">
+        <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
+          {(scan.scanning || pendingScan) && <ScanReading receipt={scan.receipt} />}
+          <div hidden={scan.scanning || pendingScan !== null}>
+          <ScanReviewNotice receipt={scan.receipt} confidence={scan.confidence} />
           {/* ── Una vez, o todos los meses ─────────────────────────────────────────── */}
-          <div className="flex gap-1 rounded-[14px] bg-line-soft p-1">
-            {([
-              { value: 'expense' as const, label: t('personalAdd.segmentOnce') },
-              { value: 'fixed' as const, label: t('personalAdd.segmentFixed') },
-            ]).map(option => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setKind(option.value)}
-                className={cn(
-                  'h-[34px] flex-1 cursor-pointer rounded-[11px] text-[12.5px] font-bold transition-colors',
-                  kind === option.value ? 'bg-primary text-primary-foreground' : 'text-muted-1',
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: 'expense', label: t('personalAdd.segmentOnce') },
+              { value: 'fixed', label: t('personalAdd.segmentFixed') },
+            ]}
+          />
 
           {/* ── El monto ───────────────────────────────────────────────────────────── */}
           <div className="pt-5 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-[22px] font-semibold text-muted-2">$</span>
-              <span className="text-[52px] font-bold leading-none tracking-[-0.035em] tabular-nums text-foreground">
-                {amountText || '0'}
-              </span>
-              <span className="h-[46px] w-[2px] animate-pulse bg-brand" aria-hidden="true" />
-            </div>
+            <AmountInput value={amountText} onChange={v => { setAmountText(v); scan.touch('amount'); }} />
+            {scan.fromPhoto.has('amount') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
 
             <div className="mt-2.5 flex justify-center gap-1.5">
               {(['ARS', 'USD'] as const).map(c => (
@@ -309,14 +299,14 @@ export function PersonalExpenseSheet({
             type="text"
             value={description}
             maxLength={255}
-            onChange={e => setDescription(e.target.value)}
+            onChange={e => { setDescription(e.target.value); scan.touch('description'); }}
             placeholder={t('expenseForm.whatWasIt')}
-            className="mt-4 w-full border-0 bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-3"
+            className={cn(
+              'mt-4 w-full bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-3',
+              scan.fromPhoto.has('description') ? 'rounded-[12px] border border-brand-soft px-3 py-2' : 'border-0',
+            )}
           />
-
-          {scanNote && (
-            <p className="mt-2 text-center text-[11.5px] font-medium text-brand-ink">{scanNote}</p>
-          )}
+          {scan.fromPhoto.has('description') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
 
           <CategoryChips
             className="mt-4"
@@ -328,8 +318,19 @@ export function PersonalExpenseSheet({
           {/* ── El contexto, según si vuelve o no ──────────────────────────────────── */}
           {kind === 'expense' ? (
             <ContextCard className="mt-3">
-              <ContextRow label={t('personalAdd.rowWhen')} value={dateLabel} onClick={() => setPicker('date')} />
-              <ContextRow label={t('personalAdd.rowPayment')} value={paymentLabel} onClick={() => setPicker('payment')} />
+              <ContextRow
+                label={t('personalAdd.rowWhen')}
+                value={dateLabel}
+                onClick={() => setPicker('date')}
+                badge={scan.fromPhoto.has('date') ? <FromPhotoPill /> : undefined}
+              />
+              <ContextRow
+                label={t('personalAdd.rowPayment')}
+                value={paymentLabel}
+                onClick={() => setPicker('payment')}
+                badge={scan.fromPhoto.has('payment') ? <FromPhotoPill /> : undefined}
+              />
+              {FEATURE_RECEIPTS && <ReceiptRow receipt={scan.receipt} onAttach={scan.attach} />}
             </ContextCard>
           ) : (
             <>
@@ -392,23 +393,25 @@ export function PersonalExpenseSheet({
             </p>
           )}
 
-          <AmountKeypad className="mt-4" value={amountText} onChange={setAmountText} />
-
-          <button
-            type="button"
-            onClick={() => save()}
-            disabled={saving || duplicate !== null}
-            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {saving
-              ? t('expenseForm.saving')
-              : t(kind === 'fixed' ? 'personalAdd.saveFixed' : 'personalAdd.saveExpense')}
-          </button>
+          {/* Pegado abajo: con el teclado del celular abierto, "Guardar" sigue a la vista. */}
+          <div className="sticky bottom-0 -mx-5 mt-3 bg-popover px-5 pb-1 pt-2">
+            <button
+              type="button"
+              onClick={() => save()}
+              disabled={saving || duplicate !== null}
+              className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {saving
+                ? t('expenseForm.saving')
+                : t(kind === 'fixed' ? 'personalAdd.saveFixed' : 'personalAdd.saveExpense')}
+            </button>
+          </div>
+          </div>
         </div>
 
         {picker === 'date' && (
           <PickerOverlay title={t('expenseForm.chooseDate')} onClose={() => setPicker(null)}>
-            <DatePicker value={date} onChange={setDate} />
+            <DatePicker value={date} onChange={d => { setDate(d); scan.touch('date'); }} />
           </PickerOverlay>
         )}
         {picker === 'payment' && (
@@ -416,7 +419,7 @@ export function PersonalExpenseSheet({
             <PaymentPicker
               paymentType={paymentType}
               installments={installments}
-              onChange={next => { setPaymentType(next.paymentType); setInstallments(next.installments); }}
+              onChange={next => { setPaymentType(next.paymentType); setInstallments(next.installments); scan.touch('payment'); }}
             />
           </PickerOverlay>
         )}

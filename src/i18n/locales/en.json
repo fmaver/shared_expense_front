@@ -167,7 +167,8 @@
     "balanceLabel": "Your balance in groups",
     "inFavour": "in your favour",
     "toPay": "to pay",
-    "moneyLeft": "left"
+    "moneyLeft": "left",
+    "sections": "Group sections"
   },
   "tabs": {
     "expenses": "Expenses",
@@ -192,7 +193,8 @@
     "members_one": "{{count}} member",
     "members_other": "{{count}} members",
     "addExpenseDesc": "Add a shared expense",
-    "transferDesc": "Record a payment between members"
+    "transferDesc": "Record a payment between members",
+    "addByHand": "Add by hand"
   },
   "charts": {
     "title": "Charts",
@@ -368,11 +370,8 @@
     "recurringEditNote": "Changes will apply to this month and all future occurrences.",
     "categoryRequired": "Pick a category",
     "submitFailed": "Could not save the expense",
-    "scanImage": "Scan a photo",
     "scanning": "Reading the image…",
     "scanHint": "Upload or paste a receipt or payment screenshot.",
-    "scanLowConfidence": "Check these values — the image was hard to read.",
-    "scanFilled": "Fields filled from the image. Review before saving.",
     "whatWasIt": "What was it?",
     "saveExpense": "Save expense",
     "saveLoan": "Save loan",
@@ -705,7 +704,8 @@
     "collectFrom": "you collect <0>{{amount}}</0> from {{group}}",
     "payTo": "you pay <0>{{amount}}</0> to {{group}}",
     "everyMonth": "Every month",
-    "dated": "Dated"
+    "dated": "Dated",
+    "bandLeft": "{{amount}} left"
   },
   "dueDates": {
     "title": "Due dates",
@@ -964,5 +964,35 @@
     "duplicateSaveAnyway": "Save anyway",
     "incomeTitle": "Income",
     "incomeDesc": "Salary, freelance, a bonus"
+  },
+  "groupMenu": {
+    "more": "More options",
+    "invite": "Invite people",
+    "shareLink": "Share link",
+    "leave": "Leave group",
+    "shareText": "Join {{group}} on Jirens",
+    "shareFailed": "Couldn't share the link"
+  },
+  "search": {
+    "open": "Search",
+    "title": "Search",
+    "inPersonal": "Search your money",
+    "placeholderPersonal": "Search your money",
+    "placeholderGroup": "Search {{group}}",
+    "comingSoon": "Soon you'll be able to search expenses by name, amount or who paid."
+  },
+  "scan": {
+    "menuTitle": "Scan a receipt",
+    "menuDesc": "Take a photo or pick one from your gallery",
+    "fromPhoto": "from photo",
+    "reading": "Reading the receipt…",
+    "read": "<0>We read the receipt.</0> Check what's marked “from photo” before saving.",
+    "lowConfidence": "We couldn't read everything: fill in what's missing.",
+    "thumbnailAlt": "Receipt photo"
+  },
+  "receipt": {
+    "add": "Add photo",
+    "optional": "optional",
+    "view": "View"
   }
 }

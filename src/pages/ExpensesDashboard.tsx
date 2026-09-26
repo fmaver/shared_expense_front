@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
@@ -17,12 +17,14 @@ import { GroupBalanceCard } from '@/components/expenses/GroupBalanceCard';
 import { SettledMonthCard } from '@/components/expenses/SettledMonthCard';
 import { ExpenseListHeader } from '@/components/expenses/ExpenseListHeader';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
+import { useScanPicker } from '@/components/expenses/ScanPicker';
+import { FEATURE_SEARCH } from '@/config/features';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, ArrowLeftRight } from 'lucide-react';
+import { Plus, ArrowLeftRight, Camera, Search } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 import { useIsland } from '@/contexts/IslandContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
@@ -51,6 +53,14 @@ export function ExpensesDashboard() {
 
   const highlightId = searchParams.get('highlight') ? parseInt(searchParams.get('highlight')!, 10) : null;
   const [showAdd, setShowAdd] = useState(false);
+  /* Desktop: la foto de un ticket abre la misma hoja, leyéndola (V6.6). */
+  const [scanFile, setScanFile] = useState<File | null>(null);
+  const scanPicker = useScanPicker(file => {
+    setScanFile(file);
+    setEditingExpense(null);
+    setShowTransfer(false);
+    setShowAdd(true);
+  });
   const [showTransfer, setShowTransfer] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null);
   const [pendingExpense, setPendingExpense] = useState<ExpenseCreate | null>(null);
@@ -261,7 +271,12 @@ export function ExpensesDashboard() {
 
       {/* A one-time group ignores months entirely, so there is nothing to navigate. */}
       {!isOneTime && (
-        <div className="relative flex items-center gap-2">
+        /*
+          En desktop, tres columnas: la cápsula del mes al centro y las acciones a la derecha. Con
+          `1fr auto 1fr` la cápsula se corre en vez de quedar tapada cuando las acciones no entran.
+        */
+        <div className="relative flex items-center gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr]">
+          <span className="hidden lg:block" aria-hidden="true" />
           <MonthPager
             className="flex-1"
             year={year}
@@ -270,16 +285,32 @@ export function ExpensesDashboard() {
             isSettled={isSettled}
           />
           {/* Alta y transferencia en desktop; en mobile viven en el FAB. */}
-          <div className="hidden shrink-0 items-center gap-2 lg:absolute lg:right-0 lg:flex">
+          <div className="hidden shrink-0 items-center justify-end gap-2 lg:flex">
             <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
               title={t('expenses.transfer')}
-              onClick={() => { setShowTransfer(true); setShowAdd(false); }}>
+              onClick={() => { setShowTransfer(true); setShowAdd(false); setScanFile(null); }}>
               <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.transfer')}</span>
             </Button>
+            {FEATURE_SEARCH && (
+              <Link
+                to={`/search?scope=group&groupId=${groupId}`}
+                aria-label={t('search.open')}
+                className="glass flex h-8 items-center gap-1.5 rounded-full px-2.5 text-muted-1 transition-opacity hover:opacity-80"
+              >
+                <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                <kbd className="font-sans text-[10.5px] font-bold">⌘K</kbd>
+              </Link>
+            )}
+            <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
+              title={t('scan.menuTitle')}
+              onClick={scanPicker.pickAny}>
+              <Camera className="mr-1.5 h-3.5 w-3.5" />
+              <span>{t('scan.menuTitle')}</span>
+            </Button>
             <Button size="sm" className="h-8 rounded-pill bg-brand px-3 text-xs text-primary-foreground hover:bg-brand/90"
               title={t('expenses.add')}
-              onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); }}>
+              onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); setScanFile(null); }}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.add')}</span>
             </Button>
@@ -345,14 +376,16 @@ export function ExpensesDashboard() {
         )}
       </div>
 
+      {scanPicker.inputs}
       <AddExpenseDialog
         isOneTimeGroup={isOneTime}
         open={showAdd || showTransfer}
         onOpenChange={v => {
           setShowAdd(v);
           setShowTransfer(v && showTransfer);
-          if (!v) { setEditingExpense(null); setRecurringEditTarget(null); }
+          if (!v) { setEditingExpense(null); setRecurringEditTarget(null); setScanFile(null); }
         }}
+        scanFile={scanFile}
         onSubmit={recurringEditTarget ? handleRecurringUpdate : (editingExpense ? handleUpdate : handleCreate)}
         initialMode={showTransfer ? 'loan' : 'expense'}
         members={members}

@@ -8,6 +8,7 @@ import { downloadGroupPdf } from '@/api/shares';
 import { Skeleton } from '@/components/ui/skeleton';
 import { avatarBg, initials } from '@/utils/avatar';
 import { cn } from '@/lib/utils';
+import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 
 /**
  * Los grupos que archivaste.
@@ -44,9 +45,11 @@ export function ArchivedGroupsPage() {
 
   return (
     <div className="mx-auto w-full max-w-lg px-5 py-6">
+      <FloatingTopBar back={{ to: '/groups', label: t('mobileNav.groups') }} />
+      <TopBarSpacer />
       <Link
         to="/groups"
-        className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
+        className="hidden lg:inline-flex items-center gap-0.5 text-[12px] font-semibold text-muted-2 transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-3.5 w-3.5" />
         {t('mobileNav.groups')}

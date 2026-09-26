@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
 import { useScroll } from '@/contexts/ScrollContext';
 import { Sidebar } from './Sidebar';
@@ -9,6 +9,7 @@ import { useGroup } from '@/hooks/useGroups';
 import { useIsland } from '@/contexts/IslandContext';
 import { cn } from '@/lib/utils';
 import type { Group } from '@/types/expense';
+import { FEATURE_SEARCH } from '@/config/features';
 
 interface AppShellProps {
   onLogout: () => void;
@@ -33,6 +34,20 @@ export function AppShell({ onLogout }: AppShellProps) {
     : null;
 
   const inGroup = groupIdParam !== null;
+
+  /* ⌘K / Ctrl+K abre la búsqueda, con el alcance de donde estás (V6.5). */
+  useEffect(() => {
+    if (!FEATURE_SEARCH) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'k') return;
+      e.preventDefault();
+      navigate(groupIdParam !== null
+        ? `/search?scope=group&groupId=${groupIdParam}`
+        : '/search?scope=personal');
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [navigate, groupIdParam]);
   /*
     Pantallas que traen su propio encabezado y no quieren el de la app encima: el grupo (nombre,
     gente y pestañas) y todo lo personal (el saludo con el mes y el avatar). Dos barras

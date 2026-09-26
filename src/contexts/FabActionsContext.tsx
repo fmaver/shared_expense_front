@@ -7,10 +7,12 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
  * abrir sus hojas directamente: el launcher publica acá cómo hacerlo.
  */
 export interface PersonalAddActions {
-  /** Abre "¿Qué anotamos?": las cuatro opciones en una grilla. */
+  /** Abre "¿Qué anotamos?": Gasto, Escanear ticket e Ingreso. */
   openMatrix: () => void;
-  /** Salta la matriz y abre una de las cuatro directamente. */
-  pick: (kind: 'expense' | 'fixed' | 'extra' | 'salary') => void;
+  /** Salta el panel y abre una hoja directamente, o el escaneo. */
+  pick: (kind: 'expense' | 'fixed' | 'extra' | 'salary' | 'scan') => void;
+  /** Directo a la cámara: lo que hace mantener apretado el "+". Llamar desde el toque. */
+  scanWithCamera: () => void;
 }
 
 interface FabActionsContextValue {

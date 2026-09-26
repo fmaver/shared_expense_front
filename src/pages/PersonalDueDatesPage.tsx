@@ -35,5 +35,5 @@ export default function PersonalDueDatesPage() {
     );
   }
 
-  return <GroupDueDatesPage groupId={groupId} />;
+  return <GroupDueDatesPage groupId={groupId} backTo="/personal" />;
 }
