@@ -59,16 +59,30 @@ export interface SegmentedLink {
   end?: boolean;
 }
 
+/*
+  `fit`: cada opción toma el ancho de su texto y el sobrante se reparte, en vez de partes
+  iguales. Con cinco pestañas ("Vencimientos" es la larga) partes iguales no entraban y la fila
+  tenía que scrollear de costado, y una fila que scrollea desde el borde le roba al celular el
+  gesto de volver. Medido en WebKit con Manrope, en español y en inglés: desde 400px de pantalla
+  entra con 7px de aire por lado; entre 360 y 399, con 4px; por debajo de 360, en 11px.
+*/
+const FIT_ITEM = cn(
+  'flex-auto px-[7px]',
+  'max-[399px]:px-1',
+  'max-[359px]:px-[3px] max-[359px]:text-[11px] max-[359px]:tracking-[-0.01em]',
+);
+
 /** La misma pieza, con links: las pestañas de una sección. */
-export function SegmentedLinks({ links, className, 'aria-label': ariaLabel }: {
+export function SegmentedLinks({ links, className, fit = false, 'aria-label': ariaLabel }: {
   links: SegmentedLink[];
   className?: string;
+  fit?: boolean;
   'aria-label'?: string;
 }) {
   return (
     <nav aria-label={ariaLabel} className={cn(TRACK, className)}>
       {links.map(link => (
-        <NavLink key={link.to} to={link.to} end={link.end} className={ITEM}>
+        <NavLink key={link.to} to={link.to} end={link.end} className={cn(ITEM, fit && FIT_ITEM)}>
           {link.label}
         </NavLink>
       ))}

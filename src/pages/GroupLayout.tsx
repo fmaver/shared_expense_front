@@ -92,11 +92,8 @@ export function GroupLayout() {
     end: tab.path === '',
   }));
   const tabs = (className?: string) => (
-    <SegmentedLinks
-      aria-label={t('groups.sections')}
-      className={cn('overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden', className)}
-      links={tabLinks}
-    />
+    /* Las cinco entran sin scroll lateral (ver `fit` en Segmented). */
+    <SegmentedLinks aria-label={t('groups.sections')} className={className} links={tabLinks} fit />
   );
   /* La línea de contexto de la banda: el mes (si el grupo tiene meses) y lo de la pestaña. */
   const bandContext = [isOneTime ? null : `${months[month - 1] ?? ''} ${year}`, subtitle]
