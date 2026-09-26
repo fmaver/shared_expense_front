@@ -14,8 +14,9 @@ import {
 } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { AmountInput } from './AmountInput';
-import { FromPhotoPill, ScanReading, ScanReviewNotice } from './ScanReview';
+import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from './ScanReview';
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
+import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from './CategoryChips';
 import { ContextCard, ContextRow } from './ContextRows';
 import { DatePicker, PaymentPicker } from './ContextPickers';
@@ -465,6 +466,7 @@ export function AddExpenseDialog({
                 badge={scan.fromPhoto.has('payment') ? <FromPhotoPill /> : undefined}
               />
             )}
+            {FEATURE_RECEIPTS && <ReceiptRow receipt={scan.receipt} onAttach={scan.attach} />}
           </ContextCard>
 
           {/* ── Se repite cada mes ─────────────────────────────────────────────────── */}

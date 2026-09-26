@@ -9,8 +9,9 @@ import { Segmented } from '@/components/ui/Segmented';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { AmountInput } from '@/components/expenses/AmountInput';
-import { FromPhotoPill, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
+import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
+import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from '@/components/expenses/CategoryChips';
 import { ContextCard, ContextRow } from '@/components/expenses/ContextRows';
 import {
@@ -329,6 +330,7 @@ export function PersonalExpenseSheet({
                 onClick={() => setPicker('payment')}
                 badge={scan.fromPhoto.has('payment') ? <FromPhotoPill /> : undefined}
               />
+              {FEATURE_RECEIPTS && <ReceiptRow receipt={scan.receipt} onAttach={scan.attach} />}
             </ContextCard>
           ) : (
             <>

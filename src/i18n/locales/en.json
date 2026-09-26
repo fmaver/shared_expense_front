@@ -974,7 +974,12 @@
     "shareFailed": "Couldn't share the link"
   },
   "search": {
-    "open": "Search"
+    "open": "Search",
+    "title": "Search",
+    "inPersonal": "Search your money",
+    "placeholderPersonal": "Search your money",
+    "placeholderGroup": "Search {{group}}",
+    "comingSoon": "Soon you'll be able to search expenses by name, amount or who paid."
   },
   "scan": {
     "menuTitle": "Scan a receipt",
@@ -984,5 +989,10 @@
     "read": "<0>We read the receipt.</0> Check what's marked “from photo” before saving.",
     "lowConfidence": "We couldn't read everything: fill in what's missing.",
     "thumbnailAlt": "Receipt photo"
+  },
+  "receipt": {
+    "add": "Add photo",
+    "optional": "optional",
+    "view": "View"
   }
 }

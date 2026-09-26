@@ -139,6 +139,18 @@ export function PersonalDashboard() {
             <h1 ref={setTitleEl} className="min-w-0 truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
               {t('personal.greeting', { name: currentMember?.name ?? '' })}
             </h1>
+            <div className="flex shrink-0 items-center gap-2.5">
+            {/* Desktop: la búsqueda como cápsula con texto (V6.5). En mobile es la lupa de arriba. */}
+            {FEATURE_SEARCH && (
+              <Link
+                to="/search?scope=personal"
+                className="glass hidden h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[12.5px] font-semibold text-muted-1 transition-opacity hover:opacity-80 lg:flex"
+              >
+                <Search className="h-4 w-4" aria-hidden="true" />
+                {t('search.inPersonal')}
+                <kbd className="rounded-[6px] bg-surface-sunken px-1.5 py-0.5 font-sans text-[10.5px] font-bold text-muted-1">⌘K</kbd>
+              </Link>
+            )}
             {/* En mobile el avatar vive en la cápsula flotante; acá queda para desktop. */}
             <Link
               to="/profile"
@@ -150,6 +162,7 @@ export function PersonalDashboard() {
             >
               {initials(currentMember?.name ?? '?')}
             </Link>
+            </div>
           </div>
           <MonthPager className="mt-3.5" year={year} month={month} onNavigate={setYearMonth} />
 

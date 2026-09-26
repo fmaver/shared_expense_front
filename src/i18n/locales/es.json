@@ -974,7 +974,12 @@
     "shareFailed": "No se pudo compartir el link"
   },
   "search": {
-    "open": "Buscar"
+    "open": "Buscar",
+    "title": "Buscar",
+    "inPersonal": "Buscar en tu plata",
+    "placeholderPersonal": "Buscar en tu plata",
+    "placeholderGroup": "Buscar en {{group}}",
+    "comingSoon": "Pronto vas a poder buscar gastos por nombre, monto o quién pagó."
   },
   "scan": {
     "menuTitle": "Escanear ticket",
@@ -984,5 +989,10 @@
     "read": "<0>Leímos el ticket.</0> Chequeá lo marcado “de la foto” antes de guardar.",
     "lowConfidence": "No pudimos leer todo: completá lo que falta.",
     "thumbnailAlt": "Foto del ticket"
+  },
+  "receipt": {
+    "add": "Agregar foto",
+    "optional": "opcional",
+    "view": "Ver"
   }
 }

@@ -28,6 +28,8 @@ import { SettlementProvider } from './contexts/SettlementContext';
 import { usePushNavigation } from '@/hooks/usePushNavigation';
 import GroupDueDatesPage from '@/pages/GroupDueDatesPage';
 import PersonalDueDatesPage from '@/pages/PersonalDueDatesPage';
+import { SearchPage } from '@/pages/SearchPage';
+import { FEATURE_SEARCH } from '@/config/features';
 
 function App() {
   usePushNavigation();
@@ -118,6 +120,7 @@ function App() {
             <Route path="/personal/shares" element={<PersonalSectionPage section="shares" />} />
             <Route path="/personal/due-dates" element={<PersonalDueDatesPage />} />
             <Route path="/profile" element={<ProfilePage onLogout={handleLogout} />} />
+            {FEATURE_SEARCH && <Route path="/search" element={<SearchPage />} />}
             <Route path="*" element={<Navigate to="/groups" replace />} />
           </Route>
         )}
