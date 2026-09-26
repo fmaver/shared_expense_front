@@ -86,6 +86,36 @@ export function parseKeypadAmount(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+/** Cuántos dígitos enteros admite el monto, y cuántos decimales. */
+const AMOUNT_MAX_WHOLE = 12;
+const AMOUNT_MAX_DECIMALS = 2;
+
+/**
+ * Lo que el usuario tipeó en el campo de monto, llevado al formato crudo del estado: sólo
+ * dígitos y una coma, con hasta dos decimales ("12500", "1250,5").
+ *
+ * El campo muestra separador de miles ("12.500"), así que los puntos que llegan son de miles
+ * y se descartan. La excepción es un punto recién tipeado al final sin coma todavía: en un
+ * teclado con punto decimal es la tecla decimal, y se toma como coma.
+ */
+export function sanitizeAmount(input: string): string {
+  let s = input.replace(/[^\d.,]/g, '');
+  if (s.endsWith('.') && !s.includes(',')) s = `${s.slice(0, -1)},`;
+  s = s.replace(/\./g, '');
+  const [whole, ...rest] = s.split(',');
+  const digits = whole.replace(/^0+(?=\d)/, '').slice(0, AMOUNT_MAX_WHOLE);
+  if (rest.length === 0) return digits;
+  return `${digits || '0'},${rest.join('').slice(0, AMOUNT_MAX_DECIMALS)}`;
+}
+
+/** El monto crudo ("12500,5") como se muestra en el campo: "12.500,5". */
+export function formatAmountInput(raw: string): string {
+  if (!raw) return '';
+  const [whole, decimals] = raw.split(',');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return decimals === undefined ? grouped : `${grouped},${decimals}`;
+}
+
 /** Un monto de la API, como string para el teclado. Los enteros van sin decimales. */
 export function formatKeypadAmount(amount: number | null | undefined): string {
   if (amount == null || !Number.isFinite(amount) || amount === 0) return '';

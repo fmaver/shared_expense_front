@@ -13,7 +13,7 @@ import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
 } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
-import { AmountKeypad } from './AmountKeypad';
+import { AmountInput } from './AmountInput';
 import { CategoryChips } from './CategoryChips';
 import { ContextCard, ContextRow } from './ContextRows';
 import { DatePicker, PaymentPicker } from './ContextPickers';
@@ -367,7 +367,7 @@ export function AddExpenseDialog({
           </div>
         </div>
 
-        <div className="max-h-[calc(88dvh-3rem)] overflow-y-auto px-5 pb-5">
+        <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
           {/* ── Segmented: qué estás anotando ──────────────────────────────────────── */}
           {canPickMode && (
             <div className="flex gap-1 rounded-pill bg-surface-sunken p-1">
@@ -396,13 +396,7 @@ export function AddExpenseDialog({
 
           {/* ── El monto, que es de lo que se trata la pantalla ────────────────────── */}
           <div className="pt-5 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-[22px] font-semibold text-muted-2">$</span>
-              <span className="text-[52px] font-bold leading-none tracking-[-0.035em] tabular-nums text-foreground">
-                {form.amountText || '0'}
-              </span>
-              <span className="h-[46px] w-[2px] animate-pulse bg-brand" aria-hidden="true" />
-            </div>
+            <AmountInput value={form.amountText} onChange={v => set({ amountText: v })} disabled={disabled} />
 
             <div className="mt-2.5 flex justify-center gap-1.5">
               {(['ARS', 'USD'] as const).map(currency => (
@@ -548,26 +542,21 @@ export function AddExpenseDialog({
             </p>
           )}
 
-          {/* ── Teclado y guardar ──────────────────────────────────────────────────── */}
-          <AmountKeypad
-            className="mt-4"
-            value={form.amountText}
-            onChange={v => set({ amountText: v })}
-            disabled={disabled}
-          />
-
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={disabled || submitting}
-            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting
-              ? t('expenseForm.saving')
-              : isEdit
-                ? t('expenseForm.update')
-                : mode === 'loan' ? t('expenseForm.saveLoan') : t('expenseForm.saveExpense')}
-          </button>
+          {/* Pegado abajo: con el teclado del celular abierto, "Guardar" sigue a la vista. */}
+          <div className="sticky bottom-0 -mx-5 mt-3 bg-popover px-5 pb-1 pt-2">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={disabled || submitting}
+              className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {submitting
+                ? t('expenseForm.saving')
+                : isEdit
+                  ? t('expenseForm.update')
+                  : mode === 'loan' ? t('expenseForm.saveLoan') : t('expenseForm.saveExpense')}
+            </button>
+          </div>
         </div>
 
         {/* ── Selectores: cada pastilla abre el suyo, encima de la hoja ───────────── */}
