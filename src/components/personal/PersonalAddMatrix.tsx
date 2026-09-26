@@ -1,51 +1,57 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
+import { ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
-/** Las cuatro cosas que se pueden anotar en tu plata. */
+/**
+ * Lo que se puede anotar en tu plata. El panel sólo ofrece `expense` e `income`; si pasa una
+ * vez o cada mes se elige adentro del formulario. `fixed` y `salary` siguen existiendo para
+ * los accesos directos (el "Agregar fijo" de la lista de gastos), que abren la hoja ya en
+ * "Cada mes".
+ */
 export type PersonalEntryKind = 'expense' | 'fixed' | 'extra' | 'salary';
 
 interface PersonalAddMatrixProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPick: (kind: PersonalEntryKind) => void;
-  /** El mes que estás mirando, para la nota al pie. */
-  monthLabel: string;
 }
 
 /**
- * "¿Qué anotamos?" — las cuatro opciones, puestas en una grilla.
+ * "¿Qué anotamos?" — dos opciones: sale o entra (ADDENDUM-violeta.md §4).
  *
- * Eran cuatro entradas de un menú vertical, y ahí las diferencias entre ellas no se veían:
- * había que leer cuatro descripciones para entender que en realidad son dos preguntas, si la
- * plata sale o entra y si pasa una vez o todos los meses. Como grilla, las dos preguntas son
- * los ejes y la respuesta es la celda: se elige mirando, no leyendo.
+ * Eran cuatro, una grilla con "sale/entra" contra "una vez/cada mes". La segunda pregunta pasó
+ * adentro del formulario como un segmentado que no borra lo cargado, así que acá queda sólo la
+ * primera, que es la que se responde sin pensar.
  */
-export function PersonalAddMatrix({ open, onOpenChange, onPick, monthLabel }: PersonalAddMatrixProps) {
+export function PersonalAddMatrix({ open, onOpenChange, onPick }: PersonalAddMatrixProps) {
   const { t } = useTranslation();
 
-  const cell = (kind: PersonalEntryKind, tone: 'out' | 'in') => (
+  const option = (kind: 'expense' | 'extra', tone: 'out' | 'in') => (
     <button
       type="button"
       onClick={() => onPick(kind)}
-      className={cn(
-        'flex h-full cursor-pointer flex-col rounded-card border p-3.5 text-left transition-colors',
-        tone === 'out'
-          ? 'border-line bg-surface hover:border-negative/40 hover:bg-negative-wash'
-          : 'border-line bg-surface hover:border-positive/40 hover:bg-positive-wash',
-      )}
+      className="flex w-full cursor-pointer items-center gap-3.5 rounded-[16px] border border-line-strong bg-surface p-4 text-left transition-[border-color,box-shadow] hover:border-brand hover:shadow-[0_0_0_3px_hsl(var(--surface-sunken))]"
     >
-      <span className="text-[14px] font-bold leading-none text-foreground">
-        {t(`personalAdd.${kind}Title`)}
+      <span
+        className={cn(
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-[20px] font-extrabold leading-none',
+          tone === 'out' ? 'bg-negative-wash text-negative' : 'bg-positive-wash text-positive',
+        )}
+        aria-hidden="true"
+      >
+        {tone === 'out' ? '−' : '+'}
       </span>
-      <span className="mt-1.5 text-[11.5px] font-medium leading-[1.4] text-muted-2">
-        {t(`personalAdd.${kind}Desc`)}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-bold text-foreground">
+          {t(kind === 'expense' ? 'personalAdd.expenseTitle' : 'personalAdd.incomeTitle')}
+        </span>
+        <span className="mt-[3px] block text-[11.5px] font-medium leading-[1.4] text-muted-1">
+          {t(kind === 'expense' ? 'personalAdd.expenseDesc' : 'personalAdd.incomeDesc')}
+        </span>
       </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
     </button>
-  );
-
-  const axisLabel = (text: string) => (
-    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-2">{text}</span>
   );
 
   return (
@@ -55,26 +61,27 @@ export function PersonalAddMatrix({ open, onOpenChange, onPick, monthLabel }: Pe
           <DialogTitle className="text-[20px] font-bold leading-[1.2] tracking-[-0.025em] text-foreground">
             {t('personalAdd.title')}
           </DialogTitle>
-          <p className="mt-1 text-[12.5px] font-medium text-muted-1">{t('personalAdd.subtitle')}</p>
+          <p className="mt-2 text-[12px] font-medium leading-[1.55] text-muted-1">{t('personalAdd.subtitle')}</p>
 
-          {/* Columna angosta para el eje de filas, y dos columnas iguales para las celdas. */}
-          <div className="mt-5 grid grid-cols-[auto_1fr_1fr] items-stretch gap-x-2 gap-y-2">
-            <span />
-            <div className="pb-0.5 pl-1">{axisLabel(t('personalAdd.axisOnce'))}</div>
-            <div className="pb-0.5 pl-1">{axisLabel(t('personalAdd.axisMonthly'))}</div>
-
-            <div className="flex items-center pr-1">{axisLabel(t('personalAdd.axisOut'))}</div>
-            {cell('expense', 'out')}
-            {cell('fixed', 'out')}
-
-            <div className="flex items-center pr-1">{axisLabel(t('personalAdd.axisIn'))}</div>
-            {cell('extra', 'in')}
-            {cell('salary', 'in')}
+          <div className="mt-5 flex flex-col gap-2.5">
+            {option('expense', 'out')}
+            {option('extra', 'in')}
           </div>
 
-          <p className="mt-4 text-[11.5px] font-medium leading-[1.5] text-muted-2">
-            {t('personalAdd.note', { month: monthLabel })}
-          </p>
+          <div className="mt-5 flex items-start gap-[9px] border-t border-line pt-4">
+            <span
+              className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-wash text-[10px] font-extrabold text-brand-ink"
+              aria-hidden="true"
+            >
+              i
+            </span>
+            <p className="flex-1 text-[11.5px] font-medium leading-[1.5] text-muted-1">
+              <Trans
+                i18nKey="personalAdd.note"
+                components={[<strong className="font-bold text-foreground" />, <strong className="font-bold text-foreground" />]}
+              />
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -218,7 +218,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             <button
               type="submit"
               disabled={isSaving}
-              className="h-11 flex-1 cursor-pointer rounded-[12px] bg-brand text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="h-11 flex-1 cursor-pointer rounded-[12px] bg-brand text-[13px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {isSaving ? t('profile.saving') : t('profile.saveProfile')}
             </button>

@@ -126,7 +126,7 @@ export function CreateGroupDialog({ open, onOpenChange, onCreated }: CreateGroup
               </Button>
               <Button
                 type="submit"
-                className="bg-brand hover:bg-brand/90 text-white"
+                className="bg-brand hover:bg-brand/90 text-primary-foreground"
                 disabled={isLoading || !name.trim()}
               >
                 {isLoading ? t('groups.dialog.creating') : t('groups.dialog.create')}

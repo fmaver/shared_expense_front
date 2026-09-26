@@ -97,7 +97,7 @@ export function PaymentPicker({
               onClick={() => onChange({ paymentType: 'credit', installments: n })}
               className={cn(
                 'h-9 w-11 cursor-pointer rounded-pill text-[12.5px] font-bold tabular-nums transition-colors',
-                installments === n ? 'bg-brand text-white' : 'border border-line-strong text-muted-1',
+                installments === n ? 'bg-brand text-primary-foreground' : 'border border-line-strong text-muted-1',
               )}
             >
               {n}
@@ -146,7 +146,7 @@ export function StartMonthPicker({
             onClick={() => onChange(year, index + 1)}
             className={cn(
               'h-9 cursor-pointer rounded-pill text-[12px] font-bold transition-colors',
-              index + 1 === month ? 'bg-brand text-white' : 'border border-line-strong text-muted-1',
+              index + 1 === month ? 'bg-brand text-primary-foreground' : 'border border-line-strong text-muted-1',
             )}
           >
             {name.slice(0, 3)}

@@ -57,7 +57,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="flex h-9 cursor-pointer items-center rounded-pill bg-brand px-4 text-[12.5px] font-bold text-white transition-opacity hover:opacity-90"
+              className="flex h-9 cursor-pointer items-center rounded-pill bg-brand px-4 text-[12.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
               {t('landing.nav.getStarted')}
             </button>
@@ -85,7 +85,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
               {t('landing.hero.cta')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -146,7 +146,7 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-white transition-opacity hover:opacity-90"
+              className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[12px] bg-brand px-7 text-[14px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
               {t('landing.howItWorks.cta')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />

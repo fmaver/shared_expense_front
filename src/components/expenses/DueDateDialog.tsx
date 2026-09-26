@@ -33,7 +33,7 @@ function chip(active: boolean) {
   return cn(
     'h-9 min-w-9 cursor-pointer rounded-pill px-3 text-[12.5px] font-bold transition-colors',
     active
-      ? 'bg-brand text-white'
+      ? 'bg-brand text-primary-foreground'
       : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
   );
 }
@@ -212,7 +212,7 @@ export function DueDateDialog({ groupId, groupName, open, onOpenChange, onCreate
             <button
               type="submit"
               disabled={isLoading || !label.trim()}
-              className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {t('dueDates.saveLong')}
             </button>

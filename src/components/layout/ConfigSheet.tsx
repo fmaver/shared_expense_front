@@ -175,7 +175,7 @@ export function ConfigSheet({ open, onOpenChange }: ConfigSheetProps) {
               <Button
                 type="submit"
                 disabled={isChangingPw}
-                className="w-full bg-brand hover:bg-brand/90 text-white"
+                className="w-full bg-brand hover:bg-brand/90 text-primary-foreground"
               >
                 {isChangingPw ? 'Guardando…' : 'Actualizar contraseña'}
               </Button>

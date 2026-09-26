@@ -125,20 +125,20 @@ export function PersonalIncomeSheet({
               <X className="h-4 w-4" />
             </button>
             <DialogTitle className="text-[13px] font-bold text-foreground">
-              {t(kind === 'salary' ? 'personalAdd.salaryTitle' : 'personalAdd.extraTitle')}
+              {t('personalAdd.incomeTitle')}
             </DialogTitle>
           </div>
           <button
             type="button"
             onClick={onBack}
-            className="h-8 cursor-pointer rounded-pill border border-line-strong px-3 text-[11.5px] font-bold text-muted-1 transition-colors hover:bg-surface-sunken"
+            className="h-8 cursor-pointer rounded-full bg-brand-wash px-2.5 text-[11px] font-bold text-brand-ink transition-opacity hover:opacity-80"
           >
             {t('personalAdd.change')}
           </button>
         </div>
 
         <div className="max-h-[calc(88dvh-3rem)] overflow-y-auto px-5 pb-5">
-          <div className="flex gap-1 rounded-pill bg-surface-sunken p-1">
+          <div className="flex gap-1 rounded-[14px] bg-line-soft p-1">
             {([
               { value: 'extra' as const, label: t('personalAdd.segmentExtra') },
               { value: 'salary' as const, label: t('personalAdd.segmentSalary') },
@@ -148,8 +148,8 @@ export function PersonalIncomeSheet({
                 type="button"
                 onClick={() => setKind(option.value)}
                 className={cn(
-                  'h-8 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
-                  kind === option.value ? 'bg-positive text-white dark:text-ink' : 'text-muted-1',
+                  'h-[34px] flex-1 cursor-pointer rounded-[11px] text-[12.5px] font-bold transition-colors',
+                  kind === option.value ? 'bg-primary text-primary-foreground' : 'text-muted-1',
                 )}
               >
                 {option.label}
@@ -264,7 +264,7 @@ export function PersonalIncomeSheet({
             type="button"
             onClick={() => save()}
             disabled={saving || duplicate !== null}
-            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-positive text-[13.5px] font-bold text-white transition-opacity dark:text-ink hover:opacity-90 disabled:opacity-50"
+            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-primary text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {saving
               ? t('expenseForm.saving')

@@ -246,7 +246,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
                     </Select>
                     <div className="flex gap-1.5 justify-end">
                       <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setEditingRecExpId(null)}>{t('common.cancel')}</Button>
-                      <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-white"
+                      <Button size="sm" className="h-6 text-xs px-2 bg-brand hover:bg-brand/90 text-primary-foreground"
                         disabled={savingEditRecExp} onClick={() => handleSaveEditRecurringExpense(instance)}>
                         {savingEditRecExp ? '…' : t('common.save')}
                       </Button>

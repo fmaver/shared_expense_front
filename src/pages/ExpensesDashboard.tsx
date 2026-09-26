@@ -301,7 +301,7 @@ export function ExpensesDashboard() {
               <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.transfer')}</span>
             </Button>
-            <Button size="sm" className="h-8 rounded-pill bg-brand px-3 text-xs text-white hover:bg-brand/90"
+            <Button size="sm" className="h-8 rounded-pill bg-brand px-3 text-xs text-primary-foreground hover:bg-brand/90"
               title={t('expenses.add')}
               onClick={() => { setShowAdd(true); setShowTransfer(false); setEditingExpense(null); }}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -406,7 +406,7 @@ export function ExpensesDashboard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setPendingExpense(null); setDuplicates([]); }}>{t('expenses.cancel')}</Button>
-            <Button className="bg-brand hover:bg-brand/90 text-white"
+            <Button className="bg-brand hover:bg-brand/90 text-primary-foreground"
               onClick={async () => { if (pendingExpense) await submitExpense(pendingExpense); }}>
               {t('expenses.addAnyway')}
             </Button>

@@ -560,7 +560,7 @@ export function AddExpenseDialog({
             type="button"
             onClick={handleSubmit}
             disabled={disabled || submitting}
-            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="mt-3 h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {submitting
               ? t('expenseForm.saving')

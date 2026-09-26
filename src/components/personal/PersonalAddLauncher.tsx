@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { PersonalAddMatrix, type PersonalEntryKind } from './PersonalAddMatrix';
@@ -16,23 +15,19 @@ interface PersonalAddLauncherProps {
 }
 
 /**
- * El alta de tu plata: la matriz y las dos hojas que salen de ella.
+ * El alta de tu plata: el panel de dos opciones y las dos hojas que salen de él.
  *
  * Vive acá y no en cada pantalla porque el "+" flotante está en otro árbol del DOM: el launcher
  * registra sus aperturas en el contexto del FAB y así la barra flotante y los botones de
  * escritorio abren exactamente lo mismo. Lo montan el home personal y las pantallas de sección.
  */
 export function PersonalAddLauncher({ ledger, year, month, categories, refetch }: PersonalAddLauncherProps) {
-  const { t } = useTranslation();
   const island = useIsland();
   const { registerPersonalActions } = useFabActions();
 
   const [matrixOpen, setMatrixOpen] = useState(false);
   const [expenseKind, setExpenseKind] = useState<'expense' | 'fixed' | null>(null);
   const [incomeKind, setIncomeKind] = useState<'extra' | 'salary' | null>(null);
-
-  const months = t('months', { returnObjects: true }) as string[];
-  const monthLabel = (months[month - 1] ?? '').toLocaleLowerCase();
 
   const openMatrix = useCallback(() => {
     setExpenseKind(null);
@@ -69,7 +64,6 @@ export function PersonalAddLauncher({ ledger, year, month, categories, refetch }
         open={matrixOpen}
         onOpenChange={setMatrixOpen}
         onPick={pick}
-        monthLabel={monthLabel}
       />
 
       {expenseKind && (

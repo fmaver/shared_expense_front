@@ -193,7 +193,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {isLoading ? t('auth.signingIn') : t('auth.enter')}
               </button>
@@ -272,7 +272,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="h-14 w-full cursor-pointer rounded-[12px] bg-brand text-[15px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
               </button>

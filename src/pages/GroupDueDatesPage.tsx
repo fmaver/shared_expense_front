@@ -111,7 +111,7 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="mt-6 flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[14px] bg-brand text-[13.5px] font-bold text-white transition-opacity hover:opacity-90"
+                className="mt-6 flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
                 {t('dueDates.add')}
@@ -169,7 +169,7 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId }: GroupDue
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[14px] bg-brand text-[13.5px] font-bold text-white transition-opacity hover:opacity-90"
+                className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
                 {t('dueDates.add')}

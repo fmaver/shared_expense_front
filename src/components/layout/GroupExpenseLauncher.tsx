@@ -126,7 +126,7 @@ function GroupExpenseDialogs({
               {t('expenses.cancel')}
             </Button>
             <Button
-              className="bg-brand hover:bg-brand/90 text-white"
+              className="bg-brand hover:bg-brand/90 text-primary-foreground"
               onClick={async () => {
                 if (pendingExpense) await confirm();
               }}
