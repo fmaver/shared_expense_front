@@ -20,7 +20,7 @@ export function PublicShell({
       <div className="mx-auto w-full max-w-md">
         <JirensMark className="text-paper" size={40} />
         {title && (
-          <h1 className="mt-5 font-display text-[30px] leading-[1.15] text-paper">{title}</h1>
+          <h1 className="mt-5 text-[26px] font-bold leading-[1.15] tracking-[-0.025em] text-paper">{title}</h1>
         )}
         {subtitle && (
           <p className="mt-2.5 text-[14px] font-medium leading-[1.5] text-muted-on-dark">

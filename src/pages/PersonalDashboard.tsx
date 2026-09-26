@@ -106,7 +106,7 @@ export function PersonalDashboard() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-2">
                 {months[month - 1]} {year}
               </p>
-              <h1 className="mt-1 truncate font-display text-[27px] leading-[1.1] text-foreground">
+              <h1 className="mt-1 truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
                 {t('personal.greeting', { name: currentMember?.name ?? '' })}
               </h1>
             </div>
@@ -156,7 +156,7 @@ export function PersonalDashboard() {
                   )}
                 </div>
 
-                <p className="mt-2 font-display text-[48px] leading-none tracking-[-0.02em] tabular-nums text-foreground">
+                <p className="mt-2 text-[40px] font-extrabold leading-none tracking-[-0.025em] tabular-nums text-foreground">
                   {formatCurrency(ledger.currentBalance)}
                 </p>
 

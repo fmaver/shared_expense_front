@@ -105,7 +105,7 @@ export function GroupLayout() {
                 <Skeleton className="h-7 w-44" />
               ) : (
                 <div className="flex items-center gap-2">
-                  <h1 className="truncate font-display text-[26px] leading-none text-foreground">
+                  <h1 className="truncate text-[23px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
                     {group?.name}
                   </h1>
                   {isOneTime && (

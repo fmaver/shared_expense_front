@@ -77,7 +77,7 @@ export function GroupBalanceCard({
       {!isSquare && (
         <p
           className={cn(
-            'mt-1 font-display text-[40px] leading-none tabular-nums',
+            'mt-1 text-[40px] font-extrabold leading-none tracking-[-0.025em] tabular-nums',
             owed ? 'text-positive' : 'text-negative',
           )}
         >

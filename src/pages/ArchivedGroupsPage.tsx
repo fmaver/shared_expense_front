@@ -51,7 +51,7 @@ export function ArchivedGroupsPage() {
         <ChevronLeft className="h-3.5 w-3.5" />
         {t('mobileNav.groups')}
       </Link>
-      <h1 className="mt-1.5 font-display text-[26px] leading-none text-foreground">
+      <h1 className="mt-1.5 text-[22px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
         {t('groups.archivedTitle')}
       </h1>
 

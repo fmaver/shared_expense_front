@@ -37,7 +37,7 @@ function Section({
     <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
       <div className="px-5 pb-3 pt-4">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="flex min-w-0 items-center gap-2 font-display text-[19px] leading-none text-foreground">
+          <h2 className="flex min-w-0 items-center gap-2 text-[18px] font-bold leading-none tracking-[-0.025em] text-foreground">
             <span className={cn('h-2 w-2 shrink-0 rounded-full', dot)} aria-hidden="true" />
             <span className="truncate">{title}</span>
           </h2>

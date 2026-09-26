@@ -113,7 +113,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {mode === 'login' ? (
           <div className="pt-6">
             <JirensMark className="text-paper" size={44} />
-            <h1 className="mt-6 whitespace-pre-line font-display text-[34px] leading-[1.15] text-paper">
+            <h1 className="mt-6 whitespace-pre-line text-[29px] font-bold leading-[1.15] tracking-[-0.025em] text-paper">
               {t('auth.heroTitle')}
             </h1>
             <p className="mt-3 text-[15px] font-medium leading-[1.5] text-muted-on-dark">
@@ -136,7 +136,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
         {mode === 'register' && (
           <div className="mt-4">
-            <h1 className="font-display text-[30px] leading-none text-paper">{t('auth.registerTitle')}</h1>
+            <h1 className="text-[26px] font-bold leading-none tracking-[-0.025em] text-paper">{t('auth.registerTitle')}</h1>
             <p className="mt-2.5 text-[14px] font-medium leading-[1.45] text-muted-on-dark">
               {t('auth.registerSubtitle')}
             </p>

@@ -65,7 +65,7 @@ export function GroupSelectorPage() {
       {/* ── Cuánto te deben, entre todos los grupos ─────────────────────────────────── */}
       <h1
         className={cn(
-          'font-display text-[30px] leading-[1.1] tabular-nums',
+          'text-[30px] font-extrabold leading-[1.1] tracking-[-0.025em] tabular-nums',
           Math.abs(pending) <= 0.01 ? 'text-foreground' : pending > 0 ? 'text-positive' : 'text-negative',
         )}
       >

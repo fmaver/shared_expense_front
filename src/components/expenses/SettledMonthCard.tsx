@@ -46,7 +46,7 @@ export function SettledMonthCard({
         <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-on-dark">
           {t('settle.closedTitle', { month: capitalize(label) })}
         </p>
-        <p className="mt-2 font-display text-[30px] leading-none text-positive-on-dark">
+        <p className="mt-2 text-[30px] font-extrabold leading-none tracking-[-0.025em] tabular-nums text-positive-on-dark">
           {t('settle.nobodyOwes')}
         </p>
         <p className="mx-auto mt-3 max-w-[36ch] text-[12px] font-medium leading-[1.5] text-muted-on-dark">

@@ -167,7 +167,7 @@ export function GroupChartsPage() {
       )}
 
       {/* La frase primero: una sola cifra protagonista por pantalla */}
-      <p className="font-display text-[20px] leading-[1.45] text-foreground">
+      <p className="text-[18px] font-bold leading-[1.45] tracking-[-0.025em] text-foreground">
         {summary}
         {categorySentence && <> {categorySentence}</>}
       </p>

@@ -169,7 +169,7 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
           {initials(name, 2)}
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-[26px] leading-none text-foreground">{name}</h1>
+          <h1 className="truncate text-[22px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">{name}</h1>
           <p className="mt-1 truncate text-[12px] font-medium text-muted-2">{email}</p>
         </div>
         {!isEditing && (

@@ -39,7 +39,7 @@ export function PersonalChartsPage() {
       >
         <div className="mx-auto w-full max-w-5xl space-y-5 px-5 py-6 lg:px-7">
           <div>
-            <h1 className="font-display text-[26px] leading-none text-foreground">
+            <h1 className="text-[22px] font-bold leading-[1.1] tracking-[-0.025em] text-foreground">
               {t('charts.title')}
             </h1>
           </div>

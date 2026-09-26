@@ -89,7 +89,7 @@ export function SettleSheet({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-0 overflow-hidden p-0 rounded-t-sheet" showCloseButton={false}>
         <div className="max-h-[calc(88dvh-2rem)] overflow-y-auto px-5 pb-5 pt-2">
-          <DialogTitle className="font-display text-[24px] leading-[1.25] text-foreground">
+          <DialogTitle className="text-[20px] font-bold leading-[1.2] tracking-[-0.025em] text-foreground">
             {nothingToDo
               ? t('settle.allSquare')
               : t('settle.planTitle', { count: transfers.length, group: groupName })}

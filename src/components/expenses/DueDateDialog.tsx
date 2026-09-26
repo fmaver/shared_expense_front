@@ -134,7 +134,7 @@ export function DueDateDialog({ groupId, groupName, open, onOpenChange, onCreate
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="gap-0 overflow-hidden p-0 rounded-t-sheet" showCloseButton={false}>
         <div className="max-h-[calc(88dvh-2rem)] overflow-y-auto px-5 pb-5 pt-2">
-          <DialogTitle className="font-display text-[24px] leading-[1.25] text-foreground">
+          <DialogTitle className="text-[20px] font-bold leading-[1.2] tracking-[-0.025em] text-foreground">
             {t('dueDates.addTitle')}
           </DialogTitle>
 

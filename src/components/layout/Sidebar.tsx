@@ -83,7 +83,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
         className="flex cursor-pointer items-center gap-2.5 px-4 pb-4 pt-5 text-left"
       >
         <JirensMark className="text-paper" size={30} />
-        <span className="font-display text-[19px] leading-none text-paper">Jirens</span>
+        <span className="text-[19px] font-extrabold leading-none tracking-[-0.025em] text-paper">Jirens</span>
       </button>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
@@ -97,7 +97,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
               <ChevronLeft className="h-3.5 w-3.5" />
               {t('mobileNav.groups')}
             </Link>
-            <p className="mb-3 truncate px-1 font-display text-[22px] leading-none text-paper">
+            <p className="mb-3 truncate px-1 text-[20px] font-bold leading-none tracking-[-0.025em] text-paper">
               {group?.name}
             </p>
 
@@ -118,7 +118,7 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
                 </p>
                 <p
                   className={cn(
-                    'mt-1 font-display text-[22px] leading-none tabular-nums',
+                    'mt-1 text-[22px] font-extrabold leading-none tracking-[-0.025em] tabular-nums',
                     Math.abs(yourBalance) <= 0.01
                       ? 'text-paper'
                       : yourBalance > 0 ? 'text-positive-on-dark' : 'text-negative-on-dark',
