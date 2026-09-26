@@ -145,7 +145,7 @@
     "squareTotal": "Estás a mano",
     "movesLeft_one": "Falta un movimiento para quedar en cero",
     "movesLeft_other": "Faltan {{count}} movimientos para quedar en cero",
-    "yourMoney": "Tu plata",
+    "yourMoney": "Personal",
     "availableThisMonth": "Disponible este mes",
     "peopleCount_one": "{{count}} persona",
     "peopleCount_other": "{{count}} personas",
@@ -997,6 +997,6 @@
   },
   "tabBar": {
     "label": "Secciones de la app",
-    "personal": "Tu plata"
+    "personal": "Personal"
   }
 }
