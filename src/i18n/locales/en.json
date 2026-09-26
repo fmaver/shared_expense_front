@@ -106,7 +106,7 @@
     "phoneLabel": "PHONE",
     "phoneHint": "optional · for WhatsApp alerts",
     "repeatLabel": "REPEAT",
-    "iosTip": "On iPhone, add Jirens to your home screen: it is the only way to get alerts.",
+    "iosTip": "On iPhone, add Jirens to your home screen to get notifications on your phone. They also reach you by email.",
     "iosTipLink": "How to do it"
   },
   "groups": {
@@ -789,7 +789,7 @@
     "theyOwe": "You're owed",
     "youOwe": "You owe",
     "cellPayer": "Paid by",
-    "cellMethod": "Method",
+    "cellMethod": "Payment method",
     "cellTotal": "Total",
     "cellStatus": "Status",
     "methodDebit": "Debit",

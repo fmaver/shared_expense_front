@@ -106,7 +106,7 @@
     "phoneLabel": "CELULAR",
     "phoneHint": "opcional · para avisos por WhatsApp",
     "repeatLabel": "REPETIR",
-    "iosTip": "En iPhone, agregá Jirens a la pantalla de inicio: es la única forma de recibir avisos.",
+    "iosTip": "En iPhone, agregá Jirens a la pantalla de inicio para recibir avisos en el celular. También te llegan por mail.",
     "iosTipLink": "Cómo se hace"
   },
   "groups": {
@@ -789,7 +789,7 @@
     "theyOwe": "Te deben",
     "youOwe": "Debés",
     "cellPayer": "Pagó",
-    "cellMethod": "Forma",
+    "cellMethod": "Forma de pago",
     "cellTotal": "Total",
     "cellStatus": "Estado",
     "methodDebit": "Débito",

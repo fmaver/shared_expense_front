@@ -144,7 +144,9 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         )}
 
         {/* ── La tarjeta ────────────────────────────────────────────────────────────── */}
-        <div className="mt-6 rounded-[24px] bg-paper p-5">
+        {/* La tarjeta sigue al tema: sus campos usan `surface`, que en oscuro se oscurece, así que
+            un fondo fijo claro dejaba campos oscuros sobre una tarjeta clara. */}
+        <div className="mt-6 rounded-[24px] bg-paper p-5 dark:bg-background">
           {error && (
             <p className="mb-3 rounded-[12px] border border-negative-wash-line bg-negative-wash px-3 py-2 text-[12.5px] font-semibold text-negative-ink">
               {error}
@@ -157,7 +159,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <button
                 type="button"
                 onClick={() => toast.info(t('auth.googleSoon'))}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[12px] border border-line-strong bg-surface text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[12px] border border-line-strong bg-surface text-[15px] font-semibold text-foreground transition-colors hover:bg-surface-sunken"
               >
                 <GoogleMark />
                 {t('auth.continueWithGoogleShort')}

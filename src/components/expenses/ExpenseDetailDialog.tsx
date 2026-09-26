@@ -45,12 +45,15 @@ function memberName(members: Member[], id: number) {
   return members.find(m => m.id === id)?.name ?? 'Unknown';
 }
 
-/** Celda de dato: label chico arriba, valor firme abajo. Nunca pares label-valor en prosa. */
+/**
+ * Fila de dato dentro de la tarjeta de datos: etiqueta a la izquierda, valor firme a la
+ * derecha (ADDENDUM-violeta.md §6). Nunca pares label-valor en prosa.
+ */
 function Cell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="min-w-0 flex-1 rounded-[12px] border border-line bg-surface px-3 py-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-muted-2">{label}</p>
-      <p className="mt-1 truncate text-[12.5px] font-bold text-foreground">{value}</p>
+    <div className="flex items-baseline justify-between gap-3 border-b border-line-soft py-[11px] last:border-b-0">
+      <p className="shrink-0 text-[12px] font-medium text-muted-1">{label}</p>
+      <p className="min-w-0 truncate text-right text-[12.5px] font-bold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
@@ -274,7 +277,7 @@ export function ExpenseDetailDialog({
 
         {/* ── Cuerpo claro ───────────────────────────────────────────────────────────── */}
         <div className="space-y-3 bg-background px-5 pb-5 pt-4">
-          <div className="flex gap-2">
+          <div className="rounded-[16px] border border-line bg-surface px-4">
             <Cell label={t('expenseDetail.cellPayer')} value={memberName(members, expense.payerId)} />
             <Cell
               label={t('expenseDetail.cellMethod')}
