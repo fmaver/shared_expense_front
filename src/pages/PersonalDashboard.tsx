@@ -144,10 +144,18 @@ export function PersonalDashboard() {
             </div>
           </div>
 
+          {/*
+            Columnas con mínimo 0, y no el `auto` de una columna implícita: con `auto` la columna
+            nunca es más angosta que el contenido sin cortes más ancho que lleve adentro, y algo
+            que llega tarde (la tendencia, una tarjeta de saldar, una cifra grande) la ensanchaba
+            más que la pantalla. Todas las tarjetas se estiraban juntas, el `overflow-x-hidden`
+            les cortaba el borde derecho, y en iOS la página quedaba más ancha que el viewport,
+            que es lo que habilita el zoom hacia afuera y el paneo lateral.
+          */}
           {ledger && (
-            <div className="mt-5 grid gap-3 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+            <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start">
 
-              <div className="space-y-3">
+              <div className="min-w-0 space-y-3">
               {/* ── La cifra protagonista ────────────────────────────────────────── */}
               <div className="rounded-card-lg border border-line bg-surface p-5 shadow-card">
                 <div className="flex items-center justify-between gap-2">
@@ -173,7 +181,9 @@ export function PersonalDashboard() {
                 {/* Proyectado: cómo queda el mes cuando se salden los grupos abiertos. */}
                 {hasPending && (
                   <div className="mt-3.5 border-t border-dashed border-line-strong pt-[13px]">
-                    <div className="flex items-baseline justify-between gap-2.5">
+                    {/* Con `flex-wrap`: con cifras grandes o en una pantalla angosta el monto baja de
+                        renglón en vez de salirse de la tarjeta. */}
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1">
                       <span className="text-[12px] font-semibold text-muted-1">{t('personal.projected')}</span>
                       <span className="flex items-baseline gap-[7px]">
                         <span
@@ -251,7 +261,7 @@ export function PersonalDashboard() {
 
               </div>
 
-              <div className="space-y-3">
+              <div className="min-w-0 space-y-3">
               {/* ── Para cerrar cada grupo ───────────────────────────────────────── */}
               {currentMember && pendingGroups.map(group => (
                 <SettleUpCard
