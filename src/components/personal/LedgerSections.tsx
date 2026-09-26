@@ -5,12 +5,14 @@ import { cn } from '@/lib/utils';
 import { capitalize, formatCurrency, formatDayMonth } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useProgressiveReveal } from '@/hooks/useProgressiveReveal';
+import { ShowMoreButton } from './ShowMoreButton';
 import type {
   CategoryWithEmoji, MirroredShareItem, PersonalLedgerResponse,
 } from '@/types/expense';
 
-/** Cuántas filas entran en el home antes del "ver más". */
-const PREVIEW_ROWS = 4;
+/** Cuántas filas de cada sublista se ven antes del "Ver N más". */
+const SUBLIST_PREVIEW = 2;
 /** Cuántos gastos se asoman dentro de la tarjeta de un grupo. */
 const GROUP_PREVIEW = 3;
 
@@ -43,7 +45,7 @@ function Section({
           </h2>
           <p className="shrink-0 text-[15px] font-bold tabular-nums text-foreground">{total}</p>
         </div>
-        <p className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-muted-2">{subtitle}</p>
+        <p className="mt-1.5 text-[11px] font-medium leading-[1.45] text-muted-1">{subtitle}</p>
       </div>
       <div className="border-t border-line">{children}</div>
       <div className="border-t border-line p-3">{footer}</div>
@@ -63,20 +65,19 @@ function SeeAll({ to, label }: { to: string; label: string }) {
   );
 }
 
-/** Una fila: cuadrado a la izquierda, título con badge, meta abajo, monto a la derecha. */
+/** Una fila: cuadrado a la izquierda, título y meta, monto a la derecha. */
 function Row({
-  icon, iconTone = 'sunken', title, badge, meta, amount, amountTone = 'text-foreground',
+  icon, iconTone = 'sunken', title, meta, amount, amountTone = 'text-foreground',
 }: {
   icon: React.ReactNode;
   iconTone?: 'sunken' | 'positive';
   title: string;
-  badge?: string;
   meta?: string;
   amount: string;
   amountTone?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0">
+    <div className="flex items-center gap-3 border-b border-line px-5 py-[11px] last:border-b-0">
       <div className={cn(
         'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px]',
         iconTone === 'positive' ? 'bg-positive-wash' : 'bg-surface-sunken',
@@ -84,21 +85,43 @@ function Row({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">{title}</p>
-          {badge && (
-            <span className="shrink-0 rounded-chip bg-brand-wash px-1.5 py-0.5 text-[10.5px] font-bold leading-[1.4] text-brand-ink">
-              {badge}
-            </span>
-          )}
-        </div>
+        <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">{title}</p>
         {meta && (
-          <p className="mt-0.5 truncate text-[11.5px] font-medium leading-tight text-muted-2">{meta}</p>
+          <p className="mt-0.5 truncate text-[11.5px] font-medium leading-tight text-muted-1">{meta}</p>
         )}
       </div>
       <p className={cn('shrink-0 text-[13.5px] font-bold tabular-nums', amountTone)}>{amount}</p>
     </div>
   );
+}
+
+/**
+ * "CADA MES" o "CON FECHA": el rótulo con su subtotal y las primeras filas. El resto se
+ * despliega acá mismo con "Ver N más", sin navegar, y sólo si hay más de dos. El rótulo ya
+ * dice si es fijo, así que las filas no llevan pastilla.
+ */
+function SubList({ label, total, rows }: { label: string; total: string; rows: React.ReactNode[] }) {
+  const { visibleCount, hasMore, remaining, showAll } = useProgressiveReveal(SUBLIST_PREVIEW, rows.length);
+  if (rows.length === 0) return null;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 px-5 pb-0.5 pt-3 text-[10.5px] font-bold uppercase tracking-[0.1em] text-muted-1">
+        <span>{label}</span>
+        <span className="tracking-normal tabular-nums">{total}</span>
+      </div>
+      <div>{rows.slice(0, visibleCount)}</div>
+      {hasMore && <ShowMoreButton remaining={remaining} onClick={showAll} className="px-5 pb-3" />}
+    </div>
+  );
+}
+
+/**
+ * Reparte un total en ARS del backend según la proporción nominal de cada parte, igual que la
+ * proyección de ritmo del dashboard: así los dos subtotales suman el total de la sección aunque
+ * haya pesos y dólares mezclados.
+ */
+function splitTotal(total: number, part: number, whole: number) {
+  return whole > 0 ? total * (part / whole) : 0;
 }
 
 /* ── 1. Entró ───────────────────────────────────────────────────────────────────────── */
@@ -107,37 +130,52 @@ export function IncomeSection({ ledger, year, month }: SectionProps) {
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
-  /* El sueldo primero: es el ingreso del que cuelga todo el mes. */
-  const incomes = [...ledger.incomes].sort((a, b) => {
-    if (a.source !== b.source) return a.source === 'recurring' ? -1 : 1;
-    return b.amount - a.amount;
-  });
+  const byAmount = (a: { amount: number }, b: { amount: number }) => b.amount - a.amount;
+  const recurring = ledger.incomes.filter(i => i.source === 'recurring').sort(byAmount);
+  const dated = ledger.incomes.filter(i => i.source !== 'recurring').sort(byAmount);
+  const count = recurring.length + dated.length;
+  const raw = (list: typeof recurring) => list.reduce((s, i) => s + i.amount, 0);
+  const rawAll = raw(recurring) + raw(dated);
+
+  const row = (income: (typeof recurring)[number]) => (
+    <Row
+      key={income.id}
+      iconTone="positive"
+      icon={<span className="text-[15px] font-bold leading-none text-positive">+</span>}
+      title={capitalize(income.label)}
+      meta={income.source === 'variable' ? t('personal.incomeExtra') : undefined}
+      amount={`+${formatAmount(income.amount, income.currency)}`}
+      amountTone="text-positive"
+    />
+  );
 
   return (
     <Section
       dot="bg-positive"
       title={t('personal.sectionIn')}
       total={formatCurrency(ledger.totalIncome)}
-      subtitle={t('personal.incomeCount', { count: incomes.length })}
+      subtitle={t('personal.incomeCount', { count })}
       footer={<SeeAll
         to={`/personal/incomes?year=${year}&month=${month}`}
-        label={t('personal.seeAllIncomes', { count: incomes.length })}
+        label={t('personal.seeAllIncomes', { count })}
       />}
     >
-      {incomes.length === 0 ? (
+      {count === 0 ? (
         <p className="px-5 py-8 text-center text-[12.5px] text-muted-2">{t('personal.noIncome')}</p>
-      ) : incomes.slice(0, PREVIEW_ROWS).map(income => (
-        <Row
-          key={income.id}
-          iconTone="positive"
-          icon={<span className="text-[15px] font-bold leading-none text-positive">+</span>}
-          title={capitalize(income.label)}
-          badge={income.source === 'recurring' ? t('expenses.badgeRecurring2') : undefined}
-          meta={income.source === 'variable' ? t('personal.incomeExtra') : undefined}
-          amount={`+${formatAmount(income.amount, income.currency)}`}
-          amountTone="text-positive"
-        />
-      ))}
+      ) : (
+        <>
+          <SubList
+            label={t('personal.everyMonth')}
+            total={formatCurrency(splitTotal(ledger.totalIncome, raw(recurring), rawAll))}
+            rows={recurring.map(row)}
+          />
+          <SubList
+            label={t('personal.dated')}
+            total={formatCurrency(splitTotal(ledger.totalIncome, raw(dated), rawAll))}
+            rows={dated.map(row)}
+          />
+        </>
+      )}
     </Section>
   );
 }
@@ -150,62 +188,65 @@ export function OwnExpensesSection({ ledger, categories, year, month }: SectionP
   const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
   const emojiFor = (category: string) => categories.find(c => c.name === category)?.emoji;
 
-  const fixedTotal = ledger.recurringPersonalExpenses.reduce((s, e) => s + e.amount, 0);
+  const rawRecurring = ledger.recurringPersonalExpenses.reduce((s, e) => s + e.amount, 0);
+  const rawDated = ledger.personalExpenses.reduce((s, e) => s + e.amount, 0);
   const count = ledger.recurringPersonalExpenses.length + ledger.personalExpenses.length;
 
-  /* Los fijos arriba: son los que ya están decididos y no se vuelven a pensar cada mes. */
-  const rows = [
-    ...ledger.recurringPersonalExpenses.map(e => ({
-      key: `rec-${e.id}`,
-      title: capitalize(e.label),
-      badge: t('expenses.badgeFixed').toLocaleLowerCase(),
-      meta: capitalize(t(`categories.${e.categoryName}`, { defaultValue: e.categoryName })),
-      emoji: emojiFor(e.categoryName),
-      fallback: e.categoryName.slice(0, 2),
-      amount: formatAmount(e.amount, e.currency),
-    })),
-    ...[...ledger.personalExpenses]
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .map(e => ({
-        key: `exp-${e.id}`,
-        title: capitalize(e.description),
-        badge: undefined,
-        meta: `${capitalize(t(`categories.${e.category}`, { defaultValue: e.category }))} · ${formatDayMonth(e.date, monthsShort)}`,
-        emoji: emojiFor(e.category),
-        fallback: e.category.slice(0, 2),
-        amount: formatAmount(e.amount, e.currency),
-      })),
-  ];
+  const icon = (category: string) => {
+    const emoji = emojiFor(category);
+    return emoji
+      ? <span className="text-lg leading-none">{emoji}</span>
+      : <span className="text-[11px] font-bold uppercase text-muted-2">{category.slice(0, 2)}</span>;
+  };
 
-  const subtitle = fixedTotal > 0
-    ? `${t('personal.expenseCount', { count })} · ${t('personal.expenseFixedPart', { amount: formatCurrency(fixedTotal) })}`
-    : t('personal.expenseCount', { count });
+  const recurringRows = ledger.recurringPersonalExpenses.map(e => (
+    <Row
+      key={`rec-${e.id}`}
+      icon={icon(e.categoryName)}
+      title={capitalize(e.label)}
+      meta={capitalize(t(`categories.${e.categoryName}`, { defaultValue: e.categoryName }))}
+      amount={formatAmount(e.amount, e.currency)}
+    />
+  ));
+  const datedRows = [...ledger.personalExpenses]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(e => (
+      <Row
+        key={`exp-${e.id}`}
+        icon={icon(e.category)}
+        title={capitalize(e.description)}
+        meta={`${capitalize(t(`categories.${e.category}`, { defaultValue: e.category }))} · ${formatDayMonth(e.date, monthsShort)}`}
+        amount={formatAmount(e.amount, e.currency)}
+      />
+    ));
 
   return (
     <Section
       dot="bg-negative"
       title={t('personal.sectionMine')}
       total={formatCurrency(ledger.totalPersonalExpenses)}
-      subtitle={subtitle}
+      subtitle={t('personal.expenseCount', { count })}
       footer={<SeeAll
         to={`/personal/expenses?year=${year}&month=${month}`}
         label={t('personal.seeAllExpenses', { count })}
       />}
     >
-      {rows.length === 0 ? (
+      {count === 0 ? (
         <p className="px-5 py-8 text-center text-[12.5px] text-muted-2">{t('personal.noMovements')}</p>
-      ) : rows.slice(0, PREVIEW_ROWS).map(row => (
-        <Row
-          key={row.key}
-          icon={row.emoji
-            ? <span className="text-lg leading-none">{row.emoji}</span>
-            : <span className="text-[11px] font-bold uppercase text-muted-2">{row.fallback}</span>}
-          title={row.title}
-          badge={row.badge}
-          meta={row.meta}
-          amount={row.amount}
-        />
-      ))}
+      ) : (
+        <>
+          <SubList
+            label={t('personal.everyMonth')}
+            total={formatCurrency(splitTotal(ledger.totalPersonalExpenses, rawRecurring, rawRecurring + rawDated))}
+            rows={recurringRows}
+          />
+          <SubList
+            label={t('personal.dated')}
+            total={formatCurrency(splitTotal(ledger.totalPersonalExpenses, rawDated, rawRecurring + rawDated))}
+            rows={datedRows}
+          />
+        </>
+      )}
     </Section>
   );
 }

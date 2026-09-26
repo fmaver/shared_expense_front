@@ -53,7 +53,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
 
   // Incomes carry no date — instance ids increase with creation order, so id desc = latest first
   const sortedIncomes = [...ledger.incomes].sort((a, b) => b.id - a.id);
-  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, sortedIncomes.length);
+  const { visibleCount, hasMore, remaining, showAll } = useProgressiveReveal(limit, sortedIncomes.length);
   const visibleIncomes = sortedIncomes.slice(0, visibleCount);
 
   // Shared save used by both the desktop inline editor and the detail sheet.
@@ -194,7 +194,7 @@ export function IncomesSection({ ledger, year, month, refetch, limit, viewAllTo 
               )}
             </div>
           ))}
-          {hasMore && <ShowMoreButton remaining={remaining} onClick={showMore} />}
+          {hasMore && <ShowMoreButton remaining={remaining} onClick={showAll} />}
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Archive, ChevronRight, Plus, Wallet } from 'lucide-react';
+import { Archive, ChevronRight, Plus } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
@@ -15,8 +15,9 @@ import type { Group } from '@/types/expense';
 /**
  * La primera pantalla después de entrar.
  *
- * Arriba la suma de todo lo que te deben o debés entre grupos, que es la pregunta con la que
- * se abre la app; después tu plata del mes y la lista de grupos, cada uno con su saldo (§6.12).
+ * Arriba tu saldo neto entre grupos, que es la pregunta con la que se abre la app, con una
+ * pastilla por grupo que lo explica; después tu plata del mes y la lista de grupos, cada uno con
+ * su saldo (§6.12, y el ajuste 2 de ADDENDUM-violeta.md).
  */
 export function GroupSelectorPage() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export function GroupSelectorPage() {
   const pending = ledger?.pendingSettlementsTotal ?? 0;
   const openGroups = (ledger?.groupBalances ?? [])
     .filter(g => !g.isSettled && Math.abs(g.netBalance) > 0.01);
+  const signedCurrency = (n: number) => `${n > 0 ? '+' : '−'}${formatCurrency(Math.abs(n))}`;
 
   /*
     El último gasto de cada grupo, sacado de tu parte en él. Es lo que ya trae el ledger: pedir
@@ -52,56 +54,65 @@ export function GroupSelectorPage() {
     }
   }
 
-  /** "Casa y Bariloche" — los grupos que hacen falta cerrar, nombrados. */
-  const openNames = (() => {
-    const names = openGroups.map(g => g.sourceGroupName);
-    if (names.length === 0) return '';
-    if (names.length === 1) return names[0];
-    return `${names.slice(0, -1).join(', ')} ${t('groups.and')} ${names[names.length - 1]}`;
-  })();
-
   return (
     <div className="mx-auto w-full max-w-lg px-5 py-6">
-      {/* ── Cuánto te deben, entre todos los grupos ─────────────────────────────────── */}
-      <h1
-        className={cn(
-          'text-[30px] font-extrabold leading-[1.1] tracking-[-0.025em] tabular-nums',
-          Math.abs(pending) <= 0.01 ? 'text-foreground' : pending > 0 ? 'text-positive' : 'text-negative',
-        )}
-      >
-        {Math.abs(pending) <= 0.01
-          ? t('groups.squareTotal')
-          : pending > 0
-            ? t('groups.owedTotal', { amount: formatCurrency(pending) })
-            : t('groups.oweTotal', { amount: formatCurrency(Math.abs(pending)) })}
-      </h1>
-      {/* Con los grupos nombrados: "en total" no dice de dónde sale, y de dónde sale importa. */}
+      {/* ── Tu saldo en grupos: la cifra neta y de qué grupo sale cada parte ─────────── */}
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-1">
+        {t('groups.balanceLabel')}
+      </p>
+      <div className="mt-1.5 flex items-baseline gap-2">
+        <span
+          className={cn(
+            'text-[36px] font-extrabold leading-none tracking-[-0.035em] tabular-nums',
+            Math.abs(pending) <= 0.01 ? 'text-foreground' : pending > 0 ? 'text-positive' : 'text-negative',
+          )}
+        >
+          {Math.abs(pending) <= 0.01 ? formatCurrency(0) : signedCurrency(pending)}
+        </span>
+        <span className="text-[13px] font-semibold text-muted-1">
+          {Math.abs(pending) <= 0.01
+            ? t('groups.squareTotal')
+            : t(pending > 0 ? 'groups.inFavour' : 'groups.toPay')}
+        </span>
+      </div>
       {openGroups.length > 0 && (
-        <p className="mt-2 text-[12.5px] font-medium leading-[1.45] text-muted-1">
-          {t('groups.movesLeftNamed', { count: openGroups.length, groups: openNames })}
-        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {openGroups.map(g => (
+            <span
+              key={g.sourceGroupId}
+              className="flex flex-none items-center gap-[5px] whitespace-nowrap rounded-full border border-line bg-surface px-[9px] py-1.5 text-[11px] font-semibold text-foreground"
+            >
+              {g.sourceGroupName}
+              <span className={cn('font-bold tabular-nums', g.netBalance > 0 ? 'text-positive' : 'text-negative')}>
+                {signedCurrency(g.netBalance)}
+              </span>
+            </span>
+          ))}
+        </div>
       )}
 
       {/* ── Tu plata ────────────────────────────────────────────────────────────────── */}
       <Link
         to="/personal"
-        className="mt-4 flex items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card transition-colors hover:bg-surface-sunken"
+        className="mt-[22px] flex items-center gap-3 rounded-card-lg border border-brand-wash-line bg-surface-sunken px-[18px] py-4 transition-opacity hover:opacity-90 dark:bg-brand-wash"
       >
-        <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-surface-sunken">
-          <Wallet className="h-4 w-4 text-muted-1" aria-hidden="true" />
-        </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13.5px] font-bold text-foreground">
             {t('groups.yourMoney')}
           </span>
-          <span className="mt-0.5 block truncate text-[11.5px] font-medium text-muted-2">
+          <span className="mt-0.5 block truncate text-[11px] font-medium text-[#57526E] dark:text-muted-1">
             {t('groups.yourMoneyDesc')}
           </span>
         </span>
-        <span className="shrink-0 text-[13px] font-bold tabular-nums text-positive">
-          {ledger ? formatCompactCurrency(ledger.currentBalance) : '—'}
+        <span className="shrink-0 text-right">
+          <span className="block text-[17px] font-extrabold tracking-[-0.02em] tabular-nums text-[#4A3C96] dark:text-brand-ink">
+            {ledger ? formatCompactCurrency(ledger.currentBalance) : '—'}
+          </span>
+          <span className="mt-0.5 block text-[10.5px] font-semibold text-[#57526E] dark:text-muted-1">
+            {t('groups.moneyLeft')}
+          </span>
         </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-2" aria-hidden="true" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
       </Link>
 
       {error && (
@@ -111,7 +122,7 @@ export function GroupSelectorPage() {
       )}
 
       {/* ── Tus grupos ──────────────────────────────────────────────────────────────── */}
-      <p className="mt-6 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+      <p className="mt-[18px] text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-1">
         {t('groups.yourGroups')}
       </p>
 
@@ -205,15 +216,18 @@ export function GroupSelectorPage() {
       </div>
 
       {/* ── Armar uno ───────────────────────────────────────────────────────────────── */}
+      {/* Punteado y sin fondo: se lee como una acción, no como un grupo más. */}
       <button
         type="button"
         onClick={() => setShowCreate(true)}
-        className="mt-3 flex w-full cursor-pointer items-center gap-3 rounded-card border border-dashed border-line-strong px-4 py-3.5 text-left transition-colors hover:bg-surface-sunken"
+        className="mt-2.5 flex w-full cursor-pointer items-center gap-[11px] rounded-card border-[1.5px] border-dashed border-muted-3 bg-transparent px-4 py-[15px] text-left transition-colors hover:bg-surface-sunken/60"
       >
-        <Plus className="h-4 w-4 shrink-0 text-muted-2" aria-hidden="true" />
+        <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] border-[1.5px] border-dashed border-muted-3 text-brand-ink">
+          <Plus className="h-4 w-4" aria-hidden="true" />
+        </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[12.5px] font-bold text-foreground">{t('groups.startOne')}</span>
-          <span className="block truncate text-[11.5px] font-medium text-muted-2">
+          <span className="block text-[13px] font-bold text-brand-ink">{t('groups.startOne')}</span>
+          <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-1">
             {t('groups.orJoinWithLink')}
           </span>
         </span>

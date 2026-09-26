@@ -65,7 +65,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
     (a, b) => b.date.localeCompare(a.date) || b.id - a.id,
   );
   const totalCount = recurring.length + sortedOneOffs.length;
-  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, totalCount);
+  const { visibleCount, hasMore, remaining, showAll } = useProgressiveReveal(limit, totalCount);
   const visibleRecurring = recurring.slice(0, visibleCount);
   const visibleOneOffs = sortedOneOffs.slice(0, Math.max(0, visibleCount - recurring.length));
 
@@ -285,7 +285,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
           ))}
           {hasMore && (
             <div className="px-4">
-              <ShowMoreButton remaining={remaining} onClick={showMore} />
+              <ShowMoreButton remaining={remaining} onClick={showAll} />
             </div>
           )}
         </div>

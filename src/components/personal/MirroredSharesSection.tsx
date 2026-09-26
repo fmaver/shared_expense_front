@@ -27,7 +27,7 @@ export function MirroredSharesSection({ ledger, year, month, categories, limit, 
   const sortedShares = [...ledger.mirroredShares].sort(
     (a, b) => b.date.localeCompare(a.date) || b.sourceExpenseId - a.sourceExpenseId,
   );
-  const { visibleCount, hasMore, remaining, showMore } = useProgressiveReveal(limit, sortedShares.length);
+  const { visibleCount, hasMore, remaining, showAll } = useProgressiveReveal(limit, sortedShares.length);
   const visibleShares = sortedShares.slice(0, visibleCount);
 
   return (
@@ -133,7 +133,7 @@ export function MirroredSharesSection({ ledger, year, month, categories, limit, 
           })}
           {hasMore && (
             <div className="px-4 pb-3">
-              <ShowMoreButton remaining={remaining} onClick={showMore} />
+              <ShowMoreButton remaining={remaining} onClick={showAll} />
             </div>
           )}
         </div>
