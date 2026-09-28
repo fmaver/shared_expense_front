@@ -53,6 +53,12 @@ export function formatDayMonth(date: string | Date, monthsShort: string[]): stri
   return `${d.getDate()} ${monthsShort[d.getMonth()] ?? ''}`.trim();
 }
 
+/** "8 jun 2026" — el encabezado de un grupo de resultados de búsqueda con fecha exacta. */
+export function formatDayMonthYear(date: string | Date, monthsShort: string[]): string {
+  const d = parseLocal(date);
+  return `${formatDayMonth(d, monthsShort)} ${d.getFullYear()}`.trim();
+}
+
 /** "lun 8 jul" — el subtítulo del detalle de gasto. */
 export function formatWeekdayDayMonth(
   date: string | Date,

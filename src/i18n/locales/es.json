@@ -982,7 +982,17 @@
     "close": "Cerrar búsqueda",
     "placeholderPersonal": "Buscar en tu plata",
     "placeholderGroup": "Buscar en {{group}}",
-    "comingSoon": "Pronto vas a poder buscar gastos por nombre, monto o quién pagó."
+    "comingSoon": "Pronto vas a poder buscar gastos por nombre, monto o quién pagó.",
+    "placeholderAll": "Buscar en todo",
+    "hint": "Buscá por nombre, monto o quién pagó",
+    "empty": "No encontramos nada con “{{q}}”",
+    "retry": "Reintentar",
+    "clear": "Borrar",
+    "capped": "Mostramos los 50 más recientes: refiná la búsqueda",
+    "paidBy": "Pagó {{name}}",
+    "everyMonth": "Cada mes · {{period}}",
+    "settled": "✓ Saldado",
+    "unsettled": "Sin saldar"
   },
   "scan": {
     "menuTitle": "Escanear ticket",

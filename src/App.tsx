@@ -22,6 +22,7 @@ import { GroupJoinLanding } from './public-pages/GroupJoinLanding';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { IslandProvider } from './contexts/IslandContext';
 import { FabActionsProvider } from './contexts/FabActionsContext';
+import { SearchProvider } from './contexts/SearchContext';
 import { ScrollProvider } from './contexts/ScrollContext';
 import { ExpenseRefreshProvider } from './contexts/ExpenseRefreshContext';
 import { SettlementProvider } from './contexts/SettlementContext';
@@ -84,6 +85,7 @@ function App() {
       <IslandProvider>
         <ScrollProvider>
         <FabActionsProvider>
+        <SearchProvider>
         <ExpenseRefreshProvider>
         <SettlementProvider>
       <Routes>
@@ -127,6 +129,7 @@ function App() {
       </Routes>
         </SettlementProvider>
         </ExpenseRefreshProvider>
+        </SearchProvider>
         </FabActionsProvider>
         </ScrollProvider>
       </IslandProvider>

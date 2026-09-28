@@ -982,7 +982,17 @@
     "close": "Close search",
     "placeholderPersonal": "Search your money",
     "placeholderGroup": "Search {{group}}",
-    "comingSoon": "Soon you'll be able to search expenses by name, amount or who paid."
+    "comingSoon": "Soon you'll be able to search expenses by name, amount or who paid.",
+    "placeholderAll": "Search everything",
+    "hint": "Search by name, amount or who paid",
+    "empty": "Nothing found for “{{q}}”",
+    "retry": "Retry",
+    "clear": "Clear",
+    "capped": "Showing the 50 most recent: refine your search",
+    "paidBy": "Paid by {{name}}",
+    "everyMonth": "Every month · {{period}}",
+    "settled": "✓ Settled",
+    "unsettled": "Unsettled"
   },
   "scan": {
     "menuTitle": "Scan a receipt",

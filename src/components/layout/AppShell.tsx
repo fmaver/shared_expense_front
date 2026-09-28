@@ -7,6 +7,8 @@ import { FloatingTabBar } from './FloatingTabBar';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
 import { useGroup } from '@/hooks/useGroups';
 import { useIsland } from '@/contexts/IslandContext';
+import { useSearch } from '@/contexts/SearchContext';
+import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { cn } from '@/lib/utils';
 import type { Group } from '@/types/expense';
 import { FEATURE_SEARCH } from '@/config/features';
@@ -35,19 +37,22 @@ export function AppShell({ onLogout }: AppShellProps) {
 
   const inGroup = groupIdParam !== null;
 
+  const { data: group } = useGroup(groupIdParam ?? 0);
+  const groupName = groupIdParam !== null ? (group?.name ?? undefined) : undefined;
+
+  const { openSearch } = useSearch();
+
   /* ⌘K / Ctrl+K abre la búsqueda, con el alcance de donde estás (V6.5). */
   useEffect(() => {
     if (!FEATURE_SEARCH) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'k') return;
       e.preventDefault();
-      navigate(groupIdParam !== null
-        ? `/search?scope=group&groupId=${groupIdParam}`
-        : '/search?scope=personal');
+      openSearch(inGroup && groupIdParam !== null ? { groupId: groupIdParam, groupName: groupName ?? '' } : undefined);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [navigate, groupIdParam]);
+  }, [openSearch, inGroup, groupIdParam, groupName]);
   /*
     Pantallas que traen su propio encabezado y no quieren el de la app encima: el grupo (nombre,
     gente y pestañas) y todo lo personal (el saludo con el mes y el avatar). Dos barras
@@ -62,9 +67,6 @@ export function AppShell({ onLogout }: AppShellProps) {
   */
   const showsAppHeader = !inGroup
     && (location.pathname === '/groups' || location.pathname === '/personal/charts');
-
-  const { data: group } = useGroup(groupIdParam ?? 0);
-  const groupName = groupIdParam !== null ? (group?.name ?? undefined) : undefined;
 
   // Derive the effective island display state
   const effectiveIslandState: 'idle' | 'loading' | 'success' | 'group' =
@@ -105,6 +107,8 @@ export function AppShell({ onLogout }: AppShellProps) {
 
       {/* Mobile floating tab bar + FAB */}
       <FloatingTabBar />
+
+      <SearchOverlay />
 
       <CreateGroupDialog
         open={openNewGroup}
