@@ -279,8 +279,10 @@ components instead of re-styling:
 | `AmountInput` | `components/expenses/AmountInput.tsx` | The big amount: a real `<input inputMode="decimal">` (the custom keypad is gone) |
 | `useScanPicker`, `useReceiptScan`, `ScanReview` | `components/expenses/`, `hooks/` | Receipt scan from the "+": native file input, draft review with "de la foto" pills |
 
-Search and receipts have no backend yet: they sit behind `FEATURE_SEARCH` / `FEATURE_RECEIPTS`
-(`src/config/features.ts`, off unless `VITE_FEATURE_SEARCH=true` / `VITE_FEATURE_RECEIPTS=true`).
+Search = `SearchOverlay` (mounted in `AppShell`, opened via `useSearch().openSearch`), which
+calls `GET /search/expenses`; month search = `matchesQuery` in `ExpenseListHeader`. Receipts
+still have no backend and sit behind `FEATURE_RECEIPTS` (`src/config/features.ts`, off unless
+`VITE_FEATURE_RECEIPTS=true`).
 
 ### Bottom sheet dialogs + drag-to-dismiss
 

@@ -976,13 +976,9 @@
   },
   "search": {
     "open": "Buscar",
-    "title": "Buscar",
-    "inPersonal": "Buscar en tu plata",
     "inMonth": "Buscar en {{month}}",
     "close": "Cerrar búsqueda",
-    "placeholderPersonal": "Buscar en tu plata",
     "placeholderGroup": "Buscar en {{group}}",
-    "comingSoon": "Pronto vas a poder buscar gastos por nombre, monto o quién pagó.",
     "placeholderAll": "Buscar en todo",
     "hint": "Buscá por nombre, monto o quién pagó",
     "empty": "No encontramos nada con “{{q}}”",

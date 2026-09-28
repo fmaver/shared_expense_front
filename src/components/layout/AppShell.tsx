@@ -11,7 +11,6 @@ import { useSearch } from '@/contexts/SearchContext';
 import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { cn } from '@/lib/utils';
 import type { Group } from '@/types/expense';
-import { FEATURE_SEARCH } from '@/config/features';
 
 interface AppShellProps {
   onLogout: () => void;
@@ -44,7 +43,6 @@ export function AppShell({ onLogout }: AppShellProps) {
 
   /* ⌘K / Ctrl+K abre la búsqueda, con el alcance de donde estás (V6.5). */
   useEffect(() => {
-    if (!FEATURE_SEARCH) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'k') return;
       e.preventDefault();

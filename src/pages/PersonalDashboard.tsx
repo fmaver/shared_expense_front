@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { useScroll } from '@/contexts/ScrollContext';
+import { useSearch } from '@/contexts/SearchContext';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { usePersonalTrend } from '@/hooks/usePersonalTrend';
 import { usePendingTransfers } from '@/hooks/usePendingTransfers';
@@ -14,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MonthPager } from '@/components/expenses/MonthPager';
 import { CapsuleSlot, GlassCapsule } from '@/components/ui/Glass';
 import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
-import { FEATURE_SEARCH } from '@/config/features';
 import { formatCurrency } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import { avatarBg, initials } from '@/utils/avatar';
@@ -30,6 +30,7 @@ import { PersonalAddLauncher } from '@/components/personal/PersonalAddLauncher';
 export function PersonalDashboard() {
   const { t } = useTranslation();
   const { notifyScroll } = useScroll();
+  const { openSearch } = useSearch();
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     notifyScroll((e.target as HTMLDivElement).scrollTop);
   }, [notifyScroll]);
@@ -105,11 +106,9 @@ export function PersonalDashboard() {
       <FloatingTopBar
         right={
           <GlassCapsule>
-            {FEATURE_SEARCH && (
-              <CapsuleSlot to="/search?scope=personal" aria-label={t('search.open')}>
-                <Search className="h-[17px] w-[17px]" strokeWidth={2.4} />
-              </CapsuleSlot>
-            )}
+            <CapsuleSlot onClick={() => openSearch()} aria-label={t('search.open')}>
+              <Search className="h-[17px] w-[17px]" strokeWidth={2.4} />
+            </CapsuleSlot>
             <CapsuleSlot to="/profile" aria-label={t('nav.profile')}>
               <span
                 className={cn(
@@ -141,16 +140,15 @@ export function PersonalDashboard() {
             </h1>
             <div className="flex shrink-0 items-center gap-2.5">
             {/* Desktop: la búsqueda como cápsula con texto (V6.5). En mobile es la lupa de arriba. */}
-            {FEATURE_SEARCH && (
-              <Link
-                to="/search?scope=personal"
-                className="glass hidden h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[12.5px] font-semibold text-muted-1 transition-opacity hover:opacity-80 lg:flex"
-              >
-                <Search className="h-4 w-4" aria-hidden="true" />
-                {t('search.inPersonal')}
-                <kbd className="rounded-[6px] bg-surface-sunken px-1.5 py-0.5 font-sans text-[10.5px] font-bold text-muted-1">⌘K</kbd>
-              </Link>
-            )}
+            <button
+              type="button"
+              onClick={() => openSearch()}
+              className="glass hidden h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[12.5px] font-semibold text-muted-1 transition-opacity hover:opacity-80 lg:flex"
+            >
+              <Search className="h-4 w-4" aria-hidden="true" />
+              {t('search.placeholderAll')}
+              <kbd className="rounded-[6px] bg-surface-sunken px-1.5 py-0.5 font-sans text-[10.5px] font-bold text-muted-1">⌘K</kbd>
+            </button>
             {/* En mobile el avatar vive en la cápsula flotante; acá queda para desktop. */}
             <Link
               to="/profile"

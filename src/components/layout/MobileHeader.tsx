@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DynamicIsland } from './DynamicIsland';
 import { JirensMark } from '@/components/brand/JirensMark';
 import { useScroll } from '@/contexts/ScrollContext';
+import { useSearch } from '@/contexts/SearchContext';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { avatarBg, initials } from '@/utils/avatar';
 import type { IslandState } from '@/contexts/IslandContext';
@@ -23,6 +25,7 @@ interface MobileHeaderProps {
 export function MobileHeader({ state, groupName }: MobileHeaderProps) {
   const { isAtTop } = useScroll();
   const { t } = useTranslation();
+  const { openSearch } = useSearch();
   const currentMember = useCurrentMember();
 
   return (
@@ -43,7 +46,15 @@ export function MobileHeader({ state, groupName }: MobileHeaderProps) {
 
       <DynamicIsland state={state} groupName={groupName} />
 
-      <div className="flex flex-1 justify-end">
+      <div className="flex flex-1 items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => openSearch()}
+          aria-label={t('search.open')}
+          className="glass flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-foreground transition-opacity hover:opacity-90"
+        >
+          <Search className="h-4 w-4" aria-hidden="true" />
+        </button>
         <Link
           to="/profile"
           aria-label={t('nav.profile')}

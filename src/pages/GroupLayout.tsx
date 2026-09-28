@@ -5,13 +5,13 @@ import { Search } from 'lucide-react';
 import { useGroup } from '@/hooks/useGroups';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useScroll } from '@/contexts/ScrollContext';
+import { useSearch } from '@/contexts/SearchContext';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SegmentedLinks } from '@/components/ui/Segmented';
 import { CapsuleSlot, GlassCapsule } from '@/components/ui/Glass';
 import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 import { GroupMoreMenu } from '@/components/layout/GroupMoreMenu';
-import { FEATURE_SEARCH } from '@/config/features';
 import { avatarBg, initials } from '@/utils/avatar';
 
 /** "Fran, Guada y Mati" — la lista de nombres como se dice en voz alta. */
@@ -28,6 +28,7 @@ export function GroupLayout() {
   const location = useLocation();
   const { t } = useTranslation();
   const { notifyScroll } = useScroll();
+  const { openSearch } = useSearch();
   const { year, month } = useMonthSearchParams();
   const [titleEl, setTitleEl] = useState<HTMLHeadingElement | null>(null);
   const handleInnerScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
@@ -115,11 +116,12 @@ export function GroupLayout() {
         back={{ to: '/groups', label: t('mobileNav.groups') }}
         right={
           <GlassCapsule>
-            {FEATURE_SEARCH && (
-              <CapsuleSlot to={`/search?scope=group&groupId=${groupId}`} aria-label={t('search.open')}>
-                <Search className="h-[17px] w-[17px]" strokeWidth={2.4} />
-              </CapsuleSlot>
-            )}
+            <CapsuleSlot
+              onClick={() => openSearch({ groupId, groupName: group?.name ?? '' })}
+              aria-label={t('search.open')}
+            >
+              <Search className="h-[17px] w-[17px]" strokeWidth={2.4} />
+            </CapsuleSlot>
             <GroupMoreMenu groupId={groupId} groupName={group?.name ?? ''} />
           </GlassCapsule>
         }

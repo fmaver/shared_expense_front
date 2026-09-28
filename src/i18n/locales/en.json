@@ -976,13 +976,9 @@
   },
   "search": {
     "open": "Search",
-    "title": "Search",
-    "inPersonal": "Search your money",
     "inMonth": "Search {{month}}",
     "close": "Close search",
-    "placeholderPersonal": "Search your money",
     "placeholderGroup": "Search {{group}}",
-    "comingSoon": "Soon you'll be able to search expenses by name, amount or who paid.",
     "placeholderAll": "Search everything",
     "hint": "Search by name, amount or who paid",
     "empty": "Nothing found for “{{q}}”",

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
@@ -18,7 +18,6 @@ import { SettledMonthCard } from '@/components/expenses/SettledMonthCard';
 import { ExpenseListHeader } from '@/components/expenses/ExpenseListHeader';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { useScanPicker } from '@/components/expenses/ScanPicker';
-import { FEATURE_SEARCH } from '@/config/features';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +26,7 @@ import { toast } from 'sonner';
 import { Plus, ArrowLeftRight, Camera, Search } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 import { useIsland } from '@/contexts/IslandContext';
+import { useSearch } from '@/contexts/SearchContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { useSettlementActions } from '@/hooks/useSettlementActions';
@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 export function ExpensesDashboard() {
   const { t } = useTranslation();
   const island = useIsland();
+  const { openSearch } = useSearch();
   const navigate = useNavigate();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
@@ -293,16 +294,15 @@ export function ExpensesDashboard() {
               <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.transfer')}</span>
             </Button>
-            {FEATURE_SEARCH && (
-              <Link
-                to={`/search?scope=group&groupId=${groupId}`}
-                aria-label={t('search.open')}
-                className="glass flex h-8 items-center gap-1.5 rounded-full px-2.5 text-muted-1 transition-opacity hover:opacity-80"
-              >
-                <Search className="h-3.5 w-3.5" aria-hidden="true" />
-                <kbd className="font-sans text-[10.5px] font-bold">⌘K</kbd>
-              </Link>
-            )}
+            <button
+              type="button"
+              onClick={() => openSearch({ groupId, groupName: group?.name ?? '' })}
+              aria-label={t('search.open')}
+              className="glass flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-muted-1 transition-opacity hover:opacity-80"
+            >
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              <kbd className="font-sans text-[10.5px] font-bold">⌘K</kbd>
+            </button>
             <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
               title={t('scan.menuTitle')}
               onClick={scanPicker.pickAny}>
