@@ -305,7 +305,6 @@
     "badgeEvent": "Evento",
     "countInMonth_one": "{{count}} gasto en {{month}}",
     "countInEvent_one": "{{count}} gasto del evento",
-    "chipUnsettled": "Sin saldar",
     "chipMine": "Míos",
     "noMatches": "Ningún gasto entra en ese filtro.",
     "sortLabel": "Orden",
@@ -977,6 +976,8 @@
     "open": "Buscar",
     "title": "Buscar",
     "inPersonal": "Buscar en tu plata",
+    "inMonth": "Buscar en {{month}}",
+    "close": "Cerrar búsqueda",
     "placeholderPersonal": "Buscar en tu plata",
     "placeholderGroup": "Buscar en {{group}}",
     "comingSoon": "Pronto vas a poder buscar gastos por nombre, monto o quién pagó."

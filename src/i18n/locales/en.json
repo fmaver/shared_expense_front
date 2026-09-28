@@ -305,7 +305,6 @@
     "badgeEvent": "Event",
     "countInMonth_one": "{{count}} expense in {{month}}",
     "countInEvent_one": "{{count}} expense in the event",
-    "chipUnsettled": "Unsettled",
     "chipMine": "Mine",
     "noMatches": "No expense matches that filter.",
     "sortLabel": "Sort",
@@ -977,6 +976,8 @@
     "open": "Search",
     "title": "Search",
     "inPersonal": "Search your money",
+    "inMonth": "Search {{month}}",
+    "close": "Close search",
     "placeholderPersonal": "Search your money",
     "placeholderGroup": "Search {{group}}",
     "comingSoon": "Soon you'll be able to search expenses by name, amount or who paid."
