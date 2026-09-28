@@ -173,10 +173,11 @@ export function ExpenseListHeader({
               type="search"
               enterKeyHint="search"
               tabIndex={searchOpen ? 0 : -1}
+              aria-hidden={!searchOpen}
               value={monthQuery}
               onChange={e => setMonthQuery(e.target.value)}
               placeholder={t('search.inMonth', { month: monthLabel.toLowerCase() })}
-              aria-label={t('search.inMonth', { month: monthLabel.toLowerCase() })}
+              aria-label={searchOpen ? t('search.inMonth', { month: monthLabel.toLowerCase() }) : undefined}
               className={cn(
                 'bg-transparent text-[16px] font-medium text-foreground outline-none placeholder:text-muted-2 lg:text-[12.5px]',
                 searchOpen ? 'w-full min-w-0 flex-1 opacity-100' : 'w-0 opacity-0',
