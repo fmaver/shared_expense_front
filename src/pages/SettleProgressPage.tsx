@@ -171,6 +171,7 @@ export function SettleProgressPage() {
           month={month}
           onNavigate={setYearMonth}
           isSettled={monthlyData?.isSettled ?? false}
+          groupId={isOneTime ? undefined : groupId}
         />
       )}
 

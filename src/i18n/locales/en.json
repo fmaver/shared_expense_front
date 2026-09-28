@@ -816,7 +816,9 @@
     "previous": "Previous month",
     "next": "Next month",
     "pick": "Pick a month",
-    "atCurrentMonth": "You're on the current month"
+    "atCurrentMonth": "You're on the current month",
+    "unsettled": "Unsettled",
+    "unsettledMonth": "unsettled"
   },
   "settle": {
     "planTitle_one": "One payment and {{group}} is square",

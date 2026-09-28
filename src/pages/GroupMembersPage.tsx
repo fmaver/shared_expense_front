@@ -150,6 +150,7 @@ export function GroupMembersPage() {
           month={month}
           onNavigate={setYearMonth}
           isSettled={monthlyData?.isSettled}
+          groupId={isOneTime ? undefined : groupId}
         />
       )}
 

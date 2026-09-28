@@ -816,7 +816,9 @@
     "previous": "Mes anterior",
     "next": "Mes siguiente",
     "pick": "Elegir mes",
-    "atCurrentMonth": "Estás en el mes actual"
+    "atCurrentMonth": "Estás en el mes actual",
+    "unsettled": "Sin saldar",
+    "unsettledMonth": "sin saldar"
   },
   "settle": {
     "planTitle_one": "Con un pago, {{group}} queda en cero",

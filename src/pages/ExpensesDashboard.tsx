@@ -283,6 +283,7 @@ export function ExpensesDashboard() {
             month={month}
             onNavigate={setYearMonth}
             isSettled={isSettled}
+            groupId={isOneTime ? undefined : groupId}
           />
           {/* Alta y transferencia en desktop; en mobile viven en el FAB. */}
           <div className="hidden shrink-0 items-center justify-end gap-2 lg:flex">
