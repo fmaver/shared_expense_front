@@ -38,6 +38,10 @@ export function MonthPager({ year, month, onNavigate, isSettled = false, groupId
   // Meses pasados sin saldar (§ atajo): solo se pide cuando el panel está abierto y hay grupo.
   const [unsettled, setUnsettled] = useState<UnsettledMonth[]>([]);
   useEffect(() => {
+    // Limpiar primero: el mismo componente sigue montado al cambiar de grupo (el <Outlet/> no
+    // cambia de key), así que sin esto se ve el "sin saldar" del grupo anterior hasta que
+    // resuelva el fetch nuevo.
+    setUnsettled([]);
     if (!pickerOpen || groupId === undefined) return;
     let cancelled = false;
     getUnsettledMonths(groupId).then(list => { if (!cancelled) setUnsettled(list); }).catch(() => {});
