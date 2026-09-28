@@ -333,3 +333,33 @@ export interface DueDateInput {
   anchorMonth: number;
   notifyDaysBefore: number;
 }
+
+export interface ExpenseSearchResult {
+  kind: 'expense' | 'recurring_personal';
+  id: number;
+  description: string;
+  amount: number;
+  currency: string;
+  date: string | null;
+  category: string;
+  groupId: number;
+  groupName: string;
+  groupType: GroupType;
+  payerId: number | null;
+  payerName: string;
+  installmentNo: number;
+  installments: number;
+  periodYear: number;
+  periodMonth: number;
+  periodSettled: boolean | null;
+}
+
+export interface ExpenseSearchResponse {
+  results: ExpenseSearchResult[];
+  hasMore: boolean;
+}
+
+export interface UnsettledMonth {
+  year: number;
+  month: number;
+}
