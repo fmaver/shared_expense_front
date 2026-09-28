@@ -94,7 +94,7 @@ export function SearchOverlay() {
           )}
           {active && error && (
             <div className="mt-10 flex flex-col items-center gap-3 text-center">
-              <p className="text-[13px] font-medium text-muted-1">{error}</p>
+              <p className="text-[13px] font-medium text-muted-1">{t('search.error')}</p>
               <button type="button" onClick={retry} className="h-9 cursor-pointer rounded-full bg-primary px-4 text-[12.5px] font-bold text-primary-foreground">
                 {t('search.retry')}
               </button>

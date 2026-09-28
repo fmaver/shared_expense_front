@@ -992,7 +992,8 @@
     "paidBy": "Paid by {{name}}",
     "everyMonth": "Every month · {{period}}",
     "settled": "✓ Settled",
-    "unsettled": "Unsettled"
+    "unsettled": "Unsettled",
+    "error": "We couldn't search. Try again."
   },
   "scan": {
     "menuTitle": "Scan a receipt",

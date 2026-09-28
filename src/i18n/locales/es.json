@@ -992,7 +992,8 @@
     "paidBy": "Pagó {{name}}",
     "everyMonth": "Cada mes · {{period}}",
     "settled": "✓ Saldado",
-    "unsettled": "Sin saldar"
+    "unsettled": "Sin saldar",
+    "error": "No pudimos buscar. Probá de nuevo."
   },
   "scan": {
     "menuTitle": "Escanear ticket",
