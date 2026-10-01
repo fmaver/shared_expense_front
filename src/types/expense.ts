@@ -337,9 +337,11 @@ export interface DueDateInput {
 export interface ExpenseSearchResult {
   kind: 'expense' | 'recurring_personal';
   id: number;
+  parentExpenseId: number | null;
   description: string;
   amount: number;
   currency: string;
+  yourShare: number | null;
   date: string | null;
   category: string;
   groupId: number;
