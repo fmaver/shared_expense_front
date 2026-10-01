@@ -69,9 +69,16 @@ export function ExpensesDashboard() {
   const [duplicates, setDuplicates] = useState<ExpenseResponse[]>([]);
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
   const [groupByDate, setGroupByDate] = useState(true);
-  // El texto de la lupa del mes vive en ExpenseListHeader; esta página sólo lo necesita para
-  // resaltar la coincidencia en cada fila y para el link "Buscar en todos los meses ›" (V8.c).
+  // El texto de la lupa del mes vive acá y ExpenseListHeader lo recibe controlado: el header
+  // se desmonta mientras carga cada mes, y con estado propio volvía vacío mientras la página
+  // seguía resaltando el texto viejo. Así el texto sigue al paginar meses — en el input, el
+  // filtro, el resaltado y el link de abajo a la vez. Cambiar de grupo sí lo borra.
   const [monthQuery, setMonthQuery] = useState('');
+  const [queryGroupId, setQueryGroupId] = useState(groupId);
+  if (queryGroupId !== groupId) {
+    setQueryGroupId(groupId);
+    setMonthQuery('');
+  }
   const [showSettle, setShowSettle] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
@@ -211,6 +218,9 @@ export function ExpensesDashboard() {
   // Mismo umbral que adentro de `ExpenseListHeader` (parseQuery): un texto de un solo carácter
   // no filtra nada allá, así que tampoco debería abrir el link "Buscar en todos los meses" acá.
   const monthSearchParsed = parseQuery(monthQuery) !== null;
+  // Sólo con el header (y su input) a la vista: mientras carga o en un mes vacío no hay
+  // input que muestre el texto, y `sortedExpenses` todavía es el del mes anterior.
+  const showMonthSearchFooter = !isOneTime && monthSearchParsed && !loadingExpenses && expenses.length > 0;
   const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
   const weekdaysLong = t('weekdaysLong', { returnObjects: true }) as string[];
   /* Los pagos ya marcados son los movimientos `prestamo`: no hay flag y no hace falta. */
@@ -353,10 +363,14 @@ export function ExpensesDashboard() {
               isOneTime={isOneTime}
               onExportPdf={handleExportPDF}
               isSettled={isSettled}
+              query={monthQuery}
               onQueryChange={setMonthQuery}
             />
             {sortedExpenses.length === 0 ? (
-              <div className="py-10 text-center text-[12.5px] text-muted-2">{t('expenses.noMatches')}</div>
+              // Con la búsqueda del mes, el "Nada con …" de abajo ya lo dice: no dos vacíos.
+              showMonthSearchFooter ? null : (
+                <div className="py-10 text-center text-[12.5px] text-muted-2">{t('expenses.noMatches')}</div>
+              )
             ) : (
               <div>
                 {days.map(day => (
@@ -395,7 +409,7 @@ export function ExpensesDashboard() {
       {/* Debajo de la tarjeta, no adentro: "Buscar en todos los meses ›" abre la búsqueda de
           grupo (V8.b) con el mismo texto, para no perder lo que ya se había escrito. Un evento
           no tiene "otros meses" — su listado ya es todo el evento (V8.c). */}
-      {!isOneTime && monthSearchParsed && (
+      {showMonthSearchFooter && (
         <p className="px-1 text-[11.5px] font-semibold leading-[1.45] text-muted-1">
           {sortedExpenses.length === 0
             ? t('expenses.searchMonthFooterEmpty', { query: monthQuery.trim(), month: monthName.toLowerCase() })

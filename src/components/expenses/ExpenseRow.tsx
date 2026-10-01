@@ -9,7 +9,7 @@ import type { ExpenseResponse, Member } from '@/types/expense';
 import { ExpenseDetailDialog } from './ExpenseDetailDialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { computeSplit, isOutsider, netOf } from '@/utils/split';
-import { Highlighted } from '@/components/search/SearchResultRow';
+import { FALLBACK_EMOJI, Highlighted } from '@/components/search/SearchResultRow';
 
 // Las categorías internas no las devuelve la API — sus emojis viven acá.
 const INTERNAL_EMOJI: Record<string, string> = {
@@ -188,9 +188,8 @@ export function ExpenseRow({
         )}
       >
         <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] bg-surface-sunken">
-          {categoryEmoji
-            ? <span className="text-[19px] leading-none">{categoryEmoji}</span>
-            : <span className="text-[11px] font-bold uppercase text-muted-2">{expense.category.slice(0, 2)}</span>}
+          {/* Ruling 3: sin emoji conocido va 🧾, nunca iniciales. */}
+          <span className="text-[19px] leading-none">{categoryEmoji || FALLBACK_EMOJI}</span>
         </div>
 
         <div className="min-w-0 flex-1">

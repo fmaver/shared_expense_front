@@ -73,7 +73,13 @@ export function SearchResultRow({ result, emoji, query, scope, archived, tabInde
         </span>
         <span className="mt-[5px] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-medium text-muted-2">
           {isRecurringPersonal ? (
-            <span>{t('search.everyMonth')}</span>
+            <>
+              {/* Lo personal también lleva su chip en "Todo" (spec V8). */}
+              {scope === 'all' && (
+                <GroupChip name={result.groupName} groupId={result.groupId} groupType="personal" archived={false} />
+              )}
+              <span>{scope === 'all' ? `· ${t('search.everyMonthInline')}` : t('search.everyMonth')}</span>
+            </>
           ) : (
             <>
               {scope === 'all' && (

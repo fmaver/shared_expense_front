@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { parseQuery, matchesQuery } from '@/utils/search';
-import { formatCurrency } from '@/utils/format';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
 type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'paymentType' | 'splitStrategy';
@@ -32,19 +31,21 @@ interface ExpenseListHeaderProps {
   /** Un mes cerrado se lee, no se edita: la lista lo dice sin que haya que deducirlo. */
   isSettled?: boolean;
   /**
-   * El texto del buscador del mes, hacia arriba — la página lo necesita para resaltar
-   * coincidencias en `ExpenseRow` y para el link "Buscar en todos los meses ›" debajo de la
-   * tarjeta (V8.c). No es un valor controlado: el input sigue viviendo acá adentro.
+   * El texto del buscador del mes, controlado por la página: ella lo usa para resaltar
+   * coincidencias en `ExpenseRow` y para el link "Buscar en todos los meses ›" (V8.c). Vive
+   * arriba porque este header se desmonta mientras carga el mes: con estado propio el input
+   * volvía vacío y la página seguía filtrando por el texto viejo.
    */
-  onQueryChange?: (query: string) => void;
+  query: string;
+  onQueryChange: (query: string) => void;
 }
 
 export function ExpenseListHeader({
   expenses, members, onSorted, monthLabel, isOneTime = false, onExportPdf, isSettled = false,
-  onQueryChange,
+  query: monthQuery, onQueryChange: setMonthQuery,
 }: ExpenseListHeaderProps) {
   const { t } = useTranslation();
-  const { displayMode, setDisplayMode, blueRate } = useCurrency();
+  const { displayMode, setDisplayMode, blueRate, formatAmount } = useCurrency();
   const currentMember = useCurrentMember();
 
   const [filters, setFilters] = useState<Set<Filter>>(new Set());
@@ -53,7 +54,6 @@ export function ExpenseListHeader({
     if (next.has(f)) next.delete(f); else next.add(f);
     return next;
   });
-  const [monthQuery, setMonthQuery] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -76,8 +76,6 @@ export function ExpenseListHeader({
   const searchPlaceholder = isOneTime ? t('search.inEvent') : t('search.inMonth', { month: monthLabel.toLowerCase() });
 
   const parsed = useMemo(() => parseQuery(monthQuery), [monthQuery]);
-
-  useEffect(() => { onQueryChange?.(monthQuery); }, [monthQuery, onQueryChange]);
 
   const sorted = useMemo(() => {
     const filtered = expenses.filter(e => {
@@ -115,17 +113,27 @@ export function ExpenseListHeader({
 
   // El total es del mes entero, no del filtro — por eso suma `expenses` (la prop, sin filtrar)
   // y no `sorted`. Los movimientos de saldo/préstamo no son gasto real del mes (mismo criterio
-  // que el resumen de Números). La cifra no convierte USD a ARS (igual que ese resumen): es una
-  // suma simple, no el balance.
-  const monthTotal = useMemo(
+  // que el resumen de Números). Ruling 8: el total va en ARS pasando los USD al blue, como los
+  // balances; sin cotización no se inventa una — se muestra "ARS + US$X" por separado.
+  const { arsTotal, usdTotal } = useMemo(
     () => expenses
       .filter(e => e.category !== 'balance' && e.category !== 'prestamo')
-      .reduce((sum, e) => sum + e.amount, 0),
+      .reduce(
+        (acc, e) => (e.currency === 'USD'
+          ? { ...acc, usdTotal: acc.usdTotal + e.amount }
+          : { ...acc, arsTotal: acc.arsTotal + e.amount }),
+        { arsTotal: 0, usdTotal: 0 },
+      ),
     [expenses],
   );
+  const monthTotalAmount = blueRate !== null
+    ? formatAmount(arsTotal + usdTotal * blueRate, 'ARS')
+    : usdTotal > 0
+      ? `${formatAmount(arsTotal, 'ARS')} + ${formatAmount(usdTotal, 'USD')}`
+      : formatAmount(arsTotal, 'ARS');
   const monthTotalLabel = isOneTime
-    ? formatCurrency(monthTotal)
-    : t('expenses.totalInMonth', { amount: formatCurrency(monthTotal), month: monthLabel.toLowerCase() });
+    ? monthTotalAmount
+    : t('expenses.totalInMonth', { amount: monthTotalAmount, month: monthLabel.toLowerCase() });
 
   // "Míos" sola también achica la lista: el conteo tiene que decir "N de M" en ese caso, no
   // sólo cuando hay texto. Comparar contra `expenses.length` cubre los dos filtros (y su combo)
@@ -209,7 +217,7 @@ export function ExpenseListHeader({
             <button
               type="button"
               onClick={() => setMonthQuery('')}
-              aria-label={t('search.close')}
+              aria-label={t('search.clear')}
               className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface text-muted-1 hover:bg-line"
             >
               <X className="h-3.5 w-3.5" />
@@ -238,7 +246,7 @@ export function ExpenseListHeader({
           type="button"
           onClick={() => setSortSheetOpen(true)}
           aria-label={t('expenses.sortSheetTitle')}
-          className="flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
+          className="flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-line-strong text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
         </button>

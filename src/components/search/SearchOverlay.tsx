@@ -209,12 +209,12 @@ export function SearchOverlay() {
             aria-label={t('search.filters')}
             className="flex gap-[7px] overflow-x-auto px-4 pt-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            <FilterChip label={t('search.filterAll')} count={filterChips.total} active={filter === 'all'} tabIndex={tab} onClick={() => setFilter('all')} />
+            <FilterChip label={t('search.filterAll')} count={filterChips.total} more={hasMore} active={filter === 'all'} tabIndex={tab} onClick={() => setFilter('all')} />
             {filterChips.personal > 0 && (
-              <FilterChip label={t('search.personal')} count={filterChips.personal} active={filter === 'personal'} tabIndex={tab} onClick={() => setFilter('personal')} />
+              <FilterChip label={t('search.personal')} count={filterChips.personal} more={hasMore} active={filter === 'personal'} tabIndex={tab} onClick={() => setFilter('personal')} />
             )}
             {filterChips.groups.map(g => (
-              <FilterChip key={g.groupId} label={g.name} count={g.count} active={filter === g.groupId} tabIndex={tab} onClick={() => setFilter(g.groupId)} />
+              <FilterChip key={g.groupId} label={g.name} count={g.count} more={hasMore} active={filter === g.groupId} tabIndex={tab} onClick={() => setFilter(g.groupId)} />
             ))}
           </div>
         )}
@@ -230,7 +230,7 @@ export function SearchOverlay() {
             />
             <span className="min-w-0 flex-1 truncate text-[11.5px] font-semibold text-muted-1">
               {(scope.groupType ?? scopeGroup?.groupType) === 'one_time' ? t('search.wholeEvent') : t('search.allMonths')}
-              {showResults && !loading && <> · {t('search.resultCount', { count: purchases.length })}</>}
+              {showResults && !loading && <> · {t(hasMore ? 'search.resultCountMore' : 'search.resultCount', { count: purchases.length })}</>}
             </span>
             <button
               type="button"
@@ -282,7 +282,7 @@ export function SearchOverlay() {
                   {[
                     filteredGroupData?.groupType === 'one_time' ? t('search.kindEvent') : t('search.kindGroup'),
                     filteredGroupData ? t('search.peopleCount', { count: filteredGroupData.members.length }) : null,
-                    t('search.resultCount', { count: filteredGroup.count }),
+                    t(hasMore ? 'search.resultCountMore' : 'search.resultCount', { count: filteredGroup.count }),
                   ].filter(Boolean).join(' · ')}
                 </span>
               </span>
@@ -340,9 +340,11 @@ export function SearchOverlay() {
   );
 }
 
-function FilterChip({ label, count, active, tabIndex, onClick }: {
+function FilterChip({ label, count, more, active, tabIndex, onClick }: {
   label: string;
   count: number;
+  /** El backend cortó en 50 compras: la cifra es un piso, no el total ("50+"). */
+  more: boolean;
   active: boolean;
   tabIndex: number;
   onClick: () => void;
@@ -361,7 +363,7 @@ function FilterChip({ label, count, active, tabIndex, onClick }: {
       )}
     >
       <span className="min-w-0 truncate">{label}</span>
-      <span className={cn('font-semibold tabular-nums', active ? 'text-primary-foreground/90' : 'text-muted-1')}>{count}</span>
+      <span className={cn('font-semibold tabular-nums', active ? 'text-primary-foreground/90' : 'text-muted-1')}>{count}{more && '+'}</span>
     </button>
   );
 }
