@@ -31,12 +31,14 @@ export function Highlighted({ text, query }: { text: string; query: string }) {
  * la derecha el monto con el estado en texto debajo, sin pastilla. Sin chip de mes: el
  * encabezado del día ya lo dice.
  */
-export function SearchResultRow({ result, emoji, query, scope, archived, onSelect }: {
+export function SearchResultRow({ result, emoji, query, scope, archived, tabIndex, onSelect }: {
   result: ExpenseSearchResult;
   emoji?: string;
   query: string;
   scope: 'all' | 'group';
   archived: boolean;
+  /** -1 mientras el overlay está cerrado, para que el tab no entre en filas invisibles. */
+  tabIndex?: number;
   onSelect: () => void;
 }) {
   const { t } = useTranslation();
@@ -58,6 +60,7 @@ export function SearchResultRow({ result, emoji, query, scope, archived, onSelec
   return (
     <button
       type="button"
+      tabIndex={tabIndex}
       onClick={onSelect}
       className="flex w-full cursor-pointer items-start gap-3 border-b border-line-soft px-4 py-3 text-left last:border-b-0 hover:bg-surface-sunken/60"
     >

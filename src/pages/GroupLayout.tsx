@@ -117,7 +117,7 @@ export function GroupLayout() {
         right={
           <GlassCapsule>
             <CapsuleSlot
-              onClick={() => openSearch({ groupId, groupName: group?.name ?? '' })}
+              onClick={() => openSearch({ groupId, groupName: group?.name ?? '', groupType: group?.groupType })}
               aria-label={t('search.open')}
             >
               <Search className="h-[17px] w-[17px]" strokeWidth={2.4} />

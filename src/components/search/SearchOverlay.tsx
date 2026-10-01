@@ -83,7 +83,10 @@ export function SearchOverlay() {
   */
   const purchases = useMemo(() => {
     const out = groupPurchases(results);
-    out.sort((a, b) => purchaseDay(b).localeCompare(purchaseDay(a)) || b.first.id - a.first.id);
+    // En el empate del día 1°, lo fechado antes que los fijos del mes: si no, el día se parte en dos.
+    out.sort((a, b) => purchaseDay(b).localeCompare(purchaseDay(a))
+      || Number(a.first.date === null) - Number(b.first.date === null)
+      || b.first.id - a.first.id);
     return out;
   }, [results]);
 
@@ -127,7 +130,11 @@ export function SearchOverlay() {
 
   const select = (r: ExpenseSearchResult) => {
     closeSearch();
-    if (r.groupType === 'personal') navigate(`/personal?year=${r.periodYear}&month=${r.periodMonth}`);
+    if (r.groupType === 'personal') {
+      // La lista personal vive en /personal/expenses; ahí el link abre el detalle del gasto o del fijo.
+      const param = r.kind === 'recurring_personal' ? 'recurring' : 'expense';
+      navigate(`/personal/expenses?year=${r.periodYear}&month=${r.periodMonth}&${param}=${r.id}`);
+    }
     else navigate(`/groups/${r.groupId}?year=${r.periodYear}&month=${r.periodMonth}&expense=${r.id}`);
   };
 
@@ -218,11 +225,11 @@ export function SearchOverlay() {
             <GroupChip
               name={scope.groupName}
               groupId={scope.groupId}
-              groupType={scopeGroup?.groupType ?? 'regular'}
+              groupType={scope.groupType ?? scopeGroup?.groupType ?? 'regular'}
               archived={archivedIds.has(scope.groupId)}
             />
             <span className="min-w-0 flex-1 truncate text-[11.5px] font-semibold text-muted-1">
-              {scopeGroup?.groupType === 'one_time' ? t('search.wholeEvent') : t('search.allMonths')}
+              {(scope.groupType ?? scopeGroup?.groupType) === 'one_time' ? t('search.wholeEvent') : t('search.allMonths')}
               {showResults && !loading && <> · {t('search.resultCount', { count: purchases.length })}</>}
             </span>
             <button
@@ -305,6 +312,7 @@ export function SearchOverlay() {
                       query={q}
                       scope={rowScope}
                       archived={archived}
+                      tabIndex={tab}
                       onSelect={select}
                     />
                   ) : (
@@ -315,6 +323,7 @@ export function SearchOverlay() {
                       query={q}
                       scope={rowScope}
                       archived={archived}
+                      tabIndex={tab}
                       onSelect={() => select(p.first)}
                     />
                   );

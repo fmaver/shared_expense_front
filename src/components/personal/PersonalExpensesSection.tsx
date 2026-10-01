@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { TrendingDown, Plus, Pencil, Trash2, Repeat } from 'lucide-react';
@@ -55,6 +56,23 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
   const [editRecExpCurrency, setEditRecExpCurrency] = useState<'ARS' | 'USD'>('ARS');
   const [savingEditRecExp, setSavingEditRecExp] = useState(false);
   const [selectedRecurringInstance, setSelectedRecurringInstance] = useState<RecurringPersonalExpenseInstanceResponse | null>(null);
+
+  /*
+    La búsqueda linkea a un gasto (`?expense=:id`) o a un fijo del mes (`?recurring=:instanceId`):
+    se abre su detalle, igual que el deep link del grupo. El fijo se abre una sola vez por id, para
+    que cerrarlo no lo vuelva a abrir con cada refetch del ledger.
+  */
+  const [searchParams] = useSearchParams();
+  const deepLinkedExpenseId = Number(searchParams.get('expense')) || null;
+  const deepLinkedRecurringId = Number(searchParams.get('recurring')) || null;
+  const openedRecurringId = useRef<number | null>(null);
+  useEffect(() => {
+    if (deepLinkedRecurringId === null || openedRecurringId.current === deepLinkedRecurringId) return;
+    const instance = (ledger.recurringPersonalExpenses ?? []).find(i => i.id === deepLinkedRecurringId);
+    if (!instance) return;
+    openedRecurringId.current = deepLinkedRecurringId;
+    setSelectedRecurringInstance(instance);
+  }, [deepLinkedRecurringId, ledger]);
 
   // Confirmation dialog state — replaces window.confirm()
   const [confirm, setConfirm] = useState<{ title: string; description?: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void } | null>(null);
@@ -260,6 +278,7 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
             <ExpenseRow
               key={exp.id}
               expense={exp}
+              autoOpenDetail={exp.id === deepLinkedExpenseId}
               members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
               isSettled={false}
               hideSplitBadge

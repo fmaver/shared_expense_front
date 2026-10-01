@@ -13,12 +13,14 @@ import type { ExpenseSearchResult } from '@/types/expense';
  * compra, con el total, "N cuotas de $Y", una barra de avance y "Ver las N cuotas" que
  * despliega la lista de cuotas ahí mismo. El conteo de resultados cuenta compras, no cuotas.
  */
-export function PurchaseRow({ purchase, emoji, query, scope, archived, onSelect }: {
+export function PurchaseRow({ purchase, emoji, query, scope, archived, tabIndex = 0, onSelect }: {
   purchase: Purchase;
   emoji?: string;
   query: string;
   scope: 'all' | 'group';
   archived: boolean;
+  /** -1 mientras el overlay está cerrado, para que el tab no entre en filas invisibles. */
+  tabIndex?: number;
   onSelect: (item: ExpenseSearchResult) => void;
 }) {
   const { t } = useTranslation();
@@ -43,7 +45,7 @@ export function PurchaseRow({ purchase, emoji, query, scope, archived, onSelect 
           un `<button>` no puede anidar contenido interactivo. */}
       <div
         role="button"
-        tabIndex={0}
+        tabIndex={tabIndex}
         onClick={openFirst}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFirst(); } }}
         className="flex w-full cursor-pointer items-start gap-3 text-left"
@@ -81,6 +83,7 @@ export function PurchaseRow({ purchase, emoji, query, scope, archived, onSelect 
           )}
           <button
             type="button"
+            tabIndex={tabIndex}
             onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
             className="mt-[7px] flex cursor-pointer items-center gap-1 text-[11.5px] font-bold text-brand-ink"
           >
@@ -103,6 +106,7 @@ export function PurchaseRow({ purchase, emoji, query, scope, archived, onSelect 
             <li key={item.id}>
               <button
                 type="button"
+                tabIndex={tabIndex}
                 onClick={() => onSelect(item)}
                 className="flex w-full cursor-pointer items-center justify-between gap-2 py-2 text-left text-[12px] font-medium text-muted-2 hover:text-foreground"
               >

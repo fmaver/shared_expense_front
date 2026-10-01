@@ -5,9 +5,17 @@ import type { ExpenseSearchResult } from '@/types/expense';
 
 const DEBOUNCE_MS = 250;
 
+/** Los resultados, junto al alcance para el que se pidieron. */
+interface Fetched {
+  groupId: number | undefined;
+  results: ExpenseSearchResult[];
+  hasMore: boolean;
+}
+
+const EMPTY: ExpenseSearchResult[] = [];
+
 export function useExpenseSearch(q: string, groupId?: number) {
-  const [results, setResults] = useState<ExpenseSearchResult[]>([]);
-  const [hasMore, setHasMore] = useState(false);
+  const [fetched, setFetched] = useState<Fetched | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
@@ -15,7 +23,7 @@ export function useExpenseSearch(q: string, groupId?: number) {
   const active = parseQuery(q) !== null;
 
   useEffect(() => {
-    if (!active) { setResults([]); setHasMore(false); setError(null); setLoading(false); return; }
+    if (!active) { setFetched(null); setError(null); setLoading(false); return; }
     const id = ++requestId.current;
     const controller = new AbortController();
     setLoading(true);
@@ -23,7 +31,7 @@ export function useExpenseSearch(q: string, groupId?: number) {
       searchExpenses(q, groupId, controller.signal)
         .then(data => {
           if (id !== requestId.current) return; // una respuesta vieja que llegó tarde
-          setResults(data.results); setHasMore(data.hasMore); setError(null);
+          setFetched({ groupId, results: data.results, hasMore: data.hasMore }); setError(null);
         })
         .catch(err => {
           if (id !== requestId.current || controller.signal.aborted) return;
@@ -34,6 +42,19 @@ export function useExpenseSearch(q: string, groupId?: number) {
     return () => { clearTimeout(timer); controller.abort(); };
   }, [q, groupId, active, nonce]);
 
+  /*
+    Los resultados de otro alcance no se muestran: al pasar de un grupo a "Buscar en todo" los
+    del grupo quedarían bajo la búsqueda general (con sus filtros) hasta que llegue la respuesta.
+  */
+  const fresh = fetched && fetched.groupId === groupId ? fetched : null;
   const retry = useCallback(() => setNonce(n => n + 1), []);
-  return { results, hasMore, loading, error, retry, active };
+  return {
+    results: fresh ? fresh.results : EMPTY,
+    hasMore: fresh ? fresh.hasMore : false,
+    // Mientras el alcance no coincide, se está cargando: así no se ve "no encontramos nada".
+    loading: loading || (active && !error && fresh === null),
+    error,
+    retry,
+    active,
+  };
 }

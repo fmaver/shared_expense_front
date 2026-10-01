@@ -1,6 +1,12 @@
+import type { GroupType } from '@/types/expense';
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 
-export interface SearchScope { groupId: number; groupName: string }
+export interface SearchScope {
+  groupId: number;
+  groupName: string;
+  /** Lo sabe quien abre desde el grupo; evita que el chip del alcance muestre otro tipo al abrir. */
+  groupType?: GroupType;
+}
 interface SearchContextValue {
   open: boolean;
   scope: SearchScope | null;

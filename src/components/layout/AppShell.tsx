@@ -46,11 +46,11 @@ export function AppShell({ onLogout }: AppShellProps) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'k') return;
       e.preventDefault();
-      openSearch(inGroup && groupIdParam !== null ? { groupId: groupIdParam, groupName: groupName ?? '' } : undefined);
+      openSearch(inGroup && groupIdParam !== null ? { groupId: groupIdParam, groupName: groupName ?? '', groupType: group?.groupType } : undefined);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [openSearch, inGroup, groupIdParam, groupName]);
+  }, [openSearch, inGroup, groupIdParam, groupName, group?.groupType]);
   /*
     Pantallas que traen su propio encabezado y no quieren el de la app encima: el grupo (nombre,
     gente y pestañas) y todo lo personal (el saludo con el mes y el avatar). Dos barras

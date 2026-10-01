@@ -86,8 +86,9 @@ export function ExpensesDashboard() {
   const isOneTime = group?.groupType === 'one_time';
   // Archivar es por miembro y `getGroup` no lo dice: se mira en tus grupos archivados. Un grupo
   // archivado se lee (se llega desde la búsqueda) pero su detalle no ofrece editar ni borrar.
-  const { data: archivedGroups } = useGroups(true);
-  const isArchived = archivedGroups.some(g => g.id === groupId);
+  const { data: archivedGroups, isLoading: loadingArchived } = useGroups(true);
+  // Mientras no se sabe, sólo lectura: un deep link a un gasto archivado no puede abrirse editable.
+  const detailReadOnly = loadingArchived || archivedGroups.some(g => g.id === groupId);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -300,7 +301,7 @@ export function ExpensesDashboard() {
             </Button>
             <button
               type="button"
-              onClick={() => openSearch({ groupId, groupName: group?.name ?? '' })}
+              onClick={() => openSearch({ groupId, groupName: group?.name ?? '', groupType: group?.groupType })}
               aria-label={t('search.open')}
               className="glass flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-muted-1 transition-opacity hover:opacity-80"
             >
@@ -361,7 +362,7 @@ export function ExpensesDashboard() {
                     {day.expenses.map(e => (
                       <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
                         autoOpenDetail={e.id === deepLinkedExpenseId}
-                        readOnly={isArchived}
+                        readOnly={detailReadOnly}
                         highlight={e.id === highlightId}
                         groupId={groupId}
                         groupName={group?.name}
