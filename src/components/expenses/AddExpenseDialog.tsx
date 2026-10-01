@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ChevronLeft, X } from 'lucide-react';
@@ -18,6 +18,7 @@ import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from './Scan
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from './CategoryChips';
+import { DescriptionInput } from './DescriptionInput';
 import { ContextCard, ContextRow } from './ContextRows';
 import { DatePicker, PaymentPicker } from './ContextPickers';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '@/types/expense';
@@ -134,6 +135,7 @@ export function AddExpenseDialog({
   const [picker, setPicker] = useState<Picker>(null);
   const [isRecurring, setIsRecurring] = useState(false);
   const [error, setError] = useState('');
+  const descriptionRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const scan = useReceiptScan(groupId);
 
@@ -205,7 +207,12 @@ export function AddExpenseDialog({
   const handleSubmit = async () => {
     setError('');
     if (amount <= 0) { setError(t('expenseForm.amountRequired')); return; }
-    if (!form.description.trim()) { setError(t('expenseForm.descriptionRequired')); return; }
+    // El foco va al campo dentro del mismo tap, así en iOS se abre el teclado ahí.
+    if (!form.description.trim()) {
+      setError(t('expenseForm.descriptionRequired'));
+      descriptionRef.current?.focus();
+      return;
+    }
 
     if (mode === 'loan') {
       if (form.loanTargetId == null) { setError(t('expenseForm.chooseLoanTarget')); return; }
@@ -397,19 +404,17 @@ export function AddExpenseDialog({
           </div>
 
           {/* ── Qué fue ────────────────────────────────────────────────────────────── */}
-          <input
-            type="text"
+          <DescriptionInput
+            ref={descriptionRef}
             value={form.description}
-            maxLength={255}
             disabled={disabled}
-            onChange={e => { set({ description: e.target.value }); scan.touch('description'); }}
-            placeholder={t('expenseForm.whatWasIt')}
-            className={cn(
-              'mt-4 w-full bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-3',
-              scan.fromPhoto.has('description')
-                ? 'rounded-[12px] border border-brand-soft px-3 py-2'
-                : 'border-0',
-            )}
+            fromPhoto={scan.fromPhoto.has('description')}
+            invalid={error === t('expenseForm.descriptionRequired')}
+            onChange={value => {
+              set({ description: value });
+              scan.touch('description');
+              if (error === t('expenseForm.descriptionRequired')) setError('');
+            }}
           />
           {scan.fromPhoto.has('description') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
 
@@ -516,7 +521,8 @@ export function AddExpenseDialog({
             </p>
           )}
 
-          {error && (
+          {/* El de la descripción se muestra pegado al campo, no acá abajo. */}
+          {error && error !== t('expenseForm.descriptionRequired') && (
             <p className="mt-3 rounded-[12px] border border-negative-wash-line bg-negative-wash px-3 py-2 text-[12px] font-semibold text-negative-ink">
               {error}
             </p>
