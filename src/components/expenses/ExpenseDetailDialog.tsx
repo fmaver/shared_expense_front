@@ -14,6 +14,7 @@ import { avatarBg, initials } from '@/utils/avatar';
 import { computeSplit, netOf, shareOf } from '@/utils/split';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { ExpenseResponse, Member } from '@/types/expense';
+import { baseDescription } from '@/utils/search';
 
 /** Las categorías internas no las devuelve la API — sus emojis viven acá (como en ExpenseRow). */
 const INTERNAL_EMOJI: Record<string, string> = {
@@ -125,11 +126,9 @@ export function ExpenseDetailDialog({
     t(`categories.${expense.category}`, { defaultValue: expense.category }),
   );
 
-  const subtitle = [
-    categoryLabel,
-    formatWeekdayDayMonth(expense.date, monthsShort, weekdaysShort),
-    groupName,
-  ].filter(Boolean).join(' · ');
+  // La fecha sale del subtítulo y pasa a su propia fila (con el año), donde se lee de una.
+  const subtitle = [categoryLabel, groupName].filter(Boolean).join(' · ');
+  const dateLabel = `${formatWeekdayDayMonth(expense.date, monthsShort, weekdaysShort)} ${new Date(`${expense.date}T00:00:00`).getFullYear()}`;
 
   /* ── Tu posición en este gasto ────────────────────────────────────────────────────── */
   const net = currentMember ? netOf(expense, split, currentMember.id) : 0;
@@ -252,7 +251,7 @@ export function ExpenseDetailDialog({
             </div>
             <div className="min-w-0 flex-1">
               <DialogTitle className="truncate text-[15px] font-bold leading-tight text-paper">
-                {capitalize(expense.description)}
+                {capitalize(baseDescription(expense.description))}
               </DialogTitle>
               <p className="mt-1 truncate text-[11.5px] font-medium text-muted-on-dark">
                 {subtitle}
@@ -296,6 +295,10 @@ export function ExpenseDetailDialog({
         {/* ── Cuerpo claro ───────────────────────────────────────────────────────────── */}
         <div className="space-y-3 bg-background px-5 pb-5 pt-4">
           <div className="rounded-[16px] border border-line bg-surface px-4">
+            <Cell
+              label={hasInstallments ? t('expenseDetail.cellPurchaseDate') : t('expenseDetail.cellDate')}
+              value={dateLabel}
+            />
             <Cell label={t('expenseDetail.cellPayer')} value={memberName(members, expense.payerId)} />
             <Cell
               label={t('expenseDetail.cellMethod')}

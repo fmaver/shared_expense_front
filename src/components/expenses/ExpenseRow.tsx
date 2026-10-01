@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { capitalize, formatDayMonth } from '@/utils/format';
+import { capitalize } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { ExpenseDetailDialog } from './ExpenseDetailDialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { computeSplit, isOutsider, netOf } from '@/utils/split';
 import { FALLBACK_EMOJI, Highlighted } from '@/components/search/SearchResultRow';
+import { baseDescription } from '@/utils/search';
 
 // Las categorías internas no las devuelve la API — sus emojis viven acá.
 const INTERNAL_EMOJI: Record<string, string> = {
@@ -91,7 +92,6 @@ export function ExpenseRow({
   const { data: categories = [] } = useCategories();
   const { formatAmount, blueRate, displayMode } = useCurrency();
   const currentMember = useCurrentMember();
-  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
 
   const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
     ?? INTERNAL_EMOJI[expense.category];
@@ -112,7 +112,8 @@ export function ExpenseRow({
     return () => clearTimeout(timer);
   }, [highlight]);
 
-  const displayTitle = expense.category in INTERNAL_EMOJI ? expense.description : capitalize(expense.description);
+  // La cuota ya la dice su badge ("4/9"): el " (4/9)" que trae la descripción la repetía.
+  const displayTitle = expense.category in INTERNAL_EMOJI ? expense.description : capitalize(baseDescription(expense.description));
   const split = computeSplit(expense, members);
   const isRecurring = expense.recurringTemplateId != null;
   const hasInstallments = expense.paymentType === 'credit' && expense.installments > 1;
@@ -142,6 +143,8 @@ export function ExpenseRow({
       return t('expenses.metaAtBlue', { rate: blueRate.toLocaleString('es-AR') });
     }
     if (hasInstallments) return t('expenses.metaCredit');
+    // La lista personal es de una sola persona: "iguales entre 1" no dice nada.
+    if (variant === 'category') return '';
     if (expense.splitStrategy.type === 'exact') return t('expenses.metaExactSplit');
     if (expense.splitStrategy.type === 'percentage') return '';
     return split.isEven
@@ -149,8 +152,6 @@ export function ExpenseRow({
       : t('expenses.metaEqualSome', { count: split.participantIds.length });
   })();
   if (qualifier) meta.push(qualifier);
-  // En la lista personal no hay pagador ni división: ahí la fecha sigue siendo el dato.
-  if (variant === 'category') meta.push(formatDayMonth(expense.date, monthsShort));
 
   /* ── Tu parte: la única cifra de la fila que habla de vos ─────────────────────────── */
   const net = currentMember ? netOf(expense, split, currentMember.id) : 0;

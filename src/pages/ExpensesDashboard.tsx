@@ -377,7 +377,7 @@ export function ExpensesDashboard() {
                   <div key={day.key}>
                     {/* El encabezado del día le da ritmo a la lista y saca la fecha de cada fila. */}
                     {day.heading && (
-                      <p className="border-b border-line bg-surface-sunken/40 px-5 py-2 text-[10.5px] font-bold uppercase tracking-[0.13em] text-muted-2">
+                      <p className="border-b border-line bg-surface-sunken/40 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.13em] text-muted-1">
                         {day.heading}
                       </p>
                     )}
