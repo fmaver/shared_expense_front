@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMonthlyBalance } from '@/hooks/useMonthlyBalance';
 import { useGroupMembers } from '@/hooks/useMembers';
-import { useGroup } from '@/hooks/useGroups';
+import { useGroup, useGroups } from '@/hooks/useGroups';
 import {
   checkSimilarExpenses, createExpense, updateExpense, deleteExpense,
 } from '@/api/expenses';
@@ -18,7 +18,6 @@ import { SettledMonthCard } from '@/components/expenses/SettledMonthCard';
 import { ExpenseListHeader } from '@/components/expenses/ExpenseListHeader';
 import { ExpenseRow } from '@/components/expenses/ExpenseRow';
 import { useScanPicker } from '@/components/expenses/ScanPicker';
-import { FEATURE_SEARCH } from '@/config/features';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,7 +26,9 @@ import { toast } from 'sonner';
 import { Plus, ArrowLeftRight, Camera, Search } from 'lucide-react';
 import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 import { useIsland } from '@/contexts/IslandContext';
+import { useSearch } from '@/contexts/SearchContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
+import { parseQuery } from '@/utils/search';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { useSettlementActions } from '@/hooks/useSettlementActions';
 import { formatDayHeading } from '@/utils/format';
@@ -37,6 +38,7 @@ import { cn } from '@/lib/utils';
 export function ExpensesDashboard() {
   const { t } = useTranslation();
   const island = useIsland();
+  const { openSearch } = useSearch();
   const navigate = useNavigate();
   const { groupId: gp } = useParams<{ groupId: string }>();
   const groupId = parseInt(gp!, 10);
@@ -67,6 +69,16 @@ export function ExpensesDashboard() {
   const [duplicates, setDuplicates] = useState<ExpenseResponse[]>([]);
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
   const [groupByDate, setGroupByDate] = useState(true);
+  // El texto de la lupa del mes vive acá y ExpenseListHeader lo recibe controlado: el header
+  // se desmonta mientras carga cada mes, y con estado propio volvía vacío mientras la página
+  // seguía resaltando el texto viejo. Así el texto sigue al paginar meses — en el input, el
+  // filtro, el resaltado y el link de abajo a la vez. Cambiar de grupo sí lo borra.
+  const [monthQuery, setMonthQuery] = useState('');
+  const [queryGroupId, setQueryGroupId] = useState(groupId);
+  if (queryGroupId !== groupId) {
+    setQueryGroupId(groupId);
+    setMonthQuery('');
+  }
   const [showSettle, setShowSettle] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
@@ -83,6 +95,11 @@ export function ExpensesDashboard() {
   // month. Nothing month-shaped may run before this is known.
   const groupTypeKnown = !loadingGroup && group !== undefined;
   const isOneTime = group?.groupType === 'one_time';
+  // Archivar es por miembro y `getGroup` no lo dice: se mira en tus grupos archivados. Un grupo
+  // archivado se lee (se llega desde la búsqueda) pero su detalle no ofrece editar ni borrar.
+  const { data: archivedGroups, isLoading: loadingArchived } = useGroups(true);
+  // Mientras no se sabe, sólo lectura: un deep link a un gasto archivado no puede abrirse editable.
+  const detailReadOnly = loadingArchived || archivedGroups.some(g => g.id === groupId);
 
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupId);
   const {
@@ -198,6 +215,12 @@ export function ExpensesDashboard() {
     });
 
   const monthName = (t('months', { returnObjects: true }) as string[])[month - 1];
+  // Mismo umbral que adentro de `ExpenseListHeader` (parseQuery): un texto de un solo carácter
+  // no filtra nada allá, así que tampoco debería abrir el link "Buscar en todos los meses" acá.
+  const monthSearchParsed = parseQuery(monthQuery) !== null;
+  // Sólo con el header (y su input) a la vista: mientras carga o en un mes vacío no hay
+  // input que muestre el texto, y `sortedExpenses` todavía es el del mes anterior.
+  const showMonthSearchFooter = !isOneTime && monthSearchParsed && !loadingExpenses && expenses.length > 0;
   const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
   const weekdaysLong = t('weekdaysLong', { returnObjects: true }) as string[];
   /* Los pagos ya marcados son los movimientos `prestamo`: no hay flag y no hace falta. */
@@ -283,6 +306,7 @@ export function ExpensesDashboard() {
             month={month}
             onNavigate={setYearMonth}
             isSettled={isSettled}
+            groupId={isOneTime ? undefined : groupId}
           />
           {/* Alta y transferencia en desktop; en mobile viven en el FAB. */}
           <div className="hidden shrink-0 items-center justify-end gap-2 lg:flex">
@@ -292,16 +316,15 @@ export function ExpensesDashboard() {
               <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
               <span>{t('expenses.transfer')}</span>
             </Button>
-            {FEATURE_SEARCH && (
-              <Link
-                to={`/search?scope=group&groupId=${groupId}`}
-                aria-label={t('search.open')}
-                className="glass flex h-8 items-center gap-1.5 rounded-full px-2.5 text-muted-1 transition-opacity hover:opacity-80"
-              >
-                <Search className="h-3.5 w-3.5" aria-hidden="true" />
-                <kbd className="font-sans text-[10.5px] font-bold">⌘K</kbd>
-              </Link>
-            )}
+            <button
+              type="button"
+              onClick={() => openSearch({ groupId, groupName: group?.name ?? '', groupType: group?.groupType })}
+              aria-label={t('search.open')}
+              className="glass flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-muted-1 transition-opacity hover:opacity-80"
+            >
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              <kbd className="font-sans text-[10.5px] font-bold">⌘K</kbd>
+            </button>
             <Button size="sm" variant="outline" className="h-8 rounded-pill px-3 text-xs"
               title={t('scan.menuTitle')}
               onClick={scanPicker.pickAny}>
@@ -340,9 +363,14 @@ export function ExpensesDashboard() {
               isOneTime={isOneTime}
               onExportPdf={handleExportPDF}
               isSettled={isSettled}
+              query={monthQuery}
+              onQueryChange={setMonthQuery}
             />
             {sortedExpenses.length === 0 ? (
-              <div className="py-10 text-center text-[12.5px] text-muted-2">{t('expenses.noMatches')}</div>
+              // Con la búsqueda del mes, el "Nada con …" de abajo ya lo dice: no dos vacíos.
+              showMonthSearchFooter ? null : (
+                <div className="py-10 text-center text-[12.5px] text-muted-2">{t('expenses.noMatches')}</div>
+              )
             ) : (
               <div>
                 {days.map(day => (
@@ -356,7 +384,9 @@ export function ExpensesDashboard() {
                     {day.expenses.map(e => (
                       <ExpenseRow key={e.id} expense={e} members={members} isSettled={isSettled}
                         autoOpenDetail={e.id === deepLinkedExpenseId}
+                        readOnly={detailReadOnly}
                         highlight={e.id === highlightId}
+                        query={monthQuery}
                         groupId={groupId}
                         groupName={group?.name}
                         isOneTimeGroup={isOneTime}
@@ -375,6 +405,25 @@ export function ExpensesDashboard() {
           </>
         )}
       </div>
+
+      {/* Debajo de la tarjeta, no adentro: "Buscar en todos los meses ›" abre la búsqueda de
+          grupo (V8.b) con el mismo texto, para no perder lo que ya se había escrito. Un evento
+          no tiene "otros meses" — su listado ya es todo el evento (V8.c). */}
+      {showMonthSearchFooter && (
+        <p className="px-1 text-[11.5px] font-semibold leading-[1.45] text-muted-1">
+          {sortedExpenses.length === 0
+            ? t('expenses.searchMonthFooterEmpty', { query: monthQuery.trim(), month: monthName.toLowerCase() })
+            : t('expenses.searchMonthFooterPrompt')}
+          {' '}
+          <button
+            type="button"
+            onClick={() => openSearch({ groupId, groupName: group?.name ?? '', groupType: group?.groupType }, monthQuery)}
+            className="cursor-pointer font-bold text-brand-ink hover:opacity-70"
+          >
+            {t('expenses.searchMonthFooterLink')}
+          </button>
+        </p>
+      )}
 
       {scanPicker.inputs}
       <AddExpenseDialog

@@ -1,5 +1,5 @@
 import { config } from '../config/env';
-import type { AggregateBalanceResponse, MonthlyBalanceResponse } from '../types/expense';
+import type { AggregateBalanceResponse, MonthlyBalanceResponse, UnsettledMonth } from '../types/expense';
 
 function authHeaders(): HeadersInit {
   const token = localStorage.getItem('token');
@@ -191,4 +191,11 @@ export async function recalculateMonthlyShare(groupId: number, year: number, mon
       error: error instanceof Error ? error.message : 'Failed to recalculate monthly share',
     };
   }
+}
+
+export async function getUnsettledMonths(groupId: number): Promise<UnsettledMonth[]> {
+  const response = await fetch(`${config.apiBaseUrl}/api/v1/groups/${groupId}/shares/unsettled`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<UnsettledMonth[]>(response);
 }

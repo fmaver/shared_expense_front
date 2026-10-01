@@ -163,6 +163,7 @@ export function GroupChartsPage() {
           month={month}
           onNavigate={setYearMonth}
           isSettled={balance?.isSettled}
+          groupId={isOneTime ? undefined : groupId}
         />
       )}
 
