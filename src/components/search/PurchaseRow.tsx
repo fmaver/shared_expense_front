@@ -59,7 +59,7 @@ export function PurchaseRow({ purchase, emoji, query, scope, archived, onSelect 
             {scope === 'all' && (
               <GroupChip name={first.groupName} groupId={first.groupId} groupType={first.groupType} archived={archived} />
             )}
-            <span className="truncate">
+            <span className="min-w-0 truncate">
               {scope === 'all' && '· '}
               {t('search.paidBy')} <Highlighted text={first.payerName} query={query} />
               {' · '}

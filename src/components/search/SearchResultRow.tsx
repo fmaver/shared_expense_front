@@ -76,7 +76,7 @@ export function SearchResultRow({ result, emoji, query, scope, archived, onSelec
               {scope === 'all' && (
                 <GroupChip name={result.groupName} groupId={result.groupId} groupType={result.groupType} archived={archived} />
               )}
-              <span className="truncate">
+              <span className="min-w-0 truncate">
                 {scope === 'all' && '· '}
                 {isPersonal ? t('search.yours') : <>{t('search.paidBy')} <Highlighted text={result.payerName} query={query} /></>}
               </span>

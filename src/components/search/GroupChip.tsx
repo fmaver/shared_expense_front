@@ -27,7 +27,7 @@ export function GroupChip({ name, groupId, groupType, archived }: {
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-[5px] whitespace-nowrap rounded-full px-2 py-0.5',
+        'inline-flex min-w-0 max-w-[160px] items-center gap-[5px] whitespace-nowrap rounded-full px-2 py-0.5',
         'text-[11px] font-bold leading-none',
         archived
           ? 'border border-dashed border-muted-3 bg-transparent text-[#57526E] dark:text-muted-1'
@@ -35,13 +35,15 @@ export function GroupChip({ name, groupId, groupType, archived }: {
       )}
     >
       {groupType === 'regular' ? (
-        <span className={cn('h-[9px] w-[9px] shrink-0 rounded-full', avatarBg(groupId))} aria-hidden="true" />
+        // Archivado: el punto también se apaga a muted — "ícono en muted" se combina con
+        // cualquier tipo, el punto de color no es una excepción.
+        <span className={cn('h-[9px] w-[9px] shrink-0 rounded-full', archived ? 'bg-muted-3' : avatarBg(groupId))} aria-hidden="true" />
       ) : groupType === 'one_time' ? (
         <Calendar className={cn('h-[11px] w-[11px] shrink-0', typeIconClass)} strokeWidth={2.6} aria-hidden="true" />
       ) : (
         <User className={cn('h-[11px] w-[11px] shrink-0', typeIconClass)} strokeWidth={2.6} aria-hidden="true" />
       )}
-      <span className="truncate">{label}</span>
+      <span className="min-w-0 truncate">{label}</span>
       {archived && (
         <span className="flex shrink-0 items-center gap-[3px] border-l border-line-strong pl-1 font-semibold text-muted-1">
           <Archive className="h-[11px] w-[11px]" strokeWidth={2.6} aria-hidden="true" />
