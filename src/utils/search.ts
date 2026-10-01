@@ -95,28 +95,54 @@ export function baseDescription(desc: string): string {
   return desc.replace(/\s\(\d+\/\d+\)$/, '');
 }
 
+export type PurchaseKind = 'installments' | 'recurring' | 'single';
+
 export interface Purchase {
   key: string;
-  /** La cuota de menor `installmentNo` — su `date` es la fecha de compra. */
+  kind: PurchaseKind;
+  /**
+   * La fila que representa a la compra (y le da el día y el orden):
+   * - cuotas: la de menor `installmentNo` — su `date` es la fecha de compra;
+   * - recurrente: la ocurrencia más reciente cuyo período ya llegó (≤ mes actual), o la más
+   *   vieja si todas son futuras.
+   */
   first: ExpenseSearchResult;
-  /** Todas las cuotas encontradas de esta compra, ordenadas por `installmentNo`. */
+  /** Cuotas por `installmentNo`; ocurrencias de un recurrente, del período más nuevo al más viejo. */
   items: ExpenseSearchResult[];
+}
+
+const periodIndex = (r: ExpenseSearchResult) => r.periodYear * 12 + (r.periodMonth - 1);
+
+/** ¿El período de `r` todavía no llegó? (un mes futuro que existe porque alguien miró adelante) */
+export function isFuturePeriod(r: ExpenseSearchResult, now: Date = new Date()): boolean {
+  return periodIndex(r) > now.getFullYear() * 12 + now.getMonth();
+}
+
+function purchaseKey(r: ExpenseSearchResult): string {
+  if (r.recurringTemplateId != null) {
+    return `${r.groupId}:${r.kind === 'recurring_personal' ? 'rp' : 'r'}:${r.recurringTemplateId}`;
+  }
+  return `${r.groupId}:${r.parentExpenseId ?? `${r.kind}:${r.id}`}`;
 }
 
 /**
  * Agrupa resultados de búsqueda por compra original: todas las cuotas de un mismo
- * `parentExpenseId` (dentro del mismo grupo) van juntas. Sin `parentExpenseId` (gastos
- * recurrentes personales), cada resultado es su propia "compra" de un solo ítem.
- * Conserva el orden de llegada de la primera aparición de cada compra.
+ * `parentExpenseId` (dentro del mismo grupo) van juntas, y todos los meses de un mismo
+ * recurrente (`recurringTemplateId`, del grupo o fijo personal) también. Lo demás es su propia
+ * "compra" de un solo ítem. Conserva el orden de llegada de la primera aparición de cada compra.
+ * `now` es para elegir el `first` de un recurrente; por defecto, hoy.
  */
-export function groupPurchases(results: ExpenseSearchResult[]): Purchase[] {
+export function groupPurchases(results: ExpenseSearchResult[], now: Date = new Date()): Purchase[] {
   const byKey = new Map<string, Purchase>();
   const order: string[] = [];
   for (const r of results) {
-    const key = `${r.groupId}:${r.parentExpenseId ?? `${r.kind}:${r.id}`}`;
+    const key = purchaseKey(r);
     let purchase = byKey.get(key);
     if (!purchase) {
-      purchase = { key, first: r, items: [] };
+      const kind: PurchaseKind = r.recurringTemplateId != null
+        ? 'recurring'
+        : r.installments > 1 ? 'installments' : 'single';
+      purchase = { key, kind, first: r, items: [] };
       byKey.set(key, purchase);
       order.push(key);
     }
@@ -124,8 +150,14 @@ export function groupPurchases(results: ExpenseSearchResult[]): Purchase[] {
   }
   return order.map(key => {
     const purchase = byKey.get(key)!;
-    purchase.items.sort((a, b) => a.installmentNo - b.installmentNo);
-    purchase.first = purchase.items[0];
+    if (purchase.kind === 'recurring') {
+      purchase.items.sort((a, b) => periodIndex(b) - periodIndex(a) || b.id - a.id);
+      purchase.first = purchase.items.find(item => !isFuturePeriod(item, now))
+        ?? purchase.items[purchase.items.length - 1];
+    } else {
+      purchase.items.sort((a, b) => a.installmentNo - b.installmentNo);
+      purchase.first = purchase.items[0];
+    }
     return purchase;
   });
 }

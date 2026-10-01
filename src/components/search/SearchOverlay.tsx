@@ -9,6 +9,7 @@ import { useExpenseSearch } from '@/hooks/useExpenseSearch';
 import { getMyGroups } from '@/api/groups';
 import { SearchResultRow } from '@/components/search/SearchResultRow';
 import { PurchaseRow } from '@/components/search/PurchaseRow';
+import { RecurringRow } from '@/components/search/RecurringRow';
 import { GroupChip } from '@/components/search/GroupChip';
 import { avatarBg, initials } from '@/utils/avatar';
 import { formatDayMonthYear } from '@/utils/format';
@@ -77,9 +78,9 @@ export function SearchOverlay() {
   }, [open]);
 
   /*
-    Una compra en cuotas es una sola fila y se ubica en el día de la compra. El backend ordena
-    por cuota, así que la compra se reordena acá por su propio día (el mismo criterio que usa el
-    backend para elegir las 50 compras).
+    Una compra en cuotas es una sola fila y se ubica en el día de la compra; un recurrente, en el
+    día de su ocurrencia más reciente que ya llegó (ver `groupPurchases`). El backend ordena por
+    fila, así que la compra se reordena acá por su propio día.
   */
   const purchases = useMemo(() => {
     const out = groupPurchases(results);
@@ -304,7 +305,22 @@ export function SearchOverlay() {
                 {day.items.map(p => {
                   const archived = archivedIds.has(p.first.groupId);
                   const emoji = categories.find(c => c.name === p.first.category)?.emoji;
-                  return p.first.installments > 1 ? (
+                  // Un recurrente con un solo mes encontrado se ve como un gasto común.
+                  if (p.kind === 'recurring' && p.items.length > 1) {
+                    return (
+                      <RecurringRow
+                        key={p.key}
+                        purchase={p}
+                        emoji={emoji}
+                        query={q}
+                        scope={rowScope}
+                        archived={archived}
+                        tabIndex={tab}
+                        onSelect={select}
+                      />
+                    );
+                  }
+                  return p.kind === 'installments' ? (
                     <PurchaseRow
                       key={p.key}
                       purchase={p}
