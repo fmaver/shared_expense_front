@@ -193,14 +193,17 @@ export function ExpenseRow({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-1.5">
-            {/* Las categorías internas traen su descripción ya armada ("Guada → Fran"), y
-                `capitalize` le bajaría la mayúscula al segundo nombre. */}
-            <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
-              {query
-                ? <Highlighted text={displayTitle} query={query} />
-                : displayTitle}
-            </p>
+          {/* Las categorías internas traen su descripción ya armada ("Guada → Fran"), y
+              `capitalize` le bajaría la mayúscula al segundo nombre. */}
+          <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
+            {query
+              ? <Highlighted text={displayTitle} query={query} />
+              : displayTitle}
+          </p>
+          {/* Los badges van en la segunda línea, delante del metadato: al lado del título, dos
+              badges (cada mes + 50/30/20) se comían la descripción entera en mobile. La
+              descripción es lo que se busca con el ojo; el metadato es lo que puede cortarse. */}
+          <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
             {/* El ícono de repetición se conserva (checklist §7), adentro del badge, porque
                 la palabra "recurrente" sale del copy de cara al usuario (§6.2). */}
             {isRecurring && (
@@ -227,10 +230,10 @@ export function ExpenseRow({
             {unevenSplit && expense.splitStrategy.type === 'exact' && (
               <ExceptionBadge tone="split">{t('expenses.badgeExact')}</ExceptionBadge>
             )}
+            <p className="min-w-0 truncate text-[11.5px] font-medium leading-tight text-muted-2">
+              {meta.join(' · ')}
+            </p>
           </div>
-          <p className="mt-0.5 truncate text-[11.5px] font-medium leading-tight text-muted-2">
-            {meta.join(' · ')}
-          </p>
         </div>
 
         <div className="shrink-0 text-right">
