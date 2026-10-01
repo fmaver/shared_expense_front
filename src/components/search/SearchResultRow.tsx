@@ -1,43 +1,96 @@
+import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { highlightParts } from '@/utils/search';
+import { GroupChip } from '@/components/search/GroupChip';
 import type { ExpenseSearchResult } from '@/types/expense';
 
-export function SearchResultRow({ result, emoji, showGroup, onSelect }: {
-  result: ExpenseSearchResult; emoji?: string; showGroup: boolean; onSelect: () => void;
+/** Emoji de categoría cuando no hay uno conocido — nunca "·" ni iniciales. */
+export const FALLBACK_EMOJI = '🧾';
+
+/** Resalta las coincidencias de `query` dentro de `text` (ver `highlightParts`). */
+export function Highlighted({ text, query }: { text: string; query: string }) {
+  return (
+    <>
+      {highlightParts(text, query).map((part, i) => (
+        <Fragment key={i}>
+          {part.match ? (
+            <mark className="rounded-[3px] bg-brand-wash-line text-inherit">{part.text}</mark>
+          ) : (
+            part.text
+          )}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Fila de resultado V8 (ADDENDUM-violeta.md, "Ajuste V8"): emoji de categoría, título
+ * resaltado, chip de grupo (sólo en `scope: 'all'`) + "pagó X" (o "tuyo" en personal), y a
+ * la derecha el monto con el estado en texto debajo, sin pastilla. Sin chip de mes: el
+ * encabezado del día ya lo dice.
+ */
+export function SearchResultRow({ result, emoji, query, scope, archived, onSelect }: {
+  result: ExpenseSearchResult;
+  emoji?: string;
+  query: string;
+  scope: 'all' | 'group';
+  archived: boolean;
+  onSelect: () => void;
 }) {
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
-  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
-  const period = `${monthsShort[result.periodMonth - 1] ?? ''} ${result.periodYear}`;
-  const now = new Date();
-  const isPast = result.periodYear * 12 + result.periodMonth < now.getFullYear() * 12 + now.getMonth() + 1;
-  const meta = [showGroup ? result.groupName : null, t('search.paidBy', { name: result.payerName })]
-    .filter(Boolean).join(' · ');
+  const isRecurringPersonal = result.kind === 'recurring_personal';
+  const isPersonal = result.groupType === 'personal';
+
+  let status: { text: string; className: string } | null = null;
+  if (!isRecurringPersonal && result.periodSettled !== null) {
+    if (result.periodSettled) {
+      status = result.yourShare !== null && result.yourShare > 0
+        ? { text: t('search.yourShare', { amount: formatAmount(result.yourShare, result.currency) }), className: 'text-muted-1' }
+        : { text: t('search.settled'), className: 'text-positive' };
+    } else {
+      status = { text: t('search.unsettled'), className: 'text-negative' };
+    }
+  }
+
   return (
-    <button type="button" onClick={onSelect}
-      className="flex w-full cursor-pointer items-start gap-3 border-b border-line px-4 py-3 text-left last:border-b-0 hover:bg-surface-sunken/60">
-      <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] bg-surface-sunken text-lg leading-none">
-        {emoji ?? '·'}
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex w-full cursor-pointer items-start gap-3 border-b border-line-soft px-4 py-3 text-left last:border-b-0 hover:bg-surface-sunken/60"
+    >
+      <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-surface-sunken text-lg leading-none">
+        {emoji ?? FALLBACK_EMOJI}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13.5px] font-semibold text-foreground">{result.description}</span>
-        <span className="mt-0.5 block truncate text-[11.5px] font-medium text-muted-1">
-          {result.kind === 'recurring_personal' ? t('search.everyMonth', { period }) : meta}
+        <span className="block truncate text-[13.5px] font-semibold text-foreground">
+          <Highlighted text={result.description} query={query} />
         </span>
-        <span className="mt-1.5 flex flex-wrap gap-1">
-          <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-[10.5px] font-bold capitalize text-muted-1">{period}</span>
-          {result.periodSettled !== null && (
-            <span className={cn('rounded-full px-2 py-0.5 text-[10.5px] font-bold',
-              result.periodSettled ? 'bg-positive-wash text-positive'
-                : isPast ? 'bg-negative-wash text-negative' : 'bg-surface-sunken text-muted-1')}>
-              {result.periodSettled ? t('search.settled') : t('search.unsettled')}
-            </span>
+        <span className="mt-[5px] flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-medium text-muted-2">
+          {isRecurringPersonal ? (
+            <span>{t('search.everyMonth')}</span>
+          ) : (
+            <>
+              {scope === 'all' && (
+                <GroupChip name={result.groupName} groupId={result.groupId} groupType={result.groupType} archived={archived} />
+              )}
+              <span className="truncate">
+                {scope === 'all' && '· '}
+                {isPersonal ? t('search.yours') : <>{t('search.paidBy')} <Highlighted text={result.payerName} query={query} /></>}
+              </span>
+            </>
           )}
         </span>
       </span>
-      <span className="shrink-0 text-[13.5px] font-bold tabular-nums text-foreground">
-        {formatAmount(result.amount, result.currency)}
+      <span className="shrink-0 text-right">
+        <span className="block text-[13.5px] font-bold tabular-nums text-foreground">
+          {formatAmount(result.amount, result.currency)}
+        </span>
+        {status && (
+          <span className={`mt-1 block text-[10.5px] font-semibold ${status.className}`}>{status.text}</span>
+        )}
       </span>
     </button>
   );

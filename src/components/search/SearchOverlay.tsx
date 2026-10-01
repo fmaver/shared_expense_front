@@ -112,7 +112,9 @@ export function SearchOverlay() {
                     key={`${r.kind}-${r.id}`}
                     result={r}
                     emoji={categories.find(c => c.name === r.category)?.emoji}
-                    showGroup={scope === null}
+                    query={q}
+                    scope={scope === null ? 'all' : 'group'}
+                    archived={false}
                     onSelect={() => select(r)}
                   />
                 ))}
