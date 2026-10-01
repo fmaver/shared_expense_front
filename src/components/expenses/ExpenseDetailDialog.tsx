@@ -32,6 +32,8 @@ interface ExpenseDetailDialogProps {
   onDelete: (expense: ExpenseResponse) => void;
   hideSplitBadge?: boolean;
   hideActions?: boolean;
+  /** Sólo lectura: un grupo que archivaste se mira, no se edita — sin editar ni borrar. */
+  readOnly?: boolean;
   groupId?: number;
   groupName?: string;
   isOneTimeGroup?: boolean;
@@ -88,7 +90,7 @@ function DarkBox({
 
 export function ExpenseDetailDialog({
   expense, members, isSettled, open, onOpenChange, onEdit, onDelete,
-  hideSplitBadge = false, hideActions = false,
+  hideSplitBadge = false, hideActions = false, readOnly = false,
   groupId, groupName, isOneTimeGroup = false,
   onRecurringDelete, onRecurringEdit,
 }: ExpenseDetailDialogProps) {
@@ -203,7 +205,7 @@ export function ExpenseDetailDialog({
     return `/groups/${groupId}?${params}`;
   })();
 
-  const showActions = !isSettled && !hideActions;
+  const showActions = !isSettled && !hideActions && !readOnly;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

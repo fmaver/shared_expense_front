@@ -1000,7 +1000,20 @@
     "viewInstallments_other": "Ver las {{count}} cuotas",
     "installmentsUnsettled_one": "{{count}} sin saldar",
     "installmentsUnsettled_other": "{{count}} sin saldar",
-    "error": "No pudimos buscar. Probá de nuevo."
+    "error": "No pudimos buscar. Probá de nuevo.",
+    "cancel": "Cancelar",
+    "filters": "Filtrar por grupo",
+    "filterAll": "Todo",
+    "allMonths": "todos los meses",
+    "wholeEvent": "todo el evento",
+    "resultCount_one": "{{count}} resultado",
+    "resultCount_other": "{{count}} resultados",
+    "peopleCount_one": "{{count}} persona",
+    "peopleCount_other": "{{count}} personas",
+    "kindGroup": "Grupo",
+    "kindEvent": "Evento",
+    "openGroup": "Abrir",
+    "searchEverywhere": "Buscar en todo"
   },
   "scan": {
     "menuTitle": "Escanear ticket",

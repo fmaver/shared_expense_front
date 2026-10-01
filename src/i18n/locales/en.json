@@ -1000,7 +1000,20 @@
     "viewInstallments_other": "View the {{count}} installments",
     "installmentsUnsettled_one": "{{count}} unsettled",
     "installmentsUnsettled_other": "{{count}} unsettled",
-    "error": "We couldn't search. Try again."
+    "error": "We couldn't search. Try again.",
+    "cancel": "Cancel",
+    "filters": "Filter by group",
+    "filterAll": "All",
+    "allMonths": "all months",
+    "wholeEvent": "whole event",
+    "resultCount_one": "{{count}} result",
+    "resultCount_other": "{{count}} results",
+    "peopleCount_one": "{{count}} person",
+    "peopleCount_other": "{{count}} people",
+    "kindGroup": "Group",
+    "kindEvent": "Event",
+    "openGroup": "Open",
+    "searchEverywhere": "Search everywhere"
   },
   "scan": {
     "menuTitle": "Scan a receipt",

@@ -54,6 +54,8 @@ interface ExpenseRowProps {
   highlight?: boolean;
   hideSplitBadge?: boolean;
   hideActions?: boolean;
+  /** El detalle se abre en sólo lectura (grupo archivado). */
+  readOnly?: boolean;
   groupId?: number;
   groupName?: string;
   /** Un grupo de evento no tiene meses ni cuotas; el detalle lo aclara al pie. */
@@ -77,7 +79,7 @@ function memberName(members: Member[], id: number) {
 
 export function ExpenseRow({
   expense, members, isSettled, onEdit, onDelete,
-  highlight = false, hideSplitBadge = false, hideActions = false,
+  highlight = false, hideSplitBadge = false, hideActions = false, readOnly = false,
   groupId, groupName, isOneTimeGroup = false, viewedYear, viewedMonth,
   variant = 'payer', autoOpenDetail = false,
   onRecurringDelete, onRecurringEdit,
@@ -248,6 +250,7 @@ export function ExpenseRow({
         onDelete={onDelete}
         hideSplitBadge={hideSplitBadge}
         hideActions={hideActions}
+        readOnly={readOnly}
         groupId={groupId}
         groupName={groupName}
         isOneTimeGroup={isOneTimeGroup}
