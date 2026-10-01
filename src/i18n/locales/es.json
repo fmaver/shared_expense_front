@@ -977,6 +977,7 @@
   "search": {
     "open": "Buscar",
     "inMonth": "Buscar en {{month}}",
+    "inEvent": "Buscar en el evento",
     "close": "Cerrar búsqueda",
     "placeholderGroup": "Buscar en {{group}}",
     "placeholderAll": "Buscar en todo",

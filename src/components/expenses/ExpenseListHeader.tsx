@@ -13,7 +13,8 @@ type SortOrder = 'asc' | 'desc';
 
 /**
  * El único toggle que queda es "Míos". La lupa del mes reemplaza al chip "Sin saldar": buscar
- * texto o monto dentro del mes ya excluye `balance`/`prestamo` porque nadie busca esas filas.
+ * texto o monto dentro del mes excluye `balance`/`prestamo` porque nadie busca esas filas —
+ * pero sólo mientras hay una búsqueda activa; sin query la lista se ve igual que siempre.
  */
 type Filter = 'mine';
 
@@ -63,13 +64,19 @@ export function ExpenseListHeader({
 
   const memberName = (id: number) => members.find(m => m.id === id)?.name ?? 'Unknown';
   const hasUsdExpenses = useMemo(() => expenses.some(e => e.currency === 'USD'), [expenses]);
+  // Un grupo de evento no tiene "este mes": el placeholder lo dice en vez de nombrar un mes
+  // que no corresponde al alcance real de la búsqueda (toda la vida del evento).
+  const searchPlaceholder = isOneTime ? t('search.inEvent') : t('search.inMonth', { month: monthLabel.toLowerCase() });
 
   const parsed = useMemo(() => parseQuery(monthQuery), [monthQuery]);
 
   const sorted = useMemo(() => {
     const filtered = expenses.filter(e => {
       if (filters.has('mine') && currentMember && e.payerId !== currentMember.id) return false;
-      if (parsed && !matchesQuery([e.description, memberName(e.payerId)], e.amount, parsed)) return false;
+      if (parsed) {
+        if (e.category === 'balance' || e.category === 'prestamo') return false;
+        if (!matchesQuery([e.description, memberName(e.payerId)], e.amount, parsed)) return false;
+      }
       return true;
     });
 
@@ -162,7 +169,7 @@ export function ExpenseListHeader({
               <button
                 type="button"
                 onClick={() => { setSearchOpen(true); inputRef.current?.focus(); }}
-                aria-label={t('search.inMonth', { month: monthLabel.toLowerCase() })}
+                aria-label={searchPlaceholder}
                 className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-1 hover:bg-surface-sunken"
               >
                 <Search className="h-3.5 w-3.5" />
@@ -176,10 +183,10 @@ export function ExpenseListHeader({
               aria-hidden={!searchOpen}
               value={monthQuery}
               onChange={e => setMonthQuery(e.target.value)}
-              placeholder={t('search.inMonth', { month: monthLabel.toLowerCase() })}
-              aria-label={searchOpen ? t('search.inMonth', { month: monthLabel.toLowerCase() }) : undefined}
+              placeholder={searchPlaceholder}
+              aria-label={searchOpen ? searchPlaceholder : undefined}
               className={cn(
-                'bg-transparent text-[16px] font-medium text-foreground outline-none placeholder:text-muted-2 lg:text-[12.5px]',
+                'bg-transparent text-[16px] font-medium text-foreground outline-none placeholder:text-muted-2 lg:text-[12.5px] [&::-webkit-search-cancel-button]:hidden',
                 searchOpen ? 'w-full min-w-0 flex-1 opacity-100' : 'w-0 opacity-0',
               )}
             />

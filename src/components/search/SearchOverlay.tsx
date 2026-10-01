@@ -56,7 +56,7 @@ export function SearchOverlay() {
       )}
     >
       {/* El campo que se estira: donde estaba la barra flotante, a lo ancho, con la ✕ al lado. */}
-      <div className="flex items-center gap-2.5 px-4 pb-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
+      <div className="flex items-center gap-2.5 px-4 pb-3 lg:mx-auto lg:w-full lg:max-w-lg" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
         <label className="glass flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full pl-3.5 pr-1.5">
           <Search className="h-[18px] w-[18px] shrink-0 text-muted-1" aria-hidden="true" />
           <input
@@ -82,12 +82,12 @@ export function SearchOverlay() {
             </button>
           )}
         </label>
-        <GlassButton onClick={closeSearch} aria-label={t('search.close')} className="h-11 w-11">
+        <GlassButton onClick={closeSearch} aria-label={t('search.close')} tabIndex={open ? 0 : -1} className="h-11 w-11">
           <X className="h-5 w-5" strokeWidth={2.4} />
         </GlassButton>
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-tabbar lg:pb-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] lg:pb-6">
         <div className="mx-auto w-full max-w-lg">
           {!active && (
             <p className="mt-10 text-center text-[13px] font-medium text-muted-1">{t('search.hint')}</p>
