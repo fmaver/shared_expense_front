@@ -18,27 +18,27 @@
       "getStarted": "Get started"
     },
     "hero": {
-      "badge": "Now with WhatsApp AI",
+      "badge": "Now with search across all your expenses",
       "headline1": "Shared expenses,",
       "headline2": "finally simple.",
-      "subheadline": "Track, split, and settle costs with your group — from the web or straight from WhatsApp.",
+      "subheadline": "Track, split, and settle costs with your group, from your phone or your computer.",
       "cta": "Get started free",
       "learnMore": "Learn more"
     },
     "features": {
       "title": "Everything your group needs",
       "subtitle": "Built for couples, roommates, and friends who share costs.",
-      "whatsapp": {
-        "title": "WhatsApp bot",
-        "desc": "Add expenses by chat — type \"gasté 500 en comida\" and it's logged."
+      "notifications": {
+        "title": "Instant alerts",
+        "desc": "Know when someone adds, edits or settles an expense, by notification or by email."
       },
       "settle": {
         "title": "Monthly settle",
         "desc": "One-click balance settlement at end of month."
       },
-      "receipt": {
-        "title": "Receipt scan",
-        "desc": "Send a receipt photo via WhatsApp. AI extracts amount and category."
+      "dueDates": {
+        "title": "Due dates",
+        "desc": "Power, rent, streaming: we remind you before they are due."
       },
       "groups": {
         "title": "Multiple groups",
@@ -49,7 +49,7 @@
       "title": "How it works",
       "step1": {
         "title": "Add an expense",
-        "desc": "Via the web app or a WhatsApp message."
+        "desc": "From the app, on your phone or your computer."
       },
       "step2": {
         "title": "Splits are calculated",
@@ -104,7 +104,7 @@
     "registerSubtitle": "Then join a group with a link, or start your own.",
     "nameLabel": "WHAT SHOULD WE CALL YOU",
     "phoneLabel": "PHONE",
-    "phoneHint": "optional · for WhatsApp alerts",
+    "phoneHint": "optional",
     "repeatLabel": "REPEAT",
     "iosTip": "On iPhone, add Jirens to your home screen to get notifications on your phone. They also reach you by email.",
     "iosTipLink": "How to do it"
@@ -438,7 +438,7 @@
     "emailChannel": "Invite by email",
     "whatsappChannel": "Invite by phone",
     "emailAddress": "Email address",
-    "phoneNumber": "WhatsApp number",
+    "phoneNumber": "Phone number",
     "phoneHelp": "Don't include the 9. For example: 11 3456 7890.",
     "sendInvite": "Send invite",
     "sending": "Sending…",
@@ -457,7 +457,11 @@
     "adding": "Adding…",
     "memberAdded": "Member added",
     "noAccount": "no account",
-    "channelHelp": "They get a notification if they have the app installed, otherwise email — and WhatsApp only if we have no other way to reach them.",
+    "channelHelp": "They get a notification if they have the app installed, otherwise email.",
+    "channelHelpWhatsapp": "They get a notification if they have the app installed, otherwise email — and WhatsApp only if we have no other way to reach them.",
+    "phoneOnlyNothingSent": "If all we have is their phone, nothing is sent: share the group link with them.",
+    "copyGroupLink": "Copy group link",
+    "invitationCreatedPhone": "Invitation created. If they have neither the app nor email, share the group link.",
     "inviteRow": "Invite someone else",
     "inviteLink": "Link",
     "whoIsIn": "Who's in"
@@ -486,7 +490,7 @@
     "subtitle": "Manage your account settings and preferences",
     "fullName": "Full name",
     "email": "Email",
-    "phone": "WhatsApp phone",
+    "phone": "Phone",
     "phoneHelp": "Don't include the 9 after +54. For example: 11 3456 7890.",
     "notifPref": "Notification preference",
     "notifWhatsapp": "WhatsApp",
@@ -517,6 +521,8 @@
     "notifications": "Alerts",
     "fallbackChannel": "When there is no push",
     "whatsappNeedsPhone": "WhatsApp needs your phone number saved",
+    "whatsappUnavailable": "WhatsApp is no longer available.",
+    "whatsappGone": "WhatsApp is no longer available: notifications reach you by email.",
     "yourData": "Your details",
     "theme": "Theme",
     "themeLight": "Light",
@@ -525,7 +531,7 @@
     "language": "Language",
     "version": "Version {{version}}",
     "edit": "Edit",
-    "phoneRowHint": "For WhatsApp reminders",
+    "phoneRowHint": "So people can find you when they invite you",
     "phoneEmpty": "Not set"
   },
   "toasts": {

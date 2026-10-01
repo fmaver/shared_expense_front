@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
+  /** A la vista pero no elegible (atenuada). La razón va en una nota al lado, no acá. */
+  disabled?: boolean;
 }
 
 /*
@@ -16,6 +18,7 @@ const ITEM = cn(
   'segmented-item flex h-8 flex-1 cursor-pointer items-center justify-center whitespace-nowrap rounded-full px-3',
   'text-[12.5px] font-semibold transition-[background-color,color,box-shadow] duration-150',
   'data-[active=true]:font-bold aria-[current=page]:font-bold',
+  'disabled:cursor-not-allowed disabled:opacity-40',
 );
 
 interface SegmentedProps<T extends string> {
@@ -41,7 +44,9 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={active}
             data-active={active}
-            onClick={() => onChange(option.value)}
+            disabled={option.disabled}
+            aria-disabled={option.disabled || undefined}
+            onClick={() => { if (!option.disabled) onChange(option.value); }}
             className={ITEM}
           >
             {option.label}
