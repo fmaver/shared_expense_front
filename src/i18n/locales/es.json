@@ -717,7 +717,8 @@
     "payTo": "pagás <0>{{amount}}</0> de {{group}}",
     "everyMonth": "Cada mes",
     "dated": "Con fecha",
-    "bandLeft": "te quedan {{amount}}"
+    "bandLeft": "te quedan {{amount}}",
+    "fixedHeading": "Cada mes"
   },
   "dueDates": {
     "title": "Vencimientos",

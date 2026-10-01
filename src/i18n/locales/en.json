@@ -717,7 +717,8 @@
     "payTo": "you pay <0>{{amount}}</0> to {{group}}",
     "everyMonth": "Every month",
     "dated": "Dated",
-    "bandLeft": "{{amount}} left"
+    "bandLeft": "{{amount}} left",
+    "fixedHeading": "Every month"
   },
   "dueDates": {
     "title": "Due dates",

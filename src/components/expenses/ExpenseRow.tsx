@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { capitalize, formatDayMonth } from '@/utils/format';
+import { capitalize } from '@/utils/format';
 import { useCategories } from '@/hooks/useCategories';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useTranslation } from 'react-i18next';
@@ -92,7 +92,6 @@ export function ExpenseRow({
   const { data: categories = [] } = useCategories();
   const { formatAmount, blueRate, displayMode } = useCurrency();
   const currentMember = useCurrentMember();
-  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
 
   const categoryEmoji = categories.find(c => c.name === expense.category)?.emoji
     ?? INTERNAL_EMOJI[expense.category];
@@ -153,8 +152,6 @@ export function ExpenseRow({
       : t('expenses.metaEqualSome', { count: split.participantIds.length });
   })();
   if (qualifier) meta.push(qualifier);
-  // En la lista personal no hay pagador ni división: ahí la fecha sigue siendo el dato.
-  if (variant === 'category') meta.push(formatDayMonth(expense.date, monthsShort));
 
   /* ── Tu parte: la única cifra de la fila que habla de vos ─────────────────────────── */
   const net = currentMember ? netOf(expense, split, currentMember.id) : 0;

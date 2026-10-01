@@ -7,6 +7,7 @@ import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
+import { formatDayHeading } from '@/utils/format';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,8 @@ interface PersonalExpensesSectionProps {
 
 export function PersonalExpensesSection({ ledger, year, month, refetch, categories, limit, viewAllTo }: PersonalExpensesSectionProps) {
   const { t } = useTranslation();
+  const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
+  const weekdaysLong = t('weekdaysLong', { returnObjects: true }) as string[];
   const island = useIsland();
   const { personalActions } = useFabActions();
   const { displayMode, setDisplayMode, blueRate, formatAmount } = useCurrency();
@@ -86,6 +89,13 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
   const { visibleCount, hasMore, remaining, showAll } = useProgressiveReveal(limit, totalCount);
   const visibleRecurring = recurring.slice(0, visibleCount);
   const visibleOneOffs = sortedOneOffs.slice(0, Math.max(0, visibleCount - recurring.length));
+  // Un bloque por día, como en los grupos (ya vienen ordenados de más nuevo a más viejo).
+  const dayBuckets: { date: string; expenses: ExpenseResponse[] }[] = [];
+  for (const exp of visibleOneOffs) {
+    const last = dayBuckets[dayBuckets.length - 1];
+    if (last && last.date === exp.date) last.expenses.push(exp);
+    else dayBuckets.push({ date: exp.date, expenses: [exp] });
+  }
 
   const handleSaveEditRecurringExpense = async (instance: RecurringPersonalExpenseInstanceResponse) => {
     if (!editRecExpLabel || !editRecExpAmount) return;
@@ -175,6 +185,11 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
         <p className="text-sm text-muted-foreground">{t('expenses.noExpenses')}</p>
       ) : (
         <div className="-mx-4">
+          {/* Como en los grupos: un encabezado por bloque. Los fijos no tienen día, van bajo
+              "Cada mes"; los demás, agrupados por la fecha del gasto. */}
+          {visibleRecurring.length > 0 && (
+            <p className="border-b border-line bg-surface-sunken/40 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.13em] text-muted-1">{t('personal.fixedHeading')}</p>
+          )}
           {/* Recurring personal expenses for this month */}
           {visibleRecurring.map(instance => {
             const catEmoji = categories.find(c => c.name === instance.categoryName)?.emoji;
@@ -274,33 +289,40 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
               )}
             </div>
           );})}
-          {visibleOneOffs.map(exp => (
-            <ExpenseRow
-              key={exp.id}
-              expense={exp}
-              autoOpenDetail={exp.id === deepLinkedExpenseId}
-              members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
-              isSettled={false}
-              hideSplitBadge
-              /* En la lista personal pagás siempre vos: el lugar del avatar lo ocupa la categoría. */
-              variant="category"
-              onEdit={e => setEditingExpense(e)}
-              onDelete={e => {
-                const id = e.parentExpenseId ?? e.id;
-                setConfirm({
-                  title: t('personal.deleteExpenseTitle'),
-                  description: t('personal.deleteExpenseDesc'),
-                  onConfirm: async () => {
-                    setConfirm(null);
-                    if (!personalGroupId) return;
-                    const { success, error } = await deleteExpense(personalGroupId, id);
-                    if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
-                    toast.success(t('toasts.expenseDeleted'));
-                    refetch();
-                  },
-                });
-              }}
-            />
+          {dayBuckets.map(bucket => (
+            <div key={bucket.date}>
+              <p className="border-b border-line bg-surface-sunken/40 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.13em] text-muted-1">
+                {formatDayHeading(bucket.date, monthsShort, weekdaysLong)}
+              </p>
+              {bucket.expenses.map(exp => (
+              <ExpenseRow
+                key={exp.id}
+                expense={exp}
+                autoOpenDetail={exp.id === deepLinkedExpenseId}
+                members={currentMemberId ? [{ id: currentMemberId, name: 'Me', telephone: '' }] : []}
+                isSettled={false}
+                hideSplitBadge
+                /* En la lista personal pagás siempre vos: el lugar del avatar lo ocupa la categoría. */
+                variant="category"
+                onEdit={e => setEditingExpense(e)}
+                onDelete={e => {
+                  const id = e.parentExpenseId ?? e.id;
+                  setConfirm({
+                    title: t('personal.deleteExpenseTitle'),
+                    description: t('personal.deleteExpenseDesc'),
+                    onConfirm: async () => {
+                      setConfirm(null);
+                      if (!personalGroupId) return;
+                      const { success, error } = await deleteExpense(personalGroupId, id);
+                      if (!success) { toast.error(error ?? t('toasts.failedDelete')); return; }
+                      toast.success(t('toasts.expenseDeleted'));
+                      refetch();
+                    },
+                  });
+                }}
+              />
+              ))}
+            </div>
           ))}
           {hasMore && (
             <div className="px-4">
