@@ -10,6 +10,7 @@ import { ExpenseDetailDialog } from './ExpenseDetailDialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { computeSplit, isOutsider, netOf } from '@/utils/split';
 import { FALLBACK_EMOJI, Highlighted } from '@/components/search/SearchResultRow';
+import { baseDescription } from '@/utils/search';
 
 // Las categorías internas no las devuelve la API — sus emojis viven acá.
 const INTERNAL_EMOJI: Record<string, string> = {
@@ -112,7 +113,8 @@ export function ExpenseRow({
     return () => clearTimeout(timer);
   }, [highlight]);
 
-  const displayTitle = expense.category in INTERNAL_EMOJI ? expense.description : capitalize(expense.description);
+  // La cuota ya la dice su badge ("4/9"): el " (4/9)" que trae la descripción la repetía.
+  const displayTitle = expense.category in INTERNAL_EMOJI ? expense.description : capitalize(baseDescription(expense.description));
   const split = computeSplit(expense, members);
   const isRecurring = expense.recurringTemplateId != null;
   const hasInstallments = expense.paymentType === 'credit' && expense.installments > 1;

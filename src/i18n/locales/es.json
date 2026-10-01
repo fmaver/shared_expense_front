@@ -825,7 +825,9 @@
     "splitCountEach": "{{count}} personas · {{amount}} cada uno",
     "putItIn": "puso todo",
     "expenseBox": "Gasto",
-    "yourPartBox": "Tu parte"
+    "yourPartBox": "Tu parte",
+    "cellDate": "Fecha",
+    "cellPurchaseDate": "Fecha de compra"
   },
   "monthPager": {
     "previous": "Mes anterior",
