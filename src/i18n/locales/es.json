@@ -324,7 +324,18 @@
     "balanceOwed": "te deben",
     "balanceOwe": "debés",
     "balanceSquare": "estás a mano",
-    "howToSettle": "Cómo saldar ›"
+    "howToSettle": "Cómo saldar ›",
+    "countPlain_one": "{{count}} gasto",
+    "countPlain_other": "{{count}} gastos",
+    "countFiltered_one": "{{matched}} de {{count}} gasto",
+    "countFiltered_other": "{{matched}} de {{count}} gastos",
+    "totalInMonth": "{{amount}} en {{month}}",
+    "searchMonthFooterPrompt": "¿No está?",
+    "searchMonthFooterLink": "Buscar en todos los meses ›",
+    "searchMonthFooterEmpty": "Nada con “{{query}}” en {{month}}",
+    "sortSheetTitle": "Fecha y orden",
+    "sortAsc": "Ascendente",
+    "sortDesc": "Descendente"
   },
   "months": [
     "Enero",

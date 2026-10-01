@@ -28,6 +28,7 @@ import type { ExpenseCreate, ExpenseResponse } from '@/types/expense';
 import { useIsland } from '@/contexts/IslandContext';
 import { useSearch } from '@/contexts/SearchContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
+import { parseQuery } from '@/utils/search';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { useSettlementActions } from '@/hooks/useSettlementActions';
 import { formatDayHeading } from '@/utils/format';
@@ -68,6 +69,9 @@ export function ExpensesDashboard() {
   const [duplicates, setDuplicates] = useState<ExpenseResponse[]>([]);
   const [sortedExpenses, setSortedExpenses] = useState<ExpenseResponse[]>([]);
   const [groupByDate, setGroupByDate] = useState(true);
+  // El texto de la lupa del mes vive en ExpenseListHeader; esta página sólo lo necesita para
+  // resaltar la coincidencia en cada fila y para el link "Buscar en todos los meses ›" (V8.c).
+  const [monthQuery, setMonthQuery] = useState('');
   const [showSettle, setShowSettle] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
   const [recurringDeleteTarget, setRecurringDeleteTarget] = useState<number | null>(null); // templateId
@@ -204,6 +208,9 @@ export function ExpensesDashboard() {
     });
 
   const monthName = (t('months', { returnObjects: true }) as string[])[month - 1];
+  // Mismo umbral que adentro de `ExpenseListHeader` (parseQuery): un texto de un solo carácter
+  // no filtra nada allá, así que tampoco debería abrir el link "Buscar en todos los meses" acá.
+  const monthSearchParsed = parseQuery(monthQuery) !== null;
   const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
   const weekdaysLong = t('weekdaysLong', { returnObjects: true }) as string[];
   /* Los pagos ya marcados son los movimientos `prestamo`: no hay flag y no hace falta. */
@@ -346,6 +353,7 @@ export function ExpensesDashboard() {
               isOneTime={isOneTime}
               onExportPdf={handleExportPDF}
               isSettled={isSettled}
+              onQueryChange={setMonthQuery}
             />
             {sortedExpenses.length === 0 ? (
               <div className="py-10 text-center text-[12.5px] text-muted-2">{t('expenses.noMatches')}</div>
@@ -364,6 +372,7 @@ export function ExpensesDashboard() {
                         autoOpenDetail={e.id === deepLinkedExpenseId}
                         readOnly={detailReadOnly}
                         highlight={e.id === highlightId}
+                        query={monthQuery}
                         groupId={groupId}
                         groupName={group?.name}
                         isOneTimeGroup={isOneTime}
@@ -382,6 +391,25 @@ export function ExpensesDashboard() {
           </>
         )}
       </div>
+
+      {/* Debajo de la tarjeta, no adentro: "Buscar en todos los meses ›" abre la búsqueda de
+          grupo (V8.b) con el mismo texto, para no perder lo que ya se había escrito. Un evento
+          no tiene "otros meses" — su listado ya es todo el evento (V8.c). */}
+      {!isOneTime && monthSearchParsed && (
+        <p className="px-1 text-[11.5px] font-semibold leading-[1.45] text-muted-1">
+          {sortedExpenses.length === 0
+            ? t('expenses.searchMonthFooterEmpty', { query: monthQuery.trim(), month: monthName.toLowerCase() })
+            : t('expenses.searchMonthFooterPrompt')}
+          {' '}
+          <button
+            type="button"
+            onClick={() => openSearch({ groupId, groupName: group?.name ?? '', groupType: group?.groupType }, monthQuery)}
+            className="cursor-pointer font-bold text-brand-ink hover:opacity-70"
+          >
+            {t('expenses.searchMonthFooterLink')}
+          </button>
+        </p>
+      )}
 
       {scanPicker.inputs}
       <AddExpenseDialog

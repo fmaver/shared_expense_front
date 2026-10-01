@@ -324,7 +324,18 @@
     "balanceOwed": "you're owed",
     "balanceOwe": "you owe",
     "balanceSquare": "you're square",
-    "howToSettle": "How to settle ›"
+    "howToSettle": "How to settle ›",
+    "countPlain_one": "{{count}} expense",
+    "countPlain_other": "{{count}} expenses",
+    "countFiltered_one": "{{matched}} of {{count}} expense",
+    "countFiltered_other": "{{matched}} of {{count}} expenses",
+    "totalInMonth": "{{amount}} in {{month}}",
+    "searchMonthFooterPrompt": "Not there?",
+    "searchMonthFooterLink": "Search all months ›",
+    "searchMonthFooterEmpty": "Nothing with “{{query}}” in {{month}}",
+    "sortSheetTitle": "Date and sort",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending"
   },
   "months": [
     "January",

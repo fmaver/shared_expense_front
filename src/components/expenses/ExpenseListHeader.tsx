@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDownUp, FileDown, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Check, SlidersHorizontal, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { parseQuery, matchesQuery } from '@/utils/search';
+import { formatCurrency } from '@/utils/format';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
 type SortField = 'date' | 'description' | 'amount' | 'category' | 'payer' | 'paymentType' | 'splitStrategy';
@@ -30,10 +31,17 @@ interface ExpenseListHeaderProps {
   onExportPdf?: () => void;
   /** Un mes cerrado se lee, no se edita: la lista lo dice sin que haya que deducirlo. */
   isSettled?: boolean;
+  /**
+   * El texto del buscador del mes, hacia arriba — la página lo necesita para resaltar
+   * coincidencias en `ExpenseRow` y para el link "Buscar en todos los meses ›" debajo de la
+   * tarjeta (V8.c). No es un valor controlado: el input sigue viviendo acá adentro.
+   */
+  onQueryChange?: (query: string) => void;
 }
 
 export function ExpenseListHeader({
   expenses, members, onSorted, monthLabel, isOneTime = false, onExportPdf, isSettled = false,
+  onQueryChange,
 }: ExpenseListHeaderProps) {
   const { t } = useTranslation();
   const { displayMode, setDisplayMode, blueRate } = useCurrency();
@@ -46,11 +54,10 @@ export function ExpenseListHeader({
     return next;
   });
   const [monthQuery, setMonthQuery] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputFocused, setInputFocused] = useState(false);
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [sortOpen, setSortOpen] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
 
   const SORT_FIELDS: { value: SortField; label: string }[] = [
     { value: 'date',          label: t('expenses.sortFields.date') },
@@ -69,6 +76,8 @@ export function ExpenseListHeader({
   const searchPlaceholder = isOneTime ? t('search.inEvent') : t('search.inMonth', { month: monthLabel.toLowerCase() });
 
   const parsed = useMemo(() => parseQuery(monthQuery), [monthQuery]);
+
+  useEffect(() => { onQueryChange?.(monthQuery); }, [monthQuery, onQueryChange]);
 
   const sorted = useMemo(() => {
     const filtered = expenses.filter(e => {
@@ -104,17 +113,38 @@ export function ExpenseListHeader({
     { value: 'mine', label: t('expenses.chipMine') },
   ];
 
+  // El total es del mes entero, no del filtro — por eso suma `expenses` (la prop, sin filtrar)
+  // y no `sorted`. Los movimientos de saldo/préstamo no son gasto real del mes (mismo criterio
+  // que el resumen de Números). La cifra no convierte USD a ARS (igual que ese resumen): es una
+  // suma simple, no el balance.
+  const monthTotal = useMemo(
+    () => expenses
+      .filter(e => e.category !== 'balance' && e.category !== 'prestamo')
+      .reduce((sum, e) => sum + e.amount, 0),
+    [expenses],
+  );
+  const monthTotalLabel = isOneTime
+    ? formatCurrency(monthTotal)
+    : t('expenses.totalInMonth', { amount: formatCurrency(monthTotal), month: monthLabel.toLowerCase() });
+
+  const hasQuery = parsed !== null;
+  // La pluralización depende del total ("1 de 2 gastos" lee en plural aunque haya un sólo
+  // resultado): `count` maneja el singular/plural de i18next, `matched` es la cifra filtrada.
+  const countLabel = hasQuery
+    ? t('expenses.countFiltered', { count: expenses.length, matched: sorted.length })
+    : t('expenses.countPlain', { count: expenses.length });
+
   return (
     <div className="border-b border-line px-5 pb-3 pt-4">
-      {/* El conteo dice el alcance en palabras, y por eso cuenta el mes entero y no el filtro. */}
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="min-w-0 truncate text-[14px] font-bold text-foreground">
-          {isOneTime
-            ? t('expenses.countInEvent', { count: expenses.length })
-            : t('expenses.countInMonth', { count: expenses.length, month: monthLabel.toLowerCase() })}
+      {/* El conteo dice el alcance en palabras; el total, al lado en gris, es siempre el del
+          mes entero — por eso no cambia cuando el filtro deja la lista en cero. */}
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="min-w-0 truncate text-[13.5px] font-bold text-foreground">
+          {countLabel}
+          <span className="ml-1 font-medium text-muted-1">· {monthTotalLabel}</span>
         </h2>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2.5">
           {isSettled && (
             <span className="rounded-pill bg-positive-wash px-2.5 py-1 text-[11px] font-bold text-positive">
               {t('settle.settledPill')}
@@ -134,121 +164,120 @@ export function ExpenseListHeader({
               {displayMode === 'ars' ? t('expenses.viewOriginal') : t('expenses.viewInARS')}
             </button>
           )}
+          {/* "PDF" pasa a link de texto (V8.c): ya no es un botón con borde e ícono. */}
           {onExportPdf && (
             <button
               type="button"
               onClick={onExportPdf}
               title={t('expenses.exportPdfTitle')}
-              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-pill border border-line-strong px-3 text-[11.5px] font-bold text-foreground transition-colors hover:bg-surface-sunken"
+              className="shrink-0 cursor-pointer text-[12px] font-bold text-brand-ink transition-opacity hover:opacity-70"
             >
-              <FileDown className="h-3.5 w-3.5" />
               {isOneTime ? 'PDF' : t('expenses.pdfOfMonth')}
             </button>
           )}
         </div>
       </div>
 
-      {/* Los chips filtran adentro del mes. El orden y la moneda los acompañan a la derecha:
-          son ajustes de cómo se lee la lista, no del alcance que el conteo acaba de decir. */}
-      <div className="mt-2.5 flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
-          {/* El input vive siempre montado: en iOS el teclado sólo se abre si el focus() corre
-              sincrónicamente adentro del tap, así que no puede depender de un rAF posterior al
-              render condicional. Colapsado queda angosto (w-8) y no tabulable. */}
-          <div
-            className={cn(
-              'flex h-8 shrink-0 items-center rounded-full transition-[flex-grow,width]',
-              searchOpen
-                ? 'glass min-w-0 flex-1 gap-1.5 pl-2.5 pr-1'
-                : 'w-8 justify-center border border-line-strong',
-            )}
-          >
-            {searchOpen ? (
-              <Search className="h-3.5 w-3.5 shrink-0 text-muted-1" aria-hidden="true" />
-            ) : (
-              <button
-                type="button"
-                onClick={() => { setSearchOpen(true); inputRef.current?.focus(); }}
-                aria-label={searchPlaceholder}
-                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-1 hover:bg-surface-sunken"
-              >
-                <Search className="h-3.5 w-3.5" />
-              </button>
-            )}
-            <input
-              ref={inputRef}
-              type="search"
-              enterKeyHint="search"
-              tabIndex={searchOpen ? 0 : -1}
-              aria-hidden={!searchOpen}
-              value={monthQuery}
-              onChange={e => setMonthQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={searchOpen ? searchPlaceholder : undefined}
-              className={cn(
-                'bg-transparent text-[16px] font-medium text-foreground outline-none placeholder:text-muted-2 lg:text-[12.5px] [&::-webkit-search-cancel-button]:hidden',
-                searchOpen ? 'w-full min-w-0 flex-1 opacity-100' : 'w-0 opacity-0',
-              )}
-            />
-            {searchOpen && (
-              <button
-                type="button"
-                onClick={() => { setMonthQuery(''); setSearchOpen(false); }}
-                aria-label={t('search.close')}
-                className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-1 hover:bg-surface-sunken"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          {CHIPS.map(chip => (
+      {/* Fila única de 34px (V8.c): el buscador se estira, "Míos" y el botón de orden la cierran. */}
+      <div className="mt-2.5 flex h-[34px] items-center gap-1.5">
+        {/* El input vive siempre montado (regla de iOS): el foco corre sincrónico dentro del
+            tap porque el `<label>` lo asocia nativamente, sin depender de un handler en JS. */}
+        <label
+          htmlFor="month-search-input"
+          className={cn(
+            'flex h-[34px] min-w-0 flex-1 cursor-text items-center gap-1.5 rounded-full border-[1.5px] bg-surface-sunken pl-2.5 pr-1 transition-colors',
+            monthQuery || inputFocused ? 'border-brand-soft' : 'border-transparent',
+          )}
+        >
+          <Search className="h-3.5 w-3.5 shrink-0 text-muted-1" aria-hidden="true" />
+          <input
+            id="month-search-input"
+            type="search"
+            enterKeyHint="search"
+            value={monthQuery}
+            onChange={e => setMonthQuery(e.target.value)}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+            className="min-w-0 flex-1 bg-transparent text-[16px] font-medium text-foreground outline-none placeholder:text-muted-2 lg:text-[12.5px] [&::-webkit-search-cancel-button]:hidden"
+          />
+          {monthQuery && (
             <button
-              key={chip.value}
               type="button"
-              onClick={() => toggleFilter(chip.value)}
-              aria-pressed={filters.has(chip.value)}
-              className={cn(
-                'h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[11.5px] font-bold transition-colors',
-                filters.has(chip.value)
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
-              )}
+              onClick={() => setMonthQuery('')}
+              aria-label={t('search.close')}
+              className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface text-muted-1 hover:bg-line"
             >
-              {chip.label}
+              <X className="h-3.5 w-3.5" />
             </button>
-          ))}
-        </div>
+          )}
+        </label>
 
-        <div className="flex shrink-0 items-center gap-1">
-          <Select
-            value={sortField}
-            onValueChange={v => setSortField(v as SortField)}
-            open={sortOpen}
-            onOpenChange={setSortOpen}
-          >
-            <SelectTrigger
-              aria-label={t('expenses.sortLabel')}
-              className="h-8 w-auto gap-1 rounded-pill border-line-strong bg-transparent px-2.5 text-[11.5px] font-semibold text-muted-1 hover:bg-surface-sunken"
-            >
-              <span className="truncate">{SORT_FIELDS.find(f => f.value === sortField)?.label}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_FIELDS.map(f => (
-                <SelectItem key={f.value} value={f.value} className="text-xs">{f.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {CHIPS.map(chip => (
           <button
+            key={chip.value}
             type="button"
-            onClick={() => setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'))}
-            aria-label={t('expenses.sortLabel')}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
+            onClick={() => toggleFilter(chip.value)}
+            aria-pressed={filters.has(chip.value)}
+            className={cn(
+              'h-[34px] shrink-0 cursor-pointer whitespace-nowrap rounded-pill px-3 text-[11.5px] font-bold transition-colors',
+              filters.has(chip.value)
+                ? 'bg-primary text-primary-foreground'
+                : 'border border-line-strong text-muted-1 hover:bg-surface-sunken',
+            )}
           >
-            <ArrowDownUp className={cn('h-3.5 w-3.5 transition-transform', sortOrder === 'asc' && 'rotate-180')} />
+            {chip.label}
           </button>
-        </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setSortSheetOpen(true)}
+          aria-label={t('expenses.sortSheetTitle')}
+          className="flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong text-muted-1 transition-colors hover:bg-surface-sunken hover:text-foreground"
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+        </button>
       </div>
+
+      {/* Ruling 2: la hoja sólo tiene el campo de orden existente y la dirección — nada de
+          rango de fechas. */}
+      <Dialog open={sortSheetOpen} onOpenChange={setSortSheetOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('expenses.sortSheetTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-0.5">
+            {SORT_FIELDS.map(f => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setSortField(f.value)}
+                className={cn(
+                  'flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-[13px] font-semibold transition-colors',
+                  sortField === f.value
+                    ? 'bg-brand-wash text-brand-ink'
+                    : 'text-foreground hover:bg-surface-sunken',
+                )}
+              >
+                {f.label}
+                {sortField === f.value && <Check className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center justify-between border-t border-line pt-3">
+            <span className="text-[12.5px] font-semibold text-muted-1">{t('expenses.sortLabel')}</span>
+            <button
+              type="button"
+              onClick={() => setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'))}
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-pill border border-line-strong px-3 text-[12px] font-bold text-foreground hover:bg-surface-sunken"
+            >
+              {sortOrder === 'asc' ? t('expenses.sortAsc') : t('expenses.sortDesc')}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import type { ExpenseResponse, Member } from '@/types/expense';
 import { ExpenseDetailDialog } from './ExpenseDetailDialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { computeSplit, isOutsider, netOf } from '@/utils/split';
+import { Highlighted } from '@/components/search/SearchResultRow';
 
 // Las categorías internas no las devuelve la API — sus emojis viven acá.
 const INTERNAL_EMOJI: Record<string, string> = {
@@ -71,6 +72,8 @@ interface ExpenseRowProps {
   autoOpenDetail?: boolean;
   onRecurringDelete?: (templateId: number) => void;
   onRecurringEdit?: (expense: ExpenseResponse) => void;
+  /** Texto de la lupa del mes (V8.c): mientras hay texto, resalta la coincidencia en el título. */
+  query?: string;
 }
 
 function memberName(members: Member[], id: number) {
@@ -82,7 +85,7 @@ export function ExpenseRow({
   highlight = false, hideSplitBadge = false, hideActions = false, readOnly = false,
   groupId, groupName, isOneTimeGroup = false, viewedYear, viewedMonth,
   variant = 'payer', autoOpenDetail = false,
-  onRecurringDelete, onRecurringEdit,
+  onRecurringDelete, onRecurringEdit, query,
 }: ExpenseRowProps) {
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
@@ -109,6 +112,7 @@ export function ExpenseRow({
     return () => clearTimeout(timer);
   }, [highlight]);
 
+  const displayTitle = expense.category in INTERNAL_EMOJI ? expense.description : capitalize(expense.description);
   const split = computeSplit(expense, members);
   const isRecurring = expense.recurringTemplateId != null;
   const hasInstallments = expense.paymentType === 'credit' && expense.installments > 1;
@@ -194,7 +198,9 @@ export function ExpenseRow({
             {/* Las categorías internas traen su descripción ya armada ("Guada → Fran"), y
                 `capitalize` le bajaría la mayúscula al segundo nombre. */}
             <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
-              {expense.category in INTERNAL_EMOJI ? expense.description : capitalize(expense.description)}
+              {query
+                ? <Highlighted text={displayTitle} query={query} />
+                : displayTitle}
             </p>
             {/* El ícono de repetición se conserva (checklist §7), adentro del badge, porque
                 la palabra "recurrente" sale del copy de cara al usuario (§6.2). */}
