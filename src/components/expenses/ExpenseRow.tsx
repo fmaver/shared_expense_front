@@ -142,6 +142,8 @@ export function ExpenseRow({
       return t('expenses.metaAtBlue', { rate: blueRate.toLocaleString('es-AR') });
     }
     if (hasInstallments) return t('expenses.metaCredit');
+    // La lista personal es de una sola persona: "iguales entre 1" no dice nada.
+    if (variant === 'category') return '';
     if (expense.splitStrategy.type === 'exact') return t('expenses.metaExactSplit');
     if (expense.splitStrategy.type === 'percentage') return '';
     return split.isEven
