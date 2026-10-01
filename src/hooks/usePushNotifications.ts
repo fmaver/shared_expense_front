@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { deletePushSubscription, getPushPublicKey, savePushSubscription } from '@/api/push';
+import { isStandalone } from '@/utils/pwa';
 
 /**
  * Why a web app can't receive push right now, when it can't.
@@ -15,15 +16,6 @@ export type PushStatus =
   | 'denied'
   | 'subscribed'
   | 'available';
-
-/** True when running as an installed web app rather than a browser tab. */
-function isStandalone(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    // iOS predates display-mode and exposes its own flag.
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
 
 function isIOS(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent);

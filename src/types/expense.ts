@@ -354,6 +354,9 @@ export interface ExpenseSearchResult {
   periodYear: number;
   periodMonth: number;
   periodSettled: boolean | null;
+  /** Plantilla de la que salió la fila (gasto recurrente del grupo o fijo personal): todas las
+   *  filas con la misma son un solo recurrente. null para lo demás. */
+  recurringTemplateId: number | null;
 }
 
 export interface ExpenseSearchResponse {

@@ -202,7 +202,7 @@ export function GroupJoinLanding({ onLoginSuccess }: Props) {
 
             <div className="space-y-1.5">
               <Label htmlFor="phone" className="flex items-center gap-1">
-                <Phone className="h-3.5 w-3.5" /> WhatsApp phone
+                <Phone className="h-3.5 w-3.5" /> {t('profile.phone')}
                 <span className="text-muted-foreground font-normal">(optional)</span>
               </Label>
               <Input

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { LandingPage } from './pages/LandingPage';
+import { isStandalone } from './utils/pwa';
 // Se importa acá para escuchar `beforeinstallprompt` desde la carga (Chrome lo dispara una vez).
 import './utils/installGuide';
 import { LoginPage } from './pages/LoginPage';
@@ -90,7 +91,11 @@ function App() {
         <SettlementProvider>
       <Routes>
         {/* Public */}
-        <Route path="/" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LandingPage />} />
+        {/* La app instalada no muestra la pública de marketing: quien ya la instaló viene a
+            entrar, no a enterarse de qué es. Abre directo en el login. */}
+        <Route path="/" element={isAuthenticated
+          ? <Navigate to="/groups" replace />
+          : isStandalone() ? <Navigate to="/login" replace /> : <LandingPage />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/groups" replace /> : <LoginPage onLoginSuccess={handleLogin} />} />
         <Route path="/invite/:token" element={<InvitationLanding onLoginSuccess={handleLogin} />} />
         <Route path="/join/:token" element={<GroupJoinLanding onLoginSuccess={handleLogin} />} />

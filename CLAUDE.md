@@ -218,7 +218,7 @@ interface MonthlyBalanceResponse {
 | `GET` | `/groups/{id}` | get group |
 | `PUT` | `/groups/{id}` | rename group |
 | `GET` | `/groups/{id}/members` | list members |
-| `POST` | `/groups/{id}/invitations` | create invitation (email or WhatsApp) |
+| `POST` | `/groups/{id}/invitations` | create invitation (email or phone; WhatsApp delivery is off) |
 | `GET` | `/groups/{id}/invitations` | list pending invitations |
 | `DELETE` | `/groups/{id}/invitations/{token}` | revoke invitation |
 | `POST` | `/groups/{id}/join-link` | get or create join link |
@@ -283,6 +283,14 @@ Search = `SearchOverlay` (mounted in `AppShell`, opened via `useSearch().openSea
 calls `GET /search/expenses`; month search = `matchesQuery` in `ExpenseListHeader`. Receipts
 still have no backend and sit behind `FEATURE_RECEIPTS` (`src/config/features.ts`, off unless
 `VITE_FEATURE_RECEIPTS=true`).
+
+**WhatsApp is off** (`WHATSAPP_ENABLED = false` in `src/config/features.ts`, a constant that must
+match the backend's `WHATSAPP_ENABLED` env, default false). With it off: the profile's WhatsApp
+option is visible but disabled (`Segmented` options take `disabled`); a stored `WHATSAPP`
+preference is shown as Email with a note, and saving the profile only sends
+`notification_preference` when the user changed it (so a rename never rewrites the stored value —
+the backend 400s on choosing WHATSAPP). `InviteDialog` says delivery is push → email and, for
+phone invites, that nothing is sent and offers "Copiar link del grupo" (`getJoinLink`). SMS pending.
 
 ### Bottom sheet dialogs + drag-to-dismiss
 

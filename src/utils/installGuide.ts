@@ -14,21 +14,14 @@
  * lo puede decidir un breakpoint de CSS.
  */
 
+import { isStandalone } from './pwa';
+
 export type InstallPlatform = 'ios' | 'android' | 'inapp';
 
 const DISMISS_KEY = 'installGuide.dismissedUntil';
 const FROM_LINK_KEY = 'installGuide.cameFromLink';
 const SNOOZE_DAYS = 7;
 const FOREVER = 'forever';
-
-/** True when running as an installed web app rather than a browser tab. */
-export function isStandalone(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    // iOS predates display-mode and exposes its own flag.
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
 
 /** iOS, Android o el navegador interno de otra app (Instagram, Facebook…), donde no se puede instalar. */
 export function detectPlatform(): InstallPlatform | null {

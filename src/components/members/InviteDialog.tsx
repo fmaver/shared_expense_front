@@ -20,6 +20,8 @@ import {
 import { toast } from 'sonner';
 import { createInvitation } from '@/api/invitations';
 import { addNamedMember } from '@/api/groups';
+import { getJoinLink } from '@/api/joinLinks';
+import { WHATSAPP_ENABLED } from '@/config/features';
 import { normalizeArPhone } from '@/utils/phone';
 import type { InvitationChannel } from '@/types/expense';
 
@@ -48,6 +50,7 @@ export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: Inv
   };
 
   const reset = () => {
+    setLinkCopied(false);
     setName('');
     setContact('');
     setChannel('email');
@@ -59,6 +62,21 @@ export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: Inv
   };
 
   const isNameOnly = channel === 'name';
+  // Con WhatsApp apagado, a alguien de quien solo sabemos el teléfono no le llega nada.
+  const phoneReachesNobody = channel === 'phone' && !WHATSAPP_ENABLED;
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const copyGroupLink = async () => {
+    try {
+      const link = await getJoinLink(groupId);
+      await navigator.clipboard.writeText(link.url);
+      setLinkCopied(true);
+      toast.success(t('toasts.linkCopied'));
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to get join link');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +93,13 @@ export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: Inv
           contact: channel === 'phone' ? normalizeArPhone(contact) : contact.trim(),
         });
       }
-      toast.success(isNameOnly ? t('members.memberAdded') : t('toasts.invitationSent'));
+      toast.success(
+        isNameOnly
+          ? t('members.memberAdded')
+          : phoneReachesNobody
+            ? t('members.invitationCreatedPhone')
+            : t('toasts.invitationSent'),
+      );
       reset();
       onMemberAdded();
       onOpenChange(false);
@@ -118,9 +142,11 @@ export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: Inv
               </SelectContent>
             </Select>
             {/* The channel names where to look the person up, not how they hear about it:
-                delivery is push, then email, then WhatsApp, depending on what they have. */}
+                delivery is push, then email, depending on what they have (WhatsApp is off). */}
             {!isNameOnly && (
-              <p className="text-xs text-muted-foreground">{t('members.channelHelp')}</p>
+              <p className="text-xs text-muted-foreground">
+                {t(WHATSAPP_ENABLED ? 'members.channelHelpWhatsapp' : 'members.channelHelp')}
+              </p>
             )}
           </div>
 
@@ -147,6 +173,18 @@ export function InviteDialog({ open, onOpenChange, groupId, onMemberAdded }: Inv
               <p className="text-xs text-muted-foreground">
                 {t('members.phoneHelp')}
               </p>
+            )}
+            {phoneReachesNobody && (
+              <div className="rounded-lg border border-line bg-surface-sunken px-3 py-2">
+                <p className="text-xs text-muted-foreground">{t('members.phoneOnlyNothingSent')}</p>
+                <button
+                  type="button"
+                  onClick={copyGroupLink}
+                  className="mt-1.5 cursor-pointer text-xs font-bold text-brand hover:underline"
+                >
+                  {linkCopied ? t('toasts.linkCopied') : t('members.copyGroupLink')}
+                </button>
+              </div>
             )}
           </div>
           )}

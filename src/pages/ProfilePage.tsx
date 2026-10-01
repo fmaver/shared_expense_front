@@ -15,6 +15,15 @@ import { avatarBg, initials } from '@/utils/avatar';
 import { normalizeArPhone, localArPhone } from '@/utils/phone';
 import { cn } from '@/lib/utils';
 import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
+import { WHATSAPP_ENABLED } from '@/config/features';
+
+/**
+ * Con WhatsApp apagado una preferencia WHATSAPP guardada se manda por mail (así rutea el
+ * backend), así que eso es lo que se muestra elegido.
+ */
+function effectiveChannel(stored: NotificationType): NotificationType {
+  return stored === 'WHATSAPP' && !WHATSAPP_ENABLED ? 'EMAIL' : stored;
+}
 
 /** Un bloque con su rótulo. Fuera del componente: adentro se remontaría en cada render. */
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -91,7 +100,11 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [telephone, setTelephone] = useState('');
-  const [channel, setChannel] = useState<NotificationType>('NONE');
+  const [channel, setChannel] = useState<NotificationType>('EMAIL');
+  // Lo que se mostró al cargar. Guardar el perfil solo manda la preferencia si cambió: si no,
+  // editar el nombre reescribiría en silencio un WHATSAPP guardado como EMAIL.
+  const [loadedChannel, setLoadedChannel] = useState<NotificationType>('EMAIL');
+  const [storedWhatsapp, setStoredWhatsapp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -103,7 +116,9 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         setName(user.name);
         setEmail(user.email);
         setTelephone(localArPhone(user.telephone));
-        setChannel(user.notificationPreference);
+        setChannel(effectiveChannel(user.notificationPreference));
+        setLoadedChannel(effectiveChannel(user.notificationPreference));
+        setStoredWhatsapp(user.notificationPreference === 'WHATSAPP');
       })
       .catch(() => {
         toast.error('Failed to load user data');
@@ -130,8 +145,12 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         name,
         email,
         telephone: normalizeArPhone(telephone),
-        notification_preference: channel,
+        ...(channel !== loadedChannel ? { notification_preference: channel } : {}),
       });
+      if (channel !== loadedChannel) {
+        setLoadedChannel(channel);
+        setStoredWhatsapp(channel === 'WHATSAPP');
+      }
       toast.success(t('toasts.profileUpdated'));
       setIsEditing(false);
     } catch (err) {
@@ -241,10 +260,19 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             onChange={setChannel}
             options={[
               { value: 'EMAIL' as NotificationType, label: t('profile.notifEmail') },
-              { value: 'WHATSAPP' as NotificationType, label: t('profile.notifWhatsapp') },
+              {
+                value: 'WHATSAPP' as NotificationType,
+                label: t('profile.notifWhatsapp'),
+                disabled: !WHATSAPP_ENABLED,
+              },
               { value: 'NONE' as NotificationType, label: t('profile.notifNone') },
             ]}
           />
+          {!WHATSAPP_ENABLED && (
+            <p className="mt-2 text-[11.5px] font-medium text-muted-2">
+              {storedWhatsapp ? t('profile.whatsappGone') : t('profile.whatsappUnavailable')}
+            </p>
+          )}
           {channel === 'WHATSAPP' && !telephone && (
             <p className="mt-2 text-[11.5px] font-medium text-negative">
               {t('profile.whatsappNeedsPhone')}
