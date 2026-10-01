@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, Repeat, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   capitalize, firstInstallmentDate, formatWeekdayDayMonth,
@@ -8,12 +8,14 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useCurrentMember } from '@/hooks/useCurrentMember';
+import { useCategories } from '@/hooks/useCategories';
+import { FALLBACK_EMOJI } from '@/components/search/SearchResultRow';
 import { avatarBg, initials } from '@/utils/avatar';
 import { computeSplit, netOf, shareOf } from '@/utils/split';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { ExpenseResponse, Member } from '@/types/expense';
 
-/** Las categorías internas son símbolos, no palabras: van con su emoji y no con iniciales. */
+/** Las categorías internas no las devuelve la API — sus emojis viven acá (como en ExpenseRow). */
 const INTERNAL_EMOJI: Record<string, string> = {
   balance: '⚖️',
   prestamo: '🤝',
@@ -41,6 +43,16 @@ interface ExpenseDetailDialogProps {
   viewedMonth?: number;
   onRecurringDelete?: (templateId: number) => void;
   onRecurringEdit?: (expense: ExpenseResponse) => void;
+}
+
+/**
+ * Emoji de la categoría, con la misma búsqueda que ExpenseRow; sin uno conocido, 🧾 — nunca
+ * iniciales. Componente propio para que las categorías se pidan recién al abrir el detalle:
+ * cada ExpenseRow monta su diálogo cerrado, y pedirlas ahí duplicaría un fetch por fila.
+ */
+function CategoryEmoji({ category }: { category: string }) {
+  const { data: categories = [] } = useCategories();
+  return <>{categories.find(c => c.name === category)?.emoji ?? INTERNAL_EMOJI[category] ?? FALLBACK_EMOJI}</>;
 }
 
 function memberName(members: Member[], id: number) {
@@ -106,6 +118,7 @@ export function ExpenseDetailDialog({
   const canEdit = expense.installmentNo === 1;
   const hasInstallments = expense.paymentType === 'credit' && expense.installments > 1;
   const split = computeSplit(expense, members);
+  const isRecurring = expense.recurringTemplateId != null;
   const categoryLabel = capitalize(
     t(`categories.${expense.category}`, { defaultValue: expense.category }),
   );
@@ -229,10 +242,11 @@ export function ExpenseDetailDialog({
           </DialogClose>
 
           <div className="flex items-start gap-3 pr-8">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-white/[0.07] text-[13px] font-bold uppercase text-brand-soft">
-              {INTERNAL_EMOJI[expense.category]
-                ? <span className="text-xl leading-none">{INTERNAL_EMOJI[expense.category]}</span>
-                : categoryLabel.slice(0, 2)}
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-white/[0.07] text-xl leading-none"
+              aria-hidden="true"
+            >
+              <CategoryEmoji category={expense.category} />
             </div>
             <div className="min-w-0 flex-1">
               <DialogTitle className="truncate text-[15px] font-bold leading-tight text-paper">
@@ -289,6 +303,17 @@ export function ExpenseDetailDialog({
                   : t(expense.paymentType === 'credit' ? 'expenseDetail.methodCredit' : 'expenseDetail.methodDebit')
               }
             />
+            {isRecurring && (
+              <Cell
+                label={t('expenseDetail.cellRepeats')}
+                value={(
+                  <span className="inline-flex items-center gap-1">
+                    <Repeat className="h-3 w-3 text-muted-1" strokeWidth={2.4} aria-hidden="true" />
+                    {t('expenseDetail.repeatsMonthly')}
+                  </span>
+                )}
+              />
+            )}
             {hasInstallments ? (
               <Cell
                 label={t('expenseDetail.cellTotal')}
