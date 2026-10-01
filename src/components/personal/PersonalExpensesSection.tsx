@@ -7,7 +7,7 @@ import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
-import { formatDayHeading } from '@/utils/format';
+import { capitalize, formatDayHeading } from '@/utils/format';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ import {
 } from '@/api/personal';
 import { updateExpense, deleteExpense } from '@/api/expenses';
 import type { ExpenseResponse, ExpenseCreate, RecurringPersonalExpenseInstanceResponse, PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
+import { FALLBACK_EMOJI } from '@/components/search/SearchResultRow';
 
 interface PersonalExpensesSectionProps {
   ledger: PersonalLedgerResponse;
@@ -194,48 +195,32 @@ export function PersonalExpensesSection({ ledger, year, month, refetch, categori
           {visibleRecurring.map(instance => {
             const catEmoji = categories.find(c => c.name === instance.categoryName)?.emoji;
             return (
-            <div key={`rec-exp-${instance.id}`} className="border-b border-border/50 last:border-0">
+            <div key={`rec-exp-${instance.id}`} className="border-b border-line last:border-b-0">
               <div
-                className="flex items-center gap-3 px-4 py-3 group [@media(hover:hover)]:hover:bg-accent/40 active:bg-accent/30 transition-colors cursor-pointer touch-manipulation"
+                className="group flex cursor-pointer touch-manipulation items-center gap-3 px-5 py-3 transition-colors [@media(hover:hover)]:hover:bg-brand-wash active:bg-brand-wash"
                 onClick={() => setSelectedRecurringInstance(instance)}
               >
-                {/* Category icon — matches ExpenseRow */}
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  {catEmoji
-                    ? <span className="text-lg leading-none">{catEmoji}</span>
-                    : <span className="text-xs font-bold text-muted-foreground uppercase">{instance.categoryName.slice(0, 2)}</span>
-                  }
+                {/* Mismo armado que ExpenseRow: emoji en su cuadrado, título y, abajo, el badge
+                    "cada mes" con la categoría. Antes decía "Recurrente" dos veces (texto y
+                    chip) y el monto quedaba a mitad de fila por un ancho fijo. */}
+                <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] bg-surface-sunken">
+                  <span className="text-[19px] leading-none">{catEmoji || FALLBACK_EMOJI}</span>
                 </div>
-                {/* Label + meta */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground line-clamp-2">{instance.label}</p>
-                  <p className="text-xs text-muted-foreground">↺ {t('personal.addRecurringExpense')}</p>
-                  {/* Mobile badges */}
-                  <div className="flex sm:hidden items-center gap-1 mt-1">
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
-                      {t('personal.addRecurringExpense')}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">{instance.label}</p>
+                  <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-chip bg-brand-wash px-1.5 py-0.5 text-[10.5px] font-bold leading-[1.4] text-brand-ink">
+                      <Repeat className="h-2.5 w-2.5" aria-hidden="true" />
+                      {t('expenses.badgeRecurring2')}
                     </span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      {instance.categoryName}
-                    </span>
+                    <p className="min-w-0 truncate text-[11.5px] font-medium leading-tight text-muted-2">
+                      {capitalize(instance.categoryName)}
+                    </p>
                   </div>
                 </div>
-                {/* Desktop badges */}
-                <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
-                    {t('personal.addRecurringExpense')}
-                  </span>
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                    {instance.categoryName}
-                  </span>
-                </div>
-                {/* Amount — separate child so gap-3 spacing matches ExpenseRow */}
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {instance.currency === 'USD' && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">USD</span>
-                  )}
-                  <span className="text-sm font-semibold text-foreground tabular-nums w-24 text-right">{formatAmount(instance.amount, instance.currency)}</span>
-                </div>
+                <p className="shrink-0 text-right text-[13.5px] font-bold leading-tight tabular-nums text-foreground">
+                  {formatAmount(instance.amount, instance.currency)}
+                </p>
                 {/* Actions */}
                 <div
                   className="[@media(hover:none)]:hidden flex items-center gap-1 opacity-0 invisible [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:visible transition-opacity flex-shrink-0"

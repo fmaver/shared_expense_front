@@ -718,7 +718,8 @@
     "everyMonth": "Every month",
     "dated": "Dated",
     "bandLeft": "{{amount}} left",
-    "fixedHeading": "Every month"
+    "fixedHeading": "Every month",
+    "installmentShort": "installment {{no}}/{{total}}"
   },
   "dueDates": {
     "title": "Due dates",

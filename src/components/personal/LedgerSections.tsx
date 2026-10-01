@@ -7,6 +7,7 @@ import { avatarBg, initials } from '@/utils/avatar';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useProgressiveReveal } from '@/hooks/useProgressiveReveal';
 import { ShowMoreButton } from './ShowMoreButton';
+import { baseDescription } from '@/utils/search';
 import type {
   CategoryWithEmoji, MirroredShareItem, PersonalLedgerResponse,
 } from '@/types/expense';
@@ -344,7 +345,12 @@ export function GroupSharesSection({ ledger, categories, year, month }: SectionP
                     {emojiFor(share.category) ?? '·'}
                   </span>
                   <p className="min-w-0 flex-1 truncate text-[12px] font-medium text-muted-1">
-                    {capitalize(share.description)}
+                    {capitalize(baseDescription(share.description))}
+                    {share.installments > 1 && (
+                      <span className="text-muted-2">
+                        {' · '}{t('personal.installmentShort', { no: share.installmentNo, total: share.installments })}
+                      </span>
+                    )}
                   </p>
                   <p className="shrink-0 text-[12px] font-semibold tabular-nums text-muted-1">
                     {formatAmount(share.shareAmount, 'ARS')}

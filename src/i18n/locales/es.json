@@ -718,7 +718,8 @@
     "everyMonth": "Cada mes",
     "dated": "Con fecha",
     "bandLeft": "te quedan {{amount}}",
-    "fixedHeading": "Cada mes"
+    "fixedHeading": "Cada mes",
+    "installmentShort": "cuota {{no}}/{{total}}"
   },
   "dueDates": {
     "title": "Vencimientos",
