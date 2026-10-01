@@ -18,27 +18,27 @@
       "getStarted": "Get started"
     },
     "hero": {
-      "badge": "Now with WhatsApp AI",
+      "badge": "Now with search across all your expenses",
       "headline1": "Shared expenses,",
       "headline2": "finally simple.",
-      "subheadline": "Track, split, and settle costs with your group — from the web or straight from WhatsApp.",
+      "subheadline": "Track, split, and settle costs with your group, from your phone or your computer.",
       "cta": "Get started free",
       "learnMore": "Learn more"
     },
     "features": {
       "title": "Everything your group needs",
       "subtitle": "Built for couples, roommates, and friends who share costs.",
-      "whatsapp": {
-        "title": "WhatsApp bot",
-        "desc": "Add expenses by chat — type \"gasté 500 en comida\" and it's logged."
+      "notifications": {
+        "title": "Instant alerts",
+        "desc": "Know when someone adds, edits or settles an expense, by notification or by email."
       },
       "settle": {
         "title": "Monthly settle",
         "desc": "One-click balance settlement at end of month."
       },
-      "receipt": {
-        "title": "Receipt scan",
-        "desc": "Send a receipt photo via WhatsApp. AI extracts amount and category."
+      "dueDates": {
+        "title": "Due dates",
+        "desc": "Power, rent, streaming: we remind you before they are due."
       },
       "groups": {
         "title": "Multiple groups",
@@ -49,7 +49,7 @@
       "title": "How it works",
       "step1": {
         "title": "Add an expense",
-        "desc": "Via the web app or a WhatsApp message."
+        "desc": "From the app, on your phone or your computer."
       },
       "step2": {
         "title": "Splits are calculated",

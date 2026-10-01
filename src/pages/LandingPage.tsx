@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Camera, CheckCircle, MessageSquare, Scale, Users } from 'lucide-react';
+import { ArrowRight, Bell, CalendarClock, CheckCircle, Scale, Users } from 'lucide-react';
 import { JirensMark } from '@/components/brand/JirensMark';
 
 /**
@@ -15,9 +15,9 @@ export function LandingPage() {
   const { t } = useTranslation();
 
   const FEATURES = [
-    { icon: MessageSquare, title: t('landing.features.whatsapp.title'), desc: t('landing.features.whatsapp.desc') },
+    { icon: Bell,          title: t('landing.features.notifications.title'), desc: t('landing.features.notifications.desc') },
     { icon: Scale,         title: t('landing.features.settle.title'),   desc: t('landing.features.settle.desc') },
-    { icon: Camera,        title: t('landing.features.receipt.title'),  desc: t('landing.features.receipt.desc') },
+    { icon: CalendarClock, title: t('landing.features.dueDates.title'), desc: t('landing.features.dueDates.desc') },
     { icon: Users,         title: t('landing.features.groups.title'),   desc: t('landing.features.groups.desc') },
   ];
 
