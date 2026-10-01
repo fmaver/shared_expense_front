@@ -1056,5 +1056,36 @@
   "tabBar": {
     "label": "App sections",
     "personal": "Personal"
+  },
+  "installGuide": {
+    "title": "Install Jirens on your phone",
+    "subtitle": "It opens like an app, without the browser bar, and it can send you notifications.",
+    "ios": {
+      "step1": "Tap Share",
+      "step1Hint": "The square with the arrow, in Safari's toolbar.",
+      "step2": "Choose “Add to Home Screen”",
+      "step2Hint": "If you don't see it, scroll the menu up.",
+      "step3": "Tap “Add”",
+      "step3Hint": "Top right. Done: Jirens is on your home screen."
+    },
+    "android": {
+      "installNow": "Install app",
+      "step1": "Tap the ⋮ menu",
+      "step1Hint": "Top right in Chrome.",
+      "step2": "Choose “Install app”",
+      "step2Hint": "On some phones it says “Add to Home screen”.",
+      "step3": "Confirm with “Install”",
+      "step3Hint": "Jirens is on your home screen."
+    },
+    "inapp": {
+      "title": "Open Jirens in your browser",
+      "subtitle": "You can't install from inside this app. Tap ⋯ and choose “Open in browser”, or copy the link and paste it in Safari or Chrome.",
+      "copy": "Copy link",
+      "copied": "Link copied",
+      "copyFailed": "Couldn't copy the link"
+    },
+    "afterInstall": "Open Jirens from its icon and turn on notifications in your profile.",
+    "later": "Not now",
+    "alreadyInstalled": "I already installed it"
   }
 }

@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { LandingPage } from './pages/LandingPage';
 import { isStandalone } from './utils/pwa';
+// Se importa acá para escuchar `beforeinstallprompt` desde la carga (Chrome lo dispara una vez).
+import './utils/installGuide';
 import { LoginPage } from './pages/LoginPage';
 import { AppShell } from './components/layout/AppShell';
 import { useKeyboardInset } from './hooks/useKeyboardInset';

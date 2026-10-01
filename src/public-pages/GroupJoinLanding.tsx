@@ -10,12 +10,15 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Phone } from 'lucide-react';
 import axios from 'axios';
+import { markCameFromGroupLink } from '@/utils/installGuide';
 
 interface Props {
   onLoginSuccess: (token: string) => void;
 }
 
 export function GroupJoinLanding({ onLoginSuccess }: Props) {
+  // Estos links abren el navegador aunque ya tengas la app: en esta visita no se ofrece instalarla.
+  useEffect(() => { markCameFromGroupLink(); }, []);
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();

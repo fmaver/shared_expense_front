@@ -11,6 +11,7 @@ import { useSearch } from '@/contexts/SearchContext';
 import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { cn } from '@/lib/utils';
 import type { Group } from '@/types/expense';
+import { InstallAppSheet } from './InstallAppSheet';
 
 interface AppShellProps {
   onLogout: () => void;
@@ -107,6 +108,9 @@ export function AppShell({ onLogout }: AppShellProps) {
       <FloatingTabBar />
 
       <SearchOverlay />
+
+      {/* Sólo en el navegador del celular: cómo instalar la app (ver utils/installGuide). */}
+      <InstallAppSheet />
 
       <CreateGroupDialog
         open={openNewGroup}
