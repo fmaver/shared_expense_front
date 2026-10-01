@@ -55,10 +55,11 @@ export function RecurringRow({ purchase, emoji, query, scope, archived, tabIndex
             {formatAmount(first.amount, first.currency)}
             <span className="ml-0.5 text-[10.5px] font-semibold text-muted-2">{t('search.perMonth')}</span>
           </span>
-          <GroupedStatus items={items} />
+          <GroupedStatus items={items} pastOnly />
         </>
       )}
       items={items}
+      upcomingIsFuture
       tabIndex={tabIndex}
       onOpen={() => onSelect(first)}
       onSelect={onSelect}

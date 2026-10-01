@@ -113,6 +113,11 @@ export interface Purchase {
 
 const periodIndex = (r: ExpenseSearchResult) => r.periodYear * 12 + (r.periodMonth - 1);
 
+/** ¿El período de `r` todavía no llegó? (un mes futuro que existe porque alguien miró adelante) */
+export function isFuturePeriod(r: ExpenseSearchResult, now: Date = new Date()): boolean {
+  return periodIndex(r) > now.getFullYear() * 12 + now.getMonth();
+}
+
 function purchaseKey(r: ExpenseSearchResult): string {
   if (r.recurringTemplateId != null) {
     return `${r.groupId}:${r.kind === 'recurring_personal' ? 'rp' : 'r'}:${r.recurringTemplateId}`;
@@ -143,12 +148,11 @@ export function groupPurchases(results: ExpenseSearchResult[], now: Date = new D
     }
     purchase.items.push(r);
   }
-  const currentPeriod = now.getFullYear() * 12 + now.getMonth();
   return order.map(key => {
     const purchase = byKey.get(key)!;
     if (purchase.kind === 'recurring') {
       purchase.items.sort((a, b) => periodIndex(b) - periodIndex(a) || b.id - a.id);
-      purchase.first = purchase.items.find(item => periodIndex(item) <= currentPeriod)
+      purchase.first = purchase.items.find(item => !isFuturePeriod(item, now))
         ?? purchase.items[purchase.items.length - 1];
     } else {
       purchase.items.sort((a, b) => a.installmentNo - b.installmentNo);

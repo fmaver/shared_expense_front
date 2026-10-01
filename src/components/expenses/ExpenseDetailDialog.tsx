@@ -33,6 +33,8 @@ interface ExpenseDetailDialogProps {
   onEdit: (expense: ExpenseResponse) => void;
   onDelete: (expense: ExpenseResponse) => void;
   hideSplitBadge?: boolean;
+  /** Emoji ya resuelto por quien abre el detalle (ExpenseRow): evita volver a pedir las categorías. */
+  categoryEmoji?: string;
   hideActions?: boolean;
   /** Sólo lectura: un grupo que archivaste se mira, no se edita — sin editar ni borrar. */
   readOnly?: boolean;
@@ -103,7 +105,7 @@ function DarkBox({
 export function ExpenseDetailDialog({
   expense, members, isSettled, open, onOpenChange, onEdit, onDelete,
   hideSplitBadge = false, hideActions = false, readOnly = false,
-  groupId, groupName, isOneTimeGroup = false,
+  groupId, groupName, isOneTimeGroup = false, categoryEmoji,
   onRecurringDelete, onRecurringEdit,
 }: ExpenseDetailDialogProps) {
   const { t } = useTranslation();
@@ -246,7 +248,7 @@ export function ExpenseDetailDialog({
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-white/[0.07] text-xl leading-none"
               aria-hidden="true"
             >
-              <CategoryEmoji category={expense.category} />
+              {categoryEmoji ?? <CategoryEmoji category={expense.category} />}
             </div>
             <div className="min-w-0 flex-1">
               <DialogTitle className="truncate text-[15px] font-bold leading-tight text-paper">

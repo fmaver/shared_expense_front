@@ -250,6 +250,7 @@ export function ExpenseRow({
 
       <ExpenseDetailDialog
         expense={expense}
+        categoryEmoji={categoryEmoji}
         members={members}
         isSettled={isSettled}
         open={detailOpen}

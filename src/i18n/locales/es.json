@@ -1015,6 +1015,7 @@
     "viewMonths_one": "Ver el mes",
     "viewMonths_other": "Ver los {{count}} meses",
     "perMonth": "/mes",
+    "upcoming": "próximo",
     "error": "No pudimos buscar. Probá de nuevo.",
     "cancel": "Cancelar",
     "filters": "Filtrar por grupo",

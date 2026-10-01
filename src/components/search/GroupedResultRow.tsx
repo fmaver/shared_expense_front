@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { FALLBACK_EMOJI } from '@/components/search/SearchResultRow';
+import { isFuturePeriod } from '@/utils/search';
 import type { ExpenseSearchResult } from '@/types/expense';
 
 /**
@@ -12,7 +13,7 @@ import type { ExpenseSearchResult } from '@/types/expense';
  * con su estado. Cada ítem de la lista es "mes año" + su estado y abre ese resultado.
  */
 export function GroupedResultRow({
-  emoji, title, subtitle, extra, toggleLabel, aside, items, tabIndex = 0, onOpen, onSelect,
+  emoji, title, subtitle, extra, toggleLabel, aside, items, upcomingIsFuture = false, tabIndex = 0, onOpen, onSelect,
 }: {
   emoji?: string;
   title: ReactNode;
@@ -21,6 +22,8 @@ export function GroupedResultRow({
   toggleLabel: string;
   aside: ReactNode;
   items: ExpenseSearchResult[];
+  /** Recurrentes: un mes futuro se lista como "próximo" y no como "sin saldar". */
+  upcomingIsFuture?: boolean;
   /** -1 mientras el overlay está cerrado, para que el tab no entre en filas invisibles. */
   tabIndex?: number;
   onOpen: () => void;
@@ -74,7 +77,9 @@ export function GroupedResultRow({
                 className="flex w-full cursor-pointer items-center justify-between gap-2 py-2 text-left text-[12px] font-medium text-muted-2 hover:text-foreground"
               >
                 <span className="truncate">{monthsShort[item.periodMonth - 1] ?? ''} {item.periodYear}</span>
-                {item.periodSettled !== null && (
+                {upcomingIsFuture && isFuturePeriod(item) ? (
+                  <span className="shrink-0 text-[10.5px] font-semibold text-muted-2">{t('search.upcoming')}</span>
+                ) : item.periodSettled !== null && (
                   <span className={cn('shrink-0 text-[10.5px] font-semibold', item.periodSettled ? 'text-positive' : 'text-negative')}>
                     {item.periodSettled ? t('search.settled') : t('search.unsettled')}
                   </span>
@@ -88,9 +93,14 @@ export function GroupedResultRow({
   );
 }
 
-/** Estado de un grupo de resultados: "K sin saldar" en rojo, "saldado" en verde, o nada (personal). */
-export function GroupedStatus({ items }: { items: ExpenseSearchResult[] }) {
+/**
+ * Estado de un grupo de resultados: "K sin saldar" en rojo, "saldado" en verde, o nada (personal).
+ * `pastOnly` (recurrentes): sólo cuentan los meses que ya llegaron — un mes futuro existe porque
+ * alguien miró adelante, no es una deuda. Las cuotas futuras sí lo son, así que ahí cuentan todas.
+ */
+export function GroupedStatus({ items: all, pastOnly = false }: { items: ExpenseSearchResult[]; pastOnly?: boolean }) {
   const { t } = useTranslation();
+  const items = pastOnly ? all.filter(item => !isFuturePeriod(item)) : all;
   // `periodSettled` es siempre null para el grupo personal (no tiene saldado).
   if (!items.some(item => item.periodSettled !== null)) return null;
   const unsettled = items.filter(item => item.periodSettled === false).length;

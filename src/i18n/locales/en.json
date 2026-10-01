@@ -1015,6 +1015,7 @@
     "viewMonths_one": "View the month",
     "viewMonths_other": "View the {{count}} months",
     "perMonth": "/mo",
+    "upcoming": "upcoming",
     "error": "We couldn't search. Try again.",
     "cancel": "Cancel",
     "filters": "Filter by group",
