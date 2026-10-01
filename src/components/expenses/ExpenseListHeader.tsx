@@ -127,10 +127,13 @@ export function ExpenseListHeader({
     ? formatCurrency(monthTotal)
     : t('expenses.totalInMonth', { amount: formatCurrency(monthTotal), month: monthLabel.toLowerCase() });
 
-  const hasQuery = parsed !== null;
+  // "Míos" sola también achica la lista: el conteo tiene que decir "N de M" en ese caso, no
+  // sólo cuando hay texto. Comparar contra `expenses.length` cubre los dos filtros (y su combo)
+  // sin tener que repetir la lógica de `filters`/`parsed` acá.
+  const isFiltered = sorted.length !== expenses.length;
   // La pluralización depende del total ("1 de 2 gastos" lee en plural aunque haya un sólo
   // resultado): `count` maneja el singular/plural de i18next, `matched` es la cifra filtrada.
-  const countLabel = hasQuery
+  const countLabel = isFiltered
     ? t('expenses.countFiltered', { count: expenses.length, matched: sorted.length })
     : t('expenses.countPlain', { count: expenses.length });
 
@@ -141,7 +144,7 @@ export function ExpenseListHeader({
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="min-w-0 truncate text-[13.5px] font-bold text-foreground">
           {countLabel}
-          <span className="ml-1 font-medium text-muted-1">· {monthTotalLabel}</span>
+          <span className="ml-1 font-medium tabular-nums text-muted-1">· {monthTotalLabel}</span>
         </h2>
 
         <div className="flex shrink-0 items-center gap-2.5">
