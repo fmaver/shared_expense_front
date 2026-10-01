@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { Segmented } from '@/components/ui/Segmented';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { AmountInput } from '@/components/expenses/AmountInput';
+import { DescriptionInput } from '@/components/expenses/DescriptionInput';
 import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
@@ -78,6 +79,7 @@ export function PersonalExpenseSheet({
   const [picker, setPicker] = useState<Picker>(null);
   const [duplicate, setDuplicate] = useState<ExpenseResponse | 'fixed' | null>(null);
   const [error, setError] = useState('');
+  const descriptionRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const scan = useReceiptScan(personalGroupId);
   /*
@@ -175,7 +177,12 @@ export function PersonalExpenseSheet({
   const save = async (skipDuplicateCheck = false) => {
     setError('');
     if (amount <= 0) { setError(t('expenseForm.amountRequired')); return; }
-    if (!description.trim()) { setError(t('expenseForm.descriptionRequired')); return; }
+    // El foco va al campo dentro del mismo tap, así en iOS se abre el teclado ahí.
+    if (!description.trim()) {
+      setError(t('expenseForm.descriptionRequired'));
+      descriptionRef.current?.focus();
+      return;
+    }
     if (!category) { setError(t('expenseForm.categoryRequired')); return; }
     if (!personalGroupId || !currentMemberId) return;
 
@@ -295,16 +302,16 @@ export function PersonalExpenseSheet({
             </div>
           </div>
 
-          <input
-            type="text"
+          <DescriptionInput
+            ref={descriptionRef}
             value={description}
-            maxLength={255}
-            onChange={e => { setDescription(e.target.value); scan.touch('description'); }}
-            placeholder={t('expenseForm.whatWasIt')}
-            className={cn(
-              'mt-4 w-full bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-3',
-              scan.fromPhoto.has('description') ? 'rounded-[12px] border border-brand-soft px-3 py-2' : 'border-0',
-            )}
+            fromPhoto={scan.fromPhoto.has('description')}
+            invalid={error === t('expenseForm.descriptionRequired')}
+            onChange={value => {
+              setDescription(value);
+              scan.touch('description');
+              if (error === t('expenseForm.descriptionRequired')) setError('');
+            }}
           />
           {scan.fromPhoto.has('description') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
 
@@ -387,7 +394,8 @@ export function PersonalExpenseSheet({
             </div>
           )}
 
-          {error && (
+          {/* El de la descripción se muestra pegado al campo, no acá abajo. */}
+          {error && error !== t('expenseForm.descriptionRequired') && (
             <p className="mt-3 rounded-[12px] border border-negative-wash-line bg-negative-wash px-3 py-2 text-[12px] font-semibold text-negative-ink">
               {error}
             </p>
