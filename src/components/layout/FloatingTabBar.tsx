@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useScroll } from '@/contexts/ScrollContext';
 import {
-  ArrowLeftRight, Camera, PenLine, PieChart, Plus, User, Users,
+  ArrowLeftRight, Camera, PenLine, PieChart, Plus, User, Users, type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
@@ -13,6 +12,9 @@ import { useScanPicker } from '@/components/expenses/ScanPicker';
 
 /** Cuánto hay que mantener apretado el "+" para ir directo a la cámara. */
 const LONG_PRESS_MS = 500;
+/** La barra inferior (V7): alto de la pastilla y del "+", y su distancia al safe-area. */
+const BAR_HEIGHT = 62;
+const BAR_BOTTOM = 8;
 
 interface LauncherState {
   open: boolean;
@@ -25,7 +27,7 @@ const CLOSED: LauncherState = { open: false, mode: 'expense' };
 
 interface TabItem {
   to: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   label: string;
   end?: boolean;
 }
@@ -34,7 +36,6 @@ export function FloatingTabBar() {
   const { t } = useTranslation();
   const location = useLocation();
   const { personalActions } = useFabActions();
-  const { tabBarCollapsed } = useScroll();
   const { isSettled: viewedMonthSettled } = useSettlementState();
 
   // Detect group context from route
@@ -70,7 +71,7 @@ export function FloatingTabBar() {
     tiene su propio encabezado con sus pestañas, y "‹ Grupos" es la salida (§6.3).
   */
   const tabs: TabItem[] = [
-    { to: '/personal', icon: User, label: t('mobileNav.personal'), end: true },
+    { to: '/personal', icon: User, label: t('tabBar.personal'), end: true },
     { to: '/groups', icon: Users, label: t('mobileNav.groups') },
     { to: '/personal/charts', icon: PieChart, label: t('mobileNav.numbers') },
   ];
@@ -135,14 +136,14 @@ export function FloatingTabBar() {
       {/* Action menu — panel escalando desde el FAB */}
       <div
         className={cn(
-          'fixed right-5 z-40 w-80 max-w-[calc(100vw-2.5rem)] lg:hidden',
+          'fixed right-3 z-40 w-80 max-w-[calc(100vw-1.5rem)] lg:hidden',
           'glass rounded-2xl p-2',
           'origin-bottom-right transition-all duration-200 ease-out',
           speedDialOpen
             ? 'translate-y-0 scale-100 opacity-100'
             : 'pointer-events-none translate-y-2 scale-95 opacity-0',
         )}
-        style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
+        style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${BAR_BOTTOM + BAR_HEIGHT + 10}px)` }}
       >
         {menuItems.map(item => {
           const Icon = item.icon;
@@ -176,62 +177,47 @@ export function FloatingTabBar() {
         })}
       </div>
 
+      {/* El degradé que desvanece la lista contra la barra (V7). No recibe toques. */}
+      <div
+        aria-hidden="true"
+        className="tabbar-fade pointer-events-none fixed inset-x-0 bottom-0 z-30 lg:hidden"
+        style={{ height: 'calc(env(safe-area-inset-bottom, 0px) + 128px)' }}
+      />
+
       {/*
-        Pastilla y FAB en una sola fila centrada: el "+" va al lado, no encima (§6.1).
-        Al scrollear la pastilla se encoge al tab activo y el FAB no se mueve.
+        Barra inferior (V7): de borde a borde, la pastilla ocupa el ancho y el "+" va a la
+        derecha, los dos de 62px. Adentro de un grupo no hay pastilla (el grupo tiene sus
+        pestañas y el volver): queda sólo el "+", en el mismo lugar y del mismo tamaño.
+        Ya no se achica al scrollear: es una decisión abierta, documentada con cómo volver
+        a ponerlo en docs/superpowers/specs/2026-09-26-barra-inferior-colapso.md.
       */}
       <div
-        className={cn(
-          'fixed inset-x-0 z-40 flex items-center gap-2.5 lg:hidden',
-          // Con pastilla, el conjunto va centrado; adentro de un grupo no hay pastilla y el
-          // "+" solo se va al borde, que es donde el pulgar lo espera.
-          inGroup ? 'justify-end pr-5' : 'justify-center',
-        )}
-        style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        className="fixed left-3 right-3 z-40 flex items-center justify-end gap-2.5 lg:hidden"
+        style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${BAR_BOTTOM}px)` }}
       >
         {!inGroup && (
           <nav
-            className="glass relative flex items-center overflow-hidden rounded-full"
-            style={{
-              padding: tabBarCollapsed ? '4px' : '8px',
-              transition: 'padding 220ms ease-out',
-            }}
+            aria-label={t('tabBar.label')}
+            className="tabbar-glass flex min-w-0 flex-1 items-stretch gap-1 rounded-full p-[5px]"
+            style={{ height: BAR_HEIGHT }}
           >
-            {/* Reflejo especular del borde superior del vidrio */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[1.5px] rounded-full"
-              style={{
-                background: 'linear-gradient(90deg, transparent 4%, rgba(255,255,255,0.60) 28%, rgba(255,255,255,0.90) 50%, rgba(255,255,255,0.60) 72%, transparent 96%)',
-              }}
-            />
-            <div
-              className="flex items-center"
-              style={{ gap: tabBarCollapsed ? '0px' : '4px', transition: 'gap 220ms ease-out' }}
-            >
-              {tabs.map(({ to, icon: Icon, label, end }) => {
-                const isActive = end ? location.pathname === to : location.pathname.startsWith(to);
-                return (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    aria-label={label}
-                    style={{ transition: 'width 220ms ease-out, opacity 200ms ease-out' }}
-                    className={cn(
-                      'relative flex h-10 items-center justify-center overflow-hidden rounded-full',
-                      isActive
-                        ? 'bg-surface-sunken text-brand-ink'
-                        : 'text-muted-1 hover:bg-surface-sunken/60 hover:text-foreground',
-                      tabBarCollapsed
-                        ? isActive ? 'w-10 opacity-100' : 'pointer-events-none w-0 opacity-0'
-                        : 'w-14 opacity-100',
-                    )}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                  </NavLink>
-                );
-              })}
-            </div>
+            {tabs.map(({ to, icon: Icon, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className="tabbar-tab flex min-w-0 flex-1 flex-col items-center justify-center gap-[3px] rounded-full transition-colors"
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.2 : 2} aria-hidden="true" />
+                    <span className={cn('max-w-full truncate px-1 text-[10.5px] leading-none', isActive ? 'font-bold' : 'font-semibold')}>
+                      {label}
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            ))}
           </nav>
         )}
 
@@ -242,7 +228,10 @@ export function FloatingTabBar() {
         */}
         <div className="relative shrink-0">
           {viewedMonthSettled && inGroup && (
-            <span className="glass absolute bottom-[3.75rem] right-0 w-44 rounded-2xl px-3 py-2 text-[10.5px] font-semibold leading-[1.4] text-muted-1">
+            <span
+              className="glass absolute right-0 w-44 rounded-2xl px-3 py-2 text-[10.5px] font-semibold leading-[1.4] text-muted-1"
+              style={{ bottom: BAR_HEIGHT + 8 }}
+            >
               {t('settle.fabNote')}
             </span>
           )}
@@ -261,14 +250,15 @@ export function FloatingTabBar() {
             }}
             aria-label={t('fab.options')}
             className={cn(
-              'flex h-14 w-14 items-center justify-center rounded-full',
+              'flex items-center justify-center rounded-full',
               'cursor-pointer transition-transform duration-150 active:scale-95',
               viewedMonthSettled && inGroup
                 ? 'bg-surface-sunken text-muted-3'
-                : 'bg-primary text-primary-foreground shadow-fab',
+                : 'tabbar-fab bg-primary text-primary-foreground',
             )}
+            style={{ width: BAR_HEIGHT, height: BAR_HEIGHT }}
           >
-            <Plus className={cn('h-6 w-6 transition-transform duration-200', speedDialOpen && 'rotate-45')} />
+            <Plus className={cn('h-6 w-6 transition-transform duration-200', speedDialOpen && 'rotate-45')} strokeWidth={2.4} />
           </button>
         </div>
       </div>

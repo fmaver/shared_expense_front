@@ -35,7 +35,7 @@ export function PersonalSectionPage({ section }: { section: Section }) {
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0" onScroll={handleScroll}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-tabbar lg:pb-0" onScroll={handleScroll}>
         <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
           {/* Header: back link + title */}
           <FloatingTopBar back={{ to: `/personal?year=${year}&month=${month}`, label: t('common.back') }} />

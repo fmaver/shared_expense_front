@@ -94,7 +94,7 @@ export default function GroupDueDatesPage({ groupId: explicitGroupId, backTo }: 
     <div className="flex flex-col flex-1">
       {backTo && <FloatingTopBar back={{ to: backTo, label: t('common.back') }} />}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-tabbar lg:pb-0"
         onScroll={(e) => notifyScroll((e.target as HTMLDivElement).scrollTop)}
       >
         <div className="mx-auto w-full max-w-2xl space-y-2.5 px-5 py-4 lg:px-7 lg:py-6">

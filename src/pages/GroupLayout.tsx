@@ -128,7 +128,7 @@ export function GroupLayout() {
 
       {/* Tab content: el encabezado scrollea con el contenido, así la banda tiene de qué salir. */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-tabbar lg:pb-0"
         onScroll={handleInnerScroll}
       >
         {/*

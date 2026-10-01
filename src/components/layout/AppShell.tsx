@@ -94,7 +94,7 @@ export function AppShell({ onLogout }: AppShellProps) {
         {/* Main content — flex col so GroupLayout can flex-1 without overflowing */}
         <main
           className={cn(
-            'flex flex-1 flex-col overflow-y-auto overflow-x-hidden touch-pan-y pb-24 lg:pb-0 lg:pt-0',
+            'flex flex-1 flex-col overflow-y-auto overflow-x-hidden touch-pan-y pb-tabbar lg:pb-0 lg:pt-0',
             showsAppHeader ? 'pt-12' : 'pt-0',
           )}
           onScroll={handleMainScroll}

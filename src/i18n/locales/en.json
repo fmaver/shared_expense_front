@@ -145,7 +145,7 @@
     "squareTotal": "You're all square",
     "movesLeft_one": "One move left to be square",
     "movesLeft_other": "{{count}} moves left to be square",
-    "yourMoney": "Your money",
+    "yourMoney": "Personal",
     "availableThisMonth": "Available this month",
     "peopleCount_one": "{{count}} person",
     "peopleCount_other": "{{count}} people",
@@ -994,5 +994,9 @@
     "add": "Add photo",
     "optional": "optional",
     "view": "View"
+  },
+  "tabBar": {
+    "label": "App sections",
+    "personal": "Personal"
   }
 }
