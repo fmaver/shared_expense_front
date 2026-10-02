@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 
 /** Cuotas que ofrece una tarjeta acá: las que se ven en la calle. */
-const INSTALLMENT_OPTIONS = [2, 3, 6, 9, 12, 18, 24];
+// 1 incluido: crédito en un pago (entra el mes que viene). Otra cantidad va por "Otra".
+const INSTALLMENT_OPTIONS = [1, 2, 3, 6, 9, 12, 18, 24];
 
 /**
  * El panel que tapa la hoja mientras elegís una cosa.
@@ -75,7 +76,7 @@ export function PaymentPicker({
             type="button"
             onClick={() => onChange({
               paymentType: type,
-              installments: type === 'debit' ? 1 : Math.max(installments, 2),
+              installments: type === 'debit' ? 1 : Math.max(installments, 1),
             })}
             className={cn(
               'h-9 flex-1 cursor-pointer rounded-pill text-[12.5px] font-bold transition-colors',
@@ -103,6 +104,32 @@ export function PaymentPicker({
               {n}
             </button>
           ))}
+          {/* Antes del rediseño las cuotas se tipeaban; cualquier cantidad que no esté en los
+              chips (4, 5, 10…) se escribe acá. */}
+          <label
+            className={cn(
+              'flex h-9 items-center gap-1 rounded-pill px-3 text-[12.5px] font-bold transition-colors',
+              INSTALLMENT_OPTIONS.includes(installments)
+                ? 'border border-line-strong text-muted-1'
+                : 'bg-brand text-primary-foreground',
+            )}
+          >
+            {t('expenseForm.otherInstallments')}
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={2}
+              value={INSTALLMENT_OPTIONS.includes(installments) ? '' : String(installments)}
+              onChange={e => {
+                const n = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                if (n >= 1) onChange({ paymentType: 'credit', installments: n });
+              }}
+              aria-label={t('expenseForm.otherInstallmentsAria')}
+              className="w-8 bg-transparent text-center text-[16px] tabular-nums outline-none placeholder:text-current/60"
+              placeholder="…"
+            />
+          </label>
         </div>
       )}
     </div>

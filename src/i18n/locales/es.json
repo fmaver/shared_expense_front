@@ -391,7 +391,6 @@
     "pillExact": "Exactos",
     "pillPaidByYou": "Pagaste vos",
     "pillPaidBy": "Pagó {{name}}",
-    "pillInstallments": "{{count}} cuotas",
     "repeatCard": "Se repite cada mes",
     "repeatNote": "Lo vas a ver también en {{month}}",
     "blueRate": "USD · blue {{rate}}",
@@ -411,7 +410,11 @@
     "rowSplit": "División",
     "rowWhen": "Cuándo",
     "rowPayment": "Pago",
-    "scanFailed": "No se pudo leer la imagen. Cargalo a mano."
+    "scanFailed": "No se pudo leer la imagen. Cargalo a mano.",
+    "pillInstallments_one": "Crédito · 1 cuota",
+    "pillInstallments_other": "{{count}} cuotas",
+    "otherInstallments": "Otra",
+    "otherInstallmentsAria": "Otra cantidad de cuotas"
   },
   "transfer": {
     "title": "Transferencia de dinero",
