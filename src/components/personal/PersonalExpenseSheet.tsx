@@ -166,7 +166,8 @@ export function PersonalExpenseSheet({
     return formatDayMonth(date, monthsShort);
   })();
 
-  const paymentLabel = paymentType === 'credit' && installments > 1
+  // Crédito en 1 cuota también es crédito: antes caía en "Débito" por el `> 1`.
+  const paymentLabel = paymentType === 'credit'
     ? t('expenseForm.pillInstallments', { count: installments })
     : t('expenseForm.debit');
 

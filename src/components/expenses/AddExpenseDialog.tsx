@@ -317,7 +317,8 @@ export function AddExpenseDialog({
     ? t('expenseForm.pillPaidByYou')
     : t('expenseForm.pillPaidBy', { name: memberName(form.payerId) });
 
-  const paymentLabel = form.paymentType === 'credit' && form.installments > 1
+  // Crédito en 1 cuota también es crédito: antes caía en "Débito" por el `> 1`.
+  const paymentLabel = form.paymentType === 'credit'
     ? t('expenseForm.pillInstallments', { count: form.installments })
     : t('expenseForm.debit');
 

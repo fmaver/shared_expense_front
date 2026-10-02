@@ -391,7 +391,6 @@
     "pillExact": "Exact",
     "pillPaidByYou": "You paid",
     "pillPaidBy": "{{name}} paid",
-    "pillInstallments": "{{count}} instalments",
     "repeatCard": "Repeats every month",
     "repeatNote": "You'll see it in {{month}} too",
     "blueRate": "USD · blue {{rate}}",
@@ -411,7 +410,11 @@
     "rowSplit": "Split",
     "rowWhen": "When",
     "rowPayment": "Payment",
-    "scanFailed": "Couldn't read the image. Enter it by hand."
+    "scanFailed": "Couldn't read the image. Enter it by hand.",
+    "pillInstallments_one": "Credit · 1 instalment",
+    "pillInstallments_other": "{{count}} instalments",
+    "otherInstallments": "Other",
+    "otherInstallmentsAria": "Other number of instalments"
   },
   "transfer": {
     "title": "Money transfer",
