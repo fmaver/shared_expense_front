@@ -411,7 +411,8 @@
     "rowSplit": "Split",
     "rowWhen": "When",
     "rowPayment": "Payment",
-    "scanFailed": "Couldn't read the image. Enter it by hand."
+    "scanFailed": "Couldn't read the image. Enter it by hand.",
+    "percentageError": "Percentages must add up to 100%."
   },
   "transfer": {
     "title": "Money transfer",
@@ -1091,5 +1092,16 @@
     "afterInstall": "Open Jirens from its icon and turn on notifications in your profile.",
     "later": "Not now",
     "alreadyInstalled": "I already installed it"
+  },
+  "splitEditor": {
+    "percentOf": "{{name}}'s percentage",
+    "amountOf": "{{name}}'s amount",
+    "okPercent": "Adds up to 100%",
+    "okAmount": "Adds up to {{total}}",
+    "missing": "{{value}} missing",
+    "over": "{{value}} over",
+    "addTo": "Add to {{name}}",
+    "takeFrom": "Take from {{name}}",
+    "needAmount": "Enter the expense amount first."
   }
 }

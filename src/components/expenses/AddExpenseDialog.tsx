@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ChevronLeft, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Segmented } from '@/components/ui/Segmented';
 import { useCategories } from '@/hooks/useCategories';
@@ -22,6 +21,8 @@ import { DescriptionInput } from './DescriptionInput';
 import { ContextCard, ContextRow } from './ContextRows';
 import { DatePicker, PaymentPicker } from './ContextPickers';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '@/types/expense';
+import { SplitValuesEditor } from './SplitValuesEditor';
+import { evenSplit, splitStatus, type SplitValues } from '@/utils/splitEditing';
 
 /** Qué se está cargando. Un préstamo es un gasto con otra categoría y otro reparto. */
 type Mode = 'expense' | 'loan';
@@ -51,6 +52,12 @@ interface AddExpenseDialogProps {
   scanFile?: File | null;
 }
 
+/** En el formulario un porcentaje o monto puede estar vacío (null) mientras se escribe. */
+type FormSplit = Omit<SplitStrategy, 'percentages' | 'amounts'> & {
+  percentages?: SplitValues | null;
+  amounts?: SplitValues | null;
+};
+
 interface FormState {
   amountText: string;
   description: string;
@@ -60,7 +67,7 @@ interface FormState {
   paymentType: 'debit' | 'credit';
   installments: number;
   currency: string;
-  splitStrategy: SplitStrategy;
+  splitStrategy: FormSplit;
   loanTargetId: number | null;
 }
 
@@ -173,6 +180,9 @@ export function AddExpenseDialog({
   const exactTotal = useMemo(() => Object.values(form.splitStrategy.amounts ?? {})
     .reduce<number>((s, v) => s + (v ?? 0), 0), [form.splitStrategy]);
   const exactRemaining = amount - exactTotal;
+  const splitOk = form.splitStrategy.type === 'equal'
+    || splitStatus(form.splitStrategy.type, form.splitStrategy.type === 'percentage'
+      ? form.splitStrategy.percentages : form.splitStrategy.amounts, amount).ok;
 
   /* ── Escaneo de ticket ────────────────────────────────────────────────────────────── */
   const scanImage = async (file: File) => {
@@ -220,6 +230,9 @@ export function AddExpenseDialog({
       if (!form.category) { setError(t('expenseForm.categoryRequired')); return; }
       if (form.splitStrategy.type === 'exact' && Math.abs(exactRemaining) > 0.01) {
         setError(t('expenseForm.exactError')); return;
+      }
+      if (form.splitStrategy.type === 'percentage' && !splitOk) {
+        setError(t('expenseForm.percentageError')); return;
       }
     }
 
@@ -627,10 +640,11 @@ export function AddExpenseDialog({
                         onClick={() => set({
                           splitStrategy: {
                             type,
+                            // Arranca en partes iguales: el reparto empieza válido y se toca lo que cambia.
                             percentages: type === 'percentage'
-                              ? Object.fromEntries(members.map(m => [String(m.id), null])) : null,
+                              ? evenSplit(members.map(m => String(m.id)), 100) : null,
                             amounts: type === 'exact'
-                              ? Object.fromEntries(members.map(m => [String(m.id), null])) : null,
+                              ? evenSplit(members.map(m => String(m.id)), amount) : null,
                             participantIds: null,
                           },
                         })}
@@ -661,6 +675,8 @@ export function AddExpenseDialog({
                               type="button"
                               onClick={() => {
                                 const current = ids ?? members.map(x => x.id);
+                                // Siempre queda al menos uno: sin participantes no hay entre quiénes repartir.
+                                if (checked && current.length === 1) return;
                                 const next = checked
                                   ? current.filter(id => id !== m.id)
                                   : [...current, m.id];
@@ -686,71 +702,36 @@ export function AddExpenseDialog({
                     </div>
                   )}
 
-                  {form.splitStrategy.type === 'percentage' && (
-                    <div className="space-y-2">
-                      {members.map(m => (
-                        <div key={m.id} className="flex items-center gap-2">
-                          <span className="w-24 truncate text-[12.5px] font-medium">{m.name}</span>
-                          <Input
-                            type="number" min="0" max="100" step="0.01" className="w-24"
-                            value={form.splitStrategy.percentages?.[m.id] ?? ''}
-                            onChange={e => set({
-                              splitStrategy: {
-                                ...form.splitStrategy,
-                                percentages: {
-                                  ...form.splitStrategy.percentages,
-                                  [m.id]: e.target.value === '' ? null : parseFloat(e.target.value),
-                                },
-                              },
-                            })}
-                          />
-                          <span className="text-[12.5px] text-muted-2">%</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {form.splitStrategy.type === 'exact' && (
-                    <div className="space-y-2">
-                      {members.map(m => (
-                        <div key={m.id} className="flex items-center gap-2">
-                          <span className="w-24 truncate text-[12.5px] font-medium">{m.name}</span>
-                          <Input
-                            type="number" min="0" step="0.01" className="w-28"
-                            value={form.splitStrategy.amounts?.[m.id] ?? ''}
-                            onChange={e => set({
-                              splitStrategy: {
-                                ...form.splitStrategy,
-                                amounts: {
-                                  ...form.splitStrategy.amounts,
-                                  [m.id]: e.target.value === '' ? null : parseFloat(e.target.value),
-                                },
-                              },
-                            })}
-                          />
-                        </div>
-                      ))}
-                      <p className={cn(
-                        'text-[11.5px] font-semibold',
-                        Math.abs(exactRemaining) <= 0.01 ? 'text-positive' : 'text-negative',
-                      )}>
-                        {Math.abs(exactRemaining) <= 0.01
-                          ? t('expenseForm.amountsCorrect')
-                          : exactRemaining > 0
-                            ? t('expenseForm.unassigned', { amount: exactRemaining.toFixed(2) })
-                            : t('expenseForm.overBy', { amount: Math.abs(exactRemaining).toFixed(2) })}
-                      </p>
-                    </div>
+                  {(form.splitStrategy.type === 'percentage' || form.splitStrategy.type === 'exact') && (
+                    <SplitValuesEditor
+                      key={form.splitStrategy.type}
+                      type={form.splitStrategy.type}
+                      members={members}
+                      amount={amount}
+                      currency={form.currency}
+                      values={(form.splitStrategy.type === 'percentage'
+                        ? form.splitStrategy.percentages
+                        : form.splitStrategy.amounts) ?? {}}
+                      onChange={values => set({
+                        splitStrategy: {
+                          ...form.splitStrategy,
+                          ...(form.splitStrategy.type === 'percentage' ? { percentages: values } : { amounts: values }),
+                        },
+                      })}
+                    />
                   )}
                 </div>
               )}
             </div>
 
             <div className="border-t border-line p-4">
+              {/* Con porcentajes o montos que no cierran no se puede salir: el estado de arriba
+                  dice cuánto falta y "Sumarle / Restarle a…" lo arregla de un toque. */}
               <button
                 type="button"
                 onClick={() => setPicker(null)}
-                className="h-11 w-full cursor-pointer rounded-[12px] bg-primary text-[13px] font-bold text-primary-foreground"
+                disabled={picker === 'split' && !splitOk}
+                className="h-11 w-full cursor-pointer rounded-[12px] bg-primary text-[13px] font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {t('expenseForm.done')}
               </button>

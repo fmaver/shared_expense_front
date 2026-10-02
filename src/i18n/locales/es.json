@@ -411,7 +411,8 @@
     "rowSplit": "División",
     "rowWhen": "Cuándo",
     "rowPayment": "Pago",
-    "scanFailed": "No se pudo leer la imagen. Cargalo a mano."
+    "scanFailed": "No se pudo leer la imagen. Cargalo a mano.",
+    "percentageError": "Los porcentajes tienen que sumar 100%."
   },
   "transfer": {
     "title": "Transferencia de dinero",
@@ -1091,5 +1092,16 @@
     "afterInstall": "Abrí Jirens desde el ícono y activá las notificaciones en tu perfil.",
     "later": "Ahora no",
     "alreadyInstalled": "Ya la tengo instalada"
+  },
+  "splitEditor": {
+    "percentOf": "Porcentaje de {{name}}",
+    "amountOf": "Monto de {{name}}",
+    "okPercent": "Suman 100%",
+    "okAmount": "Suman {{total}}",
+    "missing": "Faltan {{value}}",
+    "over": "Te pasaste {{value}}",
+    "addTo": "Sumarle a {{name}}",
+    "takeFrom": "Restarle a {{name}}",
+    "needAmount": "Primero cargá el monto del gasto."
   }
 }
