@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
 
 /** Cuotas que ofrece una tarjeta acá: las que se ven en la calle. */
 const INSTALLMENT_OPTIONS = [2, 3, 6, 9, 12, 18, 24];
@@ -47,13 +46,6 @@ export function PickerOverlay({
         </button>
       </div>
     </div>
-  );
-}
-
-/** Qué día fue. */
-export function DatePicker({ value, onChange }: { value: string; onChange: (date: string) => void }) {
-  return (
-    <Input type="date" value={value} onChange={e => onChange(e.target.value)} className="text-base" />
   );
 }
 
