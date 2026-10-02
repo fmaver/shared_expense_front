@@ -414,7 +414,8 @@
     "pillInstallments_one": "Crédito · 1 cuota",
     "pillInstallments_other": "{{count}} cuotas",
     "otherInstallments": "Otra",
-    "otherInstallmentsAria": "Otra cantidad de cuotas"
+    "otherInstallmentsAria": "Otra cantidad de cuotas",
+    "percentageError": "Los porcentajes tienen que sumar 100%."
   },
   "transfer": {
     "title": "Transferencia de dinero",
@@ -1094,5 +1095,16 @@
     "afterInstall": "Abrí Jirens desde el ícono y activá las notificaciones en tu perfil.",
     "later": "Ahora no",
     "alreadyInstalled": "Ya la tengo instalada"
+  },
+  "splitEditor": {
+    "percentOf": "Porcentaje de {{name}}",
+    "amountOf": "Monto de {{name}}",
+    "okPercent": "Suman 100%",
+    "okAmount": "Suman {{total}}",
+    "missing": "Faltan {{value}}",
+    "over": "Te pasaste {{value}}",
+    "addTo": "Sumarle a {{name}}",
+    "takeFrom": "Restarle a {{name}}",
+    "needAmount": "Primero cargá el monto del gasto."
   }
 }
