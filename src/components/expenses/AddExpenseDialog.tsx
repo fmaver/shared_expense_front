@@ -19,14 +19,14 @@ import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from './CategoryChips';
 import { DescriptionInput } from './DescriptionInput';
-import { ContextCard, ContextRow } from './ContextRows';
-import { DatePicker, PaymentPicker } from './ContextPickers';
+import { ContextCard, ContextDateRow, ContextRow } from './ContextRows';
+import { PaymentPicker } from './ContextPickers';
 import type { ExpenseCreate, ExpenseResponse, Member, SplitStrategy } from '@/types/expense';
 
 /** Qué se está cargando. Un préstamo es un gasto con otra categoría y otro reparto. */
 type Mode = 'expense' | 'loan';
 /** Qué selector está abierto encima de la hoja. */
-type Picker = null | 'payer' | 'split' | 'date' | 'payment' | 'loanTarget';
+type Picker = null | 'payer' | 'split' | 'payment' | 'loanTarget';
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -455,10 +455,11 @@ export function AddExpenseDialog({
                 disabled={disabled}
               />
             )}
-            <ContextRow
+            <ContextDateRow
               label={t('expenseForm.rowWhen')}
               value={dateLabel}
-              onClick={() => setPicker('date')}
+              date={form.date}
+              onChange={date => { set({ date }); scan.touch('date'); }}
               disabled={disabled}
               badge={scan.fromPhoto.has('date') ? <FromPhotoPill /> : undefined}
             />
@@ -562,7 +563,6 @@ export function AddExpenseDialog({
                 {picker === 'payer' && t('expenseForm.choosePayer')}
                 {picker === 'loanTarget' && t('expenseForm.chooseLoanTarget')}
                 {picker === 'split' && t('expenseForm.chooseSplit')}
-                {picker === 'date' && t('expenseForm.chooseDate')}
                 {picker === 'payment' && t('expenseForm.choosePayment')}
               </p>
             </div>
@@ -603,10 +603,6 @@ export function AddExpenseDialog({
                       );
                     })}
                 </div>
-              )}
-
-              {picker === 'date' && (
-                <DatePicker value={form.date} onChange={date => { set({ date }); scan.touch('date'); }} />
               )}
 
               {picker === 'payment' && (

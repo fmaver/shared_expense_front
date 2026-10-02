@@ -14,9 +14,9 @@ import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from '@/comp
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from '@/components/expenses/CategoryChips';
-import { ContextCard, ContextRow } from '@/components/expenses/ContextRows';
+import { ContextCard, ContextDateRow, ContextRow } from '@/components/expenses/ContextRows';
 import {
-  DatePicker, PaymentPicker, PickerOverlay, StartMonthPicker,
+  PaymentPicker, PickerOverlay, StartMonthPicker,
 } from '@/components/expenses/ContextPickers';
 import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
@@ -29,7 +29,7 @@ import type {
 
 /** Una vez, o todos los meses. */
 type Kind = 'expense' | 'fixed';
-type Picker = null | 'date' | 'payment' | 'start';
+type Picker = null | 'payment' | 'start';
 
 interface PersonalExpenseSheetProps {
   open: boolean;
@@ -325,10 +325,11 @@ export function PersonalExpenseSheet({
           {/* ── El contexto, según si vuelve o no ──────────────────────────────────── */}
           {kind === 'expense' ? (
             <ContextCard className="mt-3">
-              <ContextRow
+              <ContextDateRow
                 label={t('personalAdd.rowWhen')}
                 value={dateLabel}
-                onClick={() => setPicker('date')}
+                date={date}
+                onChange={d => { setDate(d); scan.touch('date'); }}
                 badge={scan.fromPhoto.has('date') ? <FromPhotoPill /> : undefined}
               />
               <ContextRow
@@ -417,11 +418,6 @@ export function PersonalExpenseSheet({
           </div>
         </div>
 
-        {picker === 'date' && (
-          <PickerOverlay title={t('expenseForm.chooseDate')} onClose={() => setPicker(null)}>
-            <DatePicker value={date} onChange={d => { setDate(d); scan.touch('date'); }} />
-          </PickerOverlay>
-        )}
         {picker === 'payment' && (
           <PickerOverlay title={t('expenseForm.choosePayment')} onClose={() => setPicker(null)}>
             <PaymentPicker
