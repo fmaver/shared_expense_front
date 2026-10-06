@@ -208,9 +208,13 @@ export function PersonalExpenseSheet({
       } else {
         if (!skipDuplicateCheck) {
           const [y, m] = date.split('-').map(Number);
-          const { data: similar } = await checkSimilarExpenses(
-            personalGroupId, y, m, amount, description.trim(), date,
+          const { data: similar, error: similarError } = await checkSimilarExpenses(
+            personalGroupId, y, m, amount, description.trim(), date, currency,
           );
+          // Si el chequeo de duplicados no respondió (red, token vencido), no seguimos de largo
+          // como si no hubiera match: eso dejaría pasar un duplicado en silencio. Mejor frenar
+          // y que reintente, igual que cualquier otro fallo de red en este formulario.
+          if (similarError) { setError(t('expenseForm.duplicateCheckFailed')); return; }
           if (similar && similar.length > 0) { setDuplicate(similar[0]); return; }
         }
         const { error: apiError } = await createExpense(personalGroupId, {
@@ -281,7 +285,10 @@ export function PersonalExpenseSheet({
 
           {/* ── El monto ───────────────────────────────────────────────────────────── */}
           <div className="pt-5 text-center">
-            <AmountInput value={amountText} onChange={v => { setAmountText(v); scan.touch('amount'); }} />
+            <AmountInput
+              value={amountText}
+              onChange={v => { setAmountText(v); scan.touch('amount'); if (duplicate) setDuplicate(null); }}
+            />
             {scan.fromPhoto.has('amount') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
 
             <div className="mt-2.5 flex justify-center gap-1.5">
@@ -289,7 +296,7 @@ export function PersonalExpenseSheet({
                 <button
                   key={c}
                   type="button"
-                  onClick={() => setCurrency(c)}
+                  onClick={() => { setCurrency(c); if (duplicate) setDuplicate(null); }}
                   className={cn(
                     'h-7 cursor-pointer rounded-pill px-3 text-[11.5px] font-bold transition-colors',
                     currency === c
@@ -312,6 +319,7 @@ export function PersonalExpenseSheet({
               setDescription(value);
               scan.touch('description');
               if (error === t('expenseForm.descriptionRequired')) setError('');
+              if (duplicate) setDuplicate(null);
             }}
           />
           {scan.fromPhoto.has('description') && <div className="mt-1.5 flex justify-center"><FromPhotoPill /></div>}
@@ -330,7 +338,7 @@ export function PersonalExpenseSheet({
                 label={t('personalAdd.rowWhen')}
                 value={dateLabel}
                 date={date}
-                onChange={d => { setDate(d); scan.touch('date'); }}
+                onChange={d => { setDate(d); scan.touch('date'); if (duplicate) setDuplicate(null); }}
                 badge={scan.fromPhoto.has('date') ? <FromPhotoPill /> : undefined}
               />
               <ContextRow

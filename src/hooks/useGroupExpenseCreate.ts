@@ -52,6 +52,7 @@ export function useGroupExpenseCreate({
         data.amount,
         data.description,
         data.date,
+        data.currency === 'USD' ? 'USD' : 'ARS',
       );
       if (similar && similar.length > 0) {
         setPendingExpense(data);

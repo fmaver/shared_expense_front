@@ -135,7 +135,9 @@ export function ExpensesDashboard() {
 
   const handleCreate = async (data: ExpenseCreate) => {
     const [y, m] = data.date.split('-').map(Number);
-    const { data: similar } = await checkSimilarExpenses(groupId, y, m, data.amount, data.description, data.date);
+    const { data: similar } = await checkSimilarExpenses(
+      groupId, y, m, data.amount, data.description, data.date, data.currency === 'USD' ? 'USD' : 'ARS',
+    );
     if (similar && similar.length > 0) { setPendingExpense(data); setDuplicates(similar); return; }
     await submitExpense(data);
   };
