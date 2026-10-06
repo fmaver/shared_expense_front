@@ -35,6 +35,7 @@ export async function checkSimilarExpenses(
   amount: number,
   description: string,
   expenseDate: string,
+  currency: 'ARS' | 'USD' = 'ARS',
 ): Promise<{ data: ExpenseResponse[] | null; error: string | null }> {
   try {
     const token = localStorage.getItem('token');
@@ -45,6 +46,7 @@ export async function checkSimilarExpenses(
       amount: amount.toString(),
       description,
       date: expenseDate,
+      currency,
     });
     const response = await fetch(
       `${config.apiBaseUrl}/api/v1/groups/${groupId}/expenses/similar?${params}`,
