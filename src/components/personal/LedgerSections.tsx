@@ -66,9 +66,15 @@ function SeeAll({ to, label }: { to: string; label: string }) {
   );
 }
 
-/** Una fila: cuadrado a la izquierda, título y meta, monto a la derecha. */
+/**
+ * Una fila: cuadrado a la izquierda, título y meta, monto a la derecha.
+ *
+ * Con `to` es un `Link`: mismo salto que "Ver el grupo" más abajo, a un deep link que ya sabe
+ * abrir (`/personal/expenses` y `/groups/:id` resuelven `?expense=`/`?recurring=` solos). Sin
+ * `to` queda como antes — la fila de un ingreso, que todavía no tiene detalle propio.
+ */
 function Row({
-  icon, iconTone = 'sunken', title, meta, amount, amountTone = 'text-foreground',
+  icon, iconTone = 'sunken', title, meta, amount, amountTone = 'text-foreground', to,
 }: {
   icon: React.ReactNode;
   iconTone?: 'sunken' | 'positive';
@@ -76,9 +82,14 @@ function Row({
   meta?: string;
   amount: string;
   amountTone?: string;
+  to?: string;
 }) {
-  return (
-    <div className="flex items-center gap-3 border-b border-line px-5 py-[11px] last:border-b-0">
+  const className = cn(
+    'flex items-center gap-3 border-b border-line px-5 py-[11px] last:border-b-0',
+    to && 'cursor-pointer touch-manipulation transition-colors [@media(hover:hover)]:hover:bg-brand-wash active:bg-brand-wash',
+  );
+  const content = (
+    <>
       <div className={cn(
         'flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px]',
         iconTone === 'positive' ? 'bg-positive-wash' : 'bg-surface-sunken',
@@ -92,8 +103,10 @@ function Row({
         )}
       </div>
       <p className={cn('shrink-0 text-[13.5px] font-bold tabular-nums', amountTone)}>{amount}</p>
-    </div>
+    </>
   );
+  if (to) return <Link to={to} className={className}>{content}</Link>;
+  return <div className={className}>{content}</div>;
 }
 
 /**
@@ -207,6 +220,7 @@ export function OwnExpensesSection({ ledger, categories, year, month }: SectionP
       title={capitalize(e.label)}
       meta={capitalize(t(`categories.${e.categoryName}`, { defaultValue: e.categoryName }))}
       amount={formatAmount(e.amount, e.currency)}
+      to={`/personal/expenses?year=${year}&month=${month}&recurring=${e.id}`}
     />
   ));
   const datedRows = [...ledger.personalExpenses]
@@ -218,6 +232,7 @@ export function OwnExpensesSection({ ledger, categories, year, month }: SectionP
         title={capitalize(e.description)}
         meta={`${capitalize(t(`categories.${e.category}`, { defaultValue: e.category }))} · ${formatDayMonth(e.date, monthsShort)}`}
         amount={formatAmount(e.amount, e.currency)}
+        to={`/personal/expenses?year=${year}&month=${month}&expense=${e.id}`}
       />
     ));
 
@@ -336,10 +351,18 @@ export function GroupSharesSection({ ledger, categories, year, month }: SectionP
             </div>
 
             <div className="mt-2.5 space-y-1.5">
+              {/*
+                El año/mes del link es el del ledger que se está mirando, no `share.date`: el
+                backend arma `mirroredShares` leyendo el `MonthlyShare` de ESTE período
+                (`get_monthly_share(year, month, groupId)`), y una cuota de crédito guarda la
+                fecha de su propio vencimiento — que puede caer en otro mes. Usar esa fecha
+                abriría el grupo en un mes donde el gasto no está.
+              */}
               {group.shares.slice(0, GROUP_PREVIEW).map(share => (
-                <div
+                <Link
                   key={`${share.sourceExpenseId}-${share.installmentNo}`}
-                  className="flex items-center gap-2"
+                  to={`/groups/${group.id}?year=${year}&month=${month}&expense=${share.sourceExpenseId}`}
+                  className="flex cursor-pointer touch-manipulation items-center gap-2 rounded-lg transition-colors [@media(hover:hover)]:hover:bg-brand-wash active:bg-brand-wash"
                 >
                   <span className="w-4 shrink-0 text-center text-[12px] leading-none">
                     {emojiFor(share.category) ?? '·'}
@@ -355,7 +378,7 @@ export function GroupSharesSection({ ledger, categories, year, month }: SectionP
                   <p className="shrink-0 text-[12px] font-semibold tabular-nums text-muted-1">
                     {formatAmount(share.shareAmount, 'ARS')}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
 

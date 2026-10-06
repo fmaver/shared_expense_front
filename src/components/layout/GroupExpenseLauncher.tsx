@@ -2,11 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGroups, useGroup } from '@/hooks/useGroups';
 import { useGroupMembers } from '@/hooks/useMembers';
+import { useCategories } from '@/hooks/useCategories';
+import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { getCurrentUser } from '@/api/auth';
 import { useGroupExpenseCreate } from '@/hooks/useGroupExpenseCreate';
 import { useIsland } from '@/contexts/IslandContext';
 import { useExpenseRefresh } from '@/contexts/ExpenseRefreshContext';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
+import { PersonalExpenseSheet } from '@/components/personal/PersonalExpenseSheet';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +18,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Users } from 'lucide-react';
+import { ChevronRight, User, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export type LauncherMode = 'expense' | 'transfer';
@@ -145,6 +148,55 @@ function GroupExpenseDialogs({
   );
 }
 
+/** Qué se eligió en el picker: un grupo real, o lo personal (sin id, fuera de `useGroups`). */
+type Selection = { kind: 'group'; groupId: number } | { kind: 'personal' };
+
+function presetSelection(presetGroupId?: number): Selection | null {
+  return presetGroupId != null ? { kind: 'group', groupId: presetGroupId } : null;
+}
+
+/** Inner component for the personal path — mirrors `GroupExpenseDialogs` but for your own money. */
+function PersonalExpenseLauncherSheet({
+  open,
+  onClose,
+  onBack,
+  scanFile,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onBack: () => void;
+  scanFile: File | null;
+}) {
+  const island = useIsland();
+  const { requestExpenseRefresh } = useExpenseRefresh();
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  const { data: ledger, refetch } = usePersonalLedger(year, month);
+  const { data: categories } = useCategories();
+
+  const handleSaved = useCallback(() => {
+    island.success();
+    requestExpenseRefresh();
+    refetch();
+  }, [island, requestExpenseRefresh, refetch]);
+
+  return (
+    <PersonalExpenseSheet
+      open={open}
+      onOpenChange={v => { if (!v) onClose(); }}
+      initialKind="expense"
+      year={year}
+      month={month}
+      categories={categories}
+      existingRecurring={ledger?.recurringPersonalExpenses ?? []}
+      onBack={onBack}
+      onSaved={handleSaved}
+      scanFile={scanFile}
+    />
+  );
+}
+
 export function GroupExpenseLauncher({
   open,
   onClose,
@@ -154,20 +206,23 @@ export function GroupExpenseLauncher({
 }: GroupExpenseLauncherProps) {
   const { t } = useTranslation();
   const { data: groups = [], isLoading: loadingGroups } = useGroups();
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(
-    presetGroupId ?? null,
-  );
+  const [selection, setSelection] = useState<Selection | null>(presetSelection(presetGroupId));
 
   // When the launcher re-opens reset selection (unless preset)
   useEffect(() => {
     if (open) {
-      setSelectedGroupId(presetGroupId ?? null);
+      setSelection(presetSelection(presetGroupId));
     }
   }, [open, presetGroupId]);
 
-  const resolvedGroupId = selectedGroupId ?? presetGroupId ?? null;
-  const showPicker = open && resolvedGroupId === null;
-  const showDialogs = open && resolvedGroupId !== null;
+  const showPicker = open && selection === null;
+  const showGroupDialogs = open && selection?.kind === 'group';
+  const showPersonalSheet = open && selection?.kind === 'personal';
+  /*
+    Una transferencia es entre miembros de un grupo: lo personal no tiene con quién, así que no
+    se ofrece como destino cuando el "+" abrió en modo transferencia.
+  */
+  const offerPersonal = mode === 'expense';
 
   return (
     <>
@@ -184,18 +239,36 @@ export function GroupExpenseLauncher({
                 <Skeleton key={i} className="h-12 w-full rounded-xl" />
               ))}
             </div>
-          ) : groups.length === 0 ? (
+          ) : groups.length === 0 && !offerPersonal ? (
             <div className="text-center py-8">
               <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">{t('fab.noGroups')}</p>
             </div>
           ) : (
             <div className="space-y-1.5 py-1">
+              {offerPersonal && (
+                <button
+                  type="button"
+                  onClick={() => setSelection({ kind: 'personal' })}
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between hover:border-brand/40 hover:bg-accent/50 transition-colors text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand">
+                      <User className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">{t('fab.personal')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('fab.personalDesc')}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                </button>
+              )}
               {groups.map(group => (
                 <button
                   key={group.id}
                   type="button"
-                  onClick={() => setSelectedGroupId(group.id)}
+                  onClick={() => setSelection({ kind: 'group', groupId: group.id })}
                   className="w-full bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between hover:border-brand/40 hover:bg-accent/50 transition-colors text-left cursor-pointer"
                 >
                   <div>
@@ -213,12 +286,22 @@ export function GroupExpenseLauncher({
       </Dialog>
 
       {/* Expense / Transfer dialogs with dup-check */}
-      {showDialogs && resolvedGroupId !== null && (
+      {showGroupDialogs && selection?.kind === 'group' && (
         <GroupExpenseDialogs
-          groupId={resolvedGroupId}
+          groupId={selection.groupId}
           mode={mode}
-          open={showDialogs}
+          open={showGroupDialogs}
           onClose={onClose}
+          scanFile={scanFile}
+        />
+      )}
+
+      {/* La hoja personal — misma que abre el "+" en /personal */}
+      {showPersonalSheet && (
+        <PersonalExpenseLauncherSheet
+          open={showPersonalSheet}
+          onClose={onClose}
+          onBack={() => setSelection(null)}
           scanFile={scanFile}
         />
       )}

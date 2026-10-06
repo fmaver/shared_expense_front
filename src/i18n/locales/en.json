@@ -194,7 +194,9 @@
     "members_other": "{{count}} members",
     "addExpenseDesc": "Add a shared expense",
     "transferDesc": "Record a payment between members",
-    "addByHand": "Add by hand"
+    "addByHand": "Add by hand",
+    "personal": "Personal",
+    "personalDesc": "Your expenses"
   },
   "charts": {
     "title": "Charts",
