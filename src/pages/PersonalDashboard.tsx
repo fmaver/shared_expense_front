@@ -16,6 +16,8 @@ import { MonthPager } from '@/components/expenses/MonthPager';
 import { CapsuleSlot, GlassCapsule } from '@/components/ui/Glass';
 import { FloatingTopBar, TopBarSpacer } from '@/components/layout/FloatingTopBar';
 import { formatCurrency } from '@/utils/format';
+import { ledgerRate, sumArs } from '@/utils/ledgerMoney';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
 import { avatarBg, initials } from '@/utils/avatar';
 import { PersonalCharts } from '@/components/personal/PersonalCharts';
@@ -31,6 +33,7 @@ export function PersonalDashboard() {
   const { t } = useTranslation();
   const { notifyScroll } = useScroll();
   const { openSearch } = useSearch();
+  const { blueRate } = useCurrency();
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     notifyScroll((e.target as HTMLDivElement).scrollTop);
   }, [notifyScroll]);
@@ -63,13 +66,9 @@ export function PersonalDashboard() {
   );
 
   // Gasto variable acumulado, en ARS: es lo único que la proyección de ritmo extrapola, porque
-  // lo recurrente ya cayó entero. Se reparte por la proporción nominal y se ancla en el total
-  // en ARS del backend, así queda correcto aunque haya pesos y dólares mezclados.
-  const rawRecurring = (ledger?.recurringPersonalExpenses ?? []).reduce((s, e) => s + e.amount, 0);
-  const rawVariable = (ledger?.personalExpenses ?? []).reduce((s, e) => s + e.amount, 0);
-  const rawExpenses = rawRecurring + rawVariable;
-  const variableExpensesSoFar = ledger && rawExpenses > 0
-    ? ledger.totalPersonalExpenses * (rawVariable / rawExpenses)
+  // lo recurrente ya cayó entero. Cada fila se pasa a pesos con la cotización del backend.
+  const variableExpensesSoFar = ledger
+    ? sumArs(ledger.personalExpenses, ledgerRate(ledger, blueRate))
     : 0;
 
   const groupShare = (ledger?.mirroredShares ?? []).reduce((s, sh) => s + sh.shareAmount, 0);
