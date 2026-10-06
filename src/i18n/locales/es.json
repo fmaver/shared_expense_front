@@ -194,7 +194,9 @@
     "members_other": "{{count}} miembros",
     "addExpenseDesc": "Sumá un gasto compartido",
     "transferDesc": "Registrá un pago entre miembros",
-    "addByHand": "Cargar a mano"
+    "addByHand": "Cargar a mano",
+    "personal": "Personal",
+    "personalDesc": "Tus gastos"
   },
   "charts": {
     "title": "Gráficos",
