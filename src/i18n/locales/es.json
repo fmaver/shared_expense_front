@@ -196,7 +196,8 @@
     "transferDesc": "Registrá un pago entre miembros",
     "addByHand": "Cargar a mano",
     "personal": "Personal",
-    "personalDesc": "Tus gastos"
+    "personalDesc": "Tus gastos",
+    "desktopAdd": "Cargar"
   },
   "charts": {
     "title": "Gráficos",

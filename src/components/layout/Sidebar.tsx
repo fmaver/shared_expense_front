@@ -10,6 +10,7 @@ import { useCurrentMember } from '@/hooks/useCurrentMember';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { JirensMark } from '@/components/brand/JirensMark';
+import { DesktopAddButton } from './DesktopAddButton';
 import { formatCurrency } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { cn } from '@/lib/utils';
@@ -85,6 +86,9 @@ export function Sidebar({ onLogout, onNavigate, onNewGroup }: SidebarProps) {
         <JirensMark tone="night" className="text-white" size={30} />
         <span className="text-[19px] font-extrabold leading-none tracking-[-0.025em] text-paper">Jirens</span>
       </button>
+
+      {/* El alta en desktop: el mismo "+" que mobile tiene en la barra inferior. */}
+      <DesktopAddButton />
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         {inGroup ? (
