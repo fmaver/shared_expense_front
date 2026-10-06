@@ -196,7 +196,8 @@
     "transferDesc": "Record a payment between members",
     "addByHand": "Add by hand",
     "personal": "Personal",
-    "personalDesc": "Your expenses"
+    "personalDesc": "Your expenses",
+    "desktopAdd": "Add"
   },
   "charts": {
     "title": "Charts",
