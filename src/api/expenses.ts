@@ -50,11 +50,14 @@ export async function checkSimilarExpenses(
       `${config.apiBaseUrl}/api/v1/groups/${groupId}/expenses/similar?${params}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    if (!response.ok) return { data: null, error: null };
+    // Un fallo acá no puede leerse como "no hay duplicados": silenciarlo dejaría pasar un
+    // duplicado real sin avisar. El llamador decide qué hacer con el error (frenar o seguir).
+    if (!response.ok) return { data: null, error: `HTTP ${response.status}` };
     const result = await response.json();
     return { data: result.data, error: null };
-  } catch {
-    return { data: null, error: null };
+  } catch (error) {
+    console.error('Error checking similar expenses:', error);
+    return { data: null, error: 'An unexpected error occurred' };
   }
 }
 

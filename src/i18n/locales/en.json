@@ -403,6 +403,7 @@
     "done": "Done",
     "amountRequired": "Enter an amount",
     "descriptionRequired": "Say what it was",
+    "duplicateCheckFailed": "We couldn't check for duplicates. Try again.",
     "duplicateSheetTitle": "You already added this",
     "rowPayer": "Paid by",
     "rowLoanTarget": "To",

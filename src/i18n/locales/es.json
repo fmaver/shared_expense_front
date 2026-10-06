@@ -403,6 +403,7 @@
     "done": "Listo",
     "amountRequired": "Poné un monto",
     "descriptionRequired": "Escribí qué fue",
+    "duplicateCheckFailed": "No pudimos revisar si ya lo cargaste. Probá de nuevo.",
     "duplicateSheetTitle": "Esto ya lo cargaste",
     "rowPayer": "Pagador",
     "rowLoanTarget": "Para",

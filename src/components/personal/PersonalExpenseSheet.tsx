@@ -208,9 +208,13 @@ export function PersonalExpenseSheet({
       } else {
         if (!skipDuplicateCheck) {
           const [y, m] = date.split('-').map(Number);
-          const { data: similar } = await checkSimilarExpenses(
+          const { data: similar, error: similarError } = await checkSimilarExpenses(
             personalGroupId, y, m, amount, description.trim(), date,
           );
+          // Si el chequeo de duplicados no respondió (red, token vencido), no seguimos de largo
+          // como si no hubiera match: eso dejaría pasar un duplicado en silencio. Mejor frenar
+          // y que reintente, igual que cualquier otro fallo de red en este formulario.
+          if (similarError) { setError(t('expenseForm.duplicateCheckFailed')); return; }
           if (similar && similar.length > 0) { setDuplicate(similar[0]); return; }
         }
         const { error: apiError } = await createExpense(personalGroupId, {
