@@ -17,6 +17,8 @@ import {
 } from 'recharts';
 import { CategoryBarList } from '@/components/charts/CategoryBarList';
 import { CHART_COLORS, SERIES } from '@/constants/chartColors';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { ledgerRate, toArs } from '@/utils/ledgerMoney';
 import type { PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
 
 interface PersonalChartsProps {
@@ -35,13 +37,18 @@ interface PersonalChartsProps {
 
 export function PersonalCharts({ ledger, prevLedger, year, month, categories, hiddenCategories, onToggleCategory, trendRange, onTrendRangeChange, trendData, trendLoading }: PersonalChartsProps) {
   const { t } = useTranslation();
+  const { blueRate } = useCurrency();
+  // Todo lo que se suma acá va en pesos: los gastos en dólares se pasan con la cotización con
+  // que el backend calculó ese mes (los `mirroredShares` ya vienen en ARS).
+  const rate = ledgerRate(ledger, blueRate);
+  const prevRate = prevLedger ? ledgerRate(prevLedger, blueRate) : 1;
 
   const catMap: Record<string, number> = {};
   for (const e of (ledger.personalExpenses ?? [])) {
-    catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
+    catMap[e.category] = (catMap[e.category] ?? 0) + toArs(e.amount, e.currency, rate);
   }
   for (const e of (ledger.recurringPersonalExpenses ?? [])) {
-    catMap[e.categoryName] = (catMap[e.categoryName] ?? 0) + e.amount;
+    catMap[e.categoryName] = (catMap[e.categoryName] ?? 0) + toArs(e.amount, e.currency, rate);
   }
   const allCategories = Object.keys(catMap);
   const catData = Object.entries(catMap)
@@ -56,7 +63,7 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
 
   const dayMap: Record<string, number> = {};
   for (const e of (ledger.personalExpenses ?? [])) {
-    dayMap[e.date] = (dayMap[e.date] ?? 0) + e.amount;
+    dayMap[e.date] = (dayMap[e.date] ?? 0) + toArs(e.amount, e.currency, rate);
   }
   for (const s of (ledger.mirroredShares ?? [])) {
     dayMap[s.date] = (dayMap[s.date] ?? 0) + s.shareAmount;
@@ -64,7 +71,7 @@ export function PersonalCharts({ ledger, prevLedger, year, month, categories, hi
   const prevDayMap: Record<string, number> = {};
   if (prevLedger) {
     for (const e of (prevLedger.personalExpenses ?? [])) {
-      prevDayMap[e.date] = (prevDayMap[e.date] ?? 0) + e.amount;
+      prevDayMap[e.date] = (prevDayMap[e.date] ?? 0) + toArs(e.amount, e.currency, prevRate);
     }
     for (const s of (prevLedger.mirroredShares ?? [])) {
       prevDayMap[s.date] = (prevDayMap[s.date] ?? 0) + s.shareAmount;

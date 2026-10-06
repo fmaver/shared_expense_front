@@ -237,6 +237,8 @@ export interface PersonalLedgerResponse {
   realizedBalance: number;
   currentBalance: number;
   pendingSettlementsTotal: number;
+  /** ARS por USD con que el backend calculó los totales (los `mirroredShares` ya vienen en ARS). */
+  usdRate?: number;
 }
 
 export interface RecurringIncomeCreate {

@@ -8,6 +8,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { useProgressiveReveal } from '@/hooks/useProgressiveReveal';
 import { ShowMoreButton } from './ShowMoreButton';
 import { baseDescription } from '@/utils/search';
+import { ledgerRate, sumArs, toArs } from '@/utils/ledgerMoney';
 import type {
   CategoryWithEmoji, MirroredShareItem, PersonalLedgerResponse,
 } from '@/types/expense';
@@ -129,27 +130,18 @@ function SubList({ label, total, rows }: { label: string; total: string; rows: R
   );
 }
 
-/**
- * Reparte un total en ARS del backend según la proporción nominal de cada parte, igual que la
- * proyección de ritmo del dashboard: así los dos subtotales suman el total de la sección aunque
- * haya pesos y dólares mezclados.
- */
-function splitTotal(total: number, part: number, whole: number) {
-  return whole > 0 ? total * (part / whole) : 0;
-}
-
 /* ── 1. Entró ───────────────────────────────────────────────────────────────────────── */
 
 export function IncomeSection({ ledger, year, month }: SectionProps) {
   const { t } = useTranslation();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, blueRate } = useCurrency();
+  const rate = ledgerRate(ledger, blueRate);
 
-  const byAmount = (a: { amount: number }, b: { amount: number }) => b.amount - a.amount;
+  type Money = { amount: number; currency?: string };
+  const byAmount = (a: Money, b: Money) => toArs(b.amount, b.currency, rate) - toArs(a.amount, a.currency, rate);
   const recurring = ledger.incomes.filter(i => i.source === 'recurring').sort(byAmount);
   const dated = ledger.incomes.filter(i => i.source !== 'recurring').sort(byAmount);
   const count = recurring.length + dated.length;
-  const raw = (list: typeof recurring) => list.reduce((s, i) => s + i.amount, 0);
-  const rawAll = raw(recurring) + raw(dated);
 
   const row = (income: (typeof recurring)[number]) => (
     <Row
@@ -180,12 +172,12 @@ export function IncomeSection({ ledger, year, month }: SectionProps) {
         <>
           <SubList
             label={t('personal.everyMonth')}
-            total={formatCurrency(splitTotal(ledger.totalIncome, raw(recurring), rawAll))}
+            total={formatCurrency(sumArs(recurring, rate))}
             rows={recurring.map(row)}
           />
           <SubList
             label={t('personal.dated')}
-            total={formatCurrency(splitTotal(ledger.totalIncome, raw(dated), rawAll))}
+            total={formatCurrency(sumArs(dated, rate))}
             rows={dated.map(row)}
           />
         </>
@@ -198,12 +190,14 @@ export function IncomeSection({ ledger, year, month }: SectionProps) {
 
 export function OwnExpensesSection({ ledger, categories, year, month }: SectionProps) {
   const { t } = useTranslation();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, blueRate } = useCurrency();
   const monthsShort = t('monthsShort', { returnObjects: true }) as string[];
   const emojiFor = (category: string) => categories.find(c => c.name === category)?.emoji;
 
-  const rawRecurring = ledger.recurringPersonalExpenses.reduce((s, e) => s + e.amount, 0);
-  const rawDated = ledger.personalExpenses.reduce((s, e) => s + e.amount, 0);
+  // Cada fila a pesos con la cotización del backend: así "Cada mes" + "Con fecha" da el total.
+  const rate = ledgerRate(ledger, blueRate);
+  const recurringTotal = sumArs(ledger.recurringPersonalExpenses, rate);
+  const datedTotal = sumArs(ledger.personalExpenses, rate);
   const count = ledger.recurringPersonalExpenses.length + ledger.personalExpenses.length;
 
   const icon = (category: string) => {
@@ -253,12 +247,12 @@ export function OwnExpensesSection({ ledger, categories, year, month }: SectionP
         <>
           <SubList
             label={t('personal.everyMonth')}
-            total={formatCurrency(splitTotal(ledger.totalPersonalExpenses, rawRecurring, rawRecurring + rawDated))}
+            total={formatCurrency(recurringTotal)}
             rows={recurringRows}
           />
           <SubList
             label={t('personal.dated')}
-            total={formatCurrency(splitTotal(ledger.totalPersonalExpenses, rawDated, rawRecurring + rawDated))}
+            total={formatCurrency(datedTotal)}
             rows={datedRows}
           />
         </>
