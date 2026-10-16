@@ -90,6 +90,7 @@ export function SettleProgressPage() {
     try {
       const payload = buildTransferExpense(
         transfer, memberName(transfer.fromMemberId), memberName(transfer.toMemberId),
+        isOneTime ? null : { year, month },
       );
       const { data: created, error } = await createExpense(groupId, payload);
       if (error || !created) { toast.error(error ?? t('toasts.failedSettle')); return; }

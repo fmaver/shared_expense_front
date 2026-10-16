@@ -218,7 +218,7 @@ export function OwnExpensesSection({ ledger, categories, year, month }: SectionP
     />
   ));
   const datedRows = [...ledger.personalExpenses]
-    .sort((a, b) => b.date.localeCompare(a.date))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
     .map(e => (
       <Row
         key={`exp-${e.id}`}

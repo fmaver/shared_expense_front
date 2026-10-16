@@ -18,6 +18,9 @@ interface BalancePanelProps {
   isSettled: boolean;
   expenses: ExpenseResponse[];
   currentMemberId: number | null;
+  /** El mes que se está mirando: el pago marcado se fecha dentro de él. */
+  year: number;
+  month: number;
   /** Período del registro local de pagos marcados — ver `settleScope`. */
   scope: string;
   /** Abre el plan, que es donde se lee el acuerdo entero. */
@@ -40,7 +43,7 @@ interface BalancePanelProps {
  */
 export function BalancePanel({
   groupId, balances, transfers, members, isSettled, expenses, currentMemberId,
-  scope, onOpenSettle, onChanged, isOneTime = false, stubMemberIds,
+  year, month, scope, onOpenSettle, onChanged, isOneTime = false, stubMemberIds,
 }: BalancePanelProps) {
   const { t } = useTranslation();
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
@@ -66,6 +69,7 @@ export function BalancePanel({
     try {
       const payload = buildTransferExpense(
         transfer, memberName(transfer.fromMemberId), memberName(transfer.toMemberId),
+        isOneTime ? null : { year, month },
       );
       const { data: created, error } = await createExpense(groupId, payload);
       if (error || !created) { toast.error(error ?? t('toasts.failedSettle')); return; }

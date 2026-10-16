@@ -166,6 +166,8 @@ export function GroupMembersPage() {
           expenses={monthlyData.expenses}
           currentMemberId={currentMember?.id ?? null}
           stubMemberIds={stubMemberIds}
+          year={year}
+          month={month}
           scope={settleScope(groupId, isOneTime, year, month)}
           onOpenSettle={openSettle}
           onChanged={reloadMonth}
