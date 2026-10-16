@@ -98,6 +98,9 @@ export function ExpenseListHeader({
         case 'paymentType':   cmp = a.paymentType.localeCompare(b.paymentType); break;
         case 'splitStrategy': cmp = a.splitStrategy.type.localeCompare(b.splitStrategy.type); break;
       }
+      // Empate (mismo día, mismo monto…): el orden en que se cargaron. El id crece con cada
+      // alta, así que de más nuevo a más viejo cuando el orden es descendente.
+      if (cmp === 0) cmp = a.id - b.id;
       return sortOrder === 'asc' ? cmp : -cmp;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
