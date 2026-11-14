@@ -161,7 +161,7 @@ export function DraftsPage() {
   const handleReview = async (draft: Draft) => {
     if (busyId !== null) return;
     setBusyId(draft.id);
-    // Sin la foto la hoja no aplica el borrador: se espera a que llegue si todavía no está.
+    // Se espera la foto si todavía no está; si no baja, la hoja aplica el borrador sin miniatura.
     const file = draft.hasImage ? await load(draft.id) : null;
     setBusyId(null);
     setReview({

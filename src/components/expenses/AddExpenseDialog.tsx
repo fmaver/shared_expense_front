@@ -167,7 +167,8 @@ export function AddExpenseDialog({
     setIsRecurring(false);
     setError('');
     scan.reset();
-    if (scanFile) scanImage(scanFile, scanDraft ?? undefined);
+    // Un borrador sin foto (no se pudo bajar) se aplica igual, sin miniatura.
+    if (scanFile || scanDraft) scanImage(scanFile, scanDraft ?? undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -198,7 +199,7 @@ export function AddExpenseDialog({
       ? form.splitStrategy.percentages : form.splitStrategy.amounts, amount).ok;
 
   /* ── Escaneo de ticket ────────────────────────────────────────────────────────────── */
-  const scanImage = async (file: File, preRead?: ExpenseDraft) => {
+  const scanImage = async (file: File | null, preRead?: ExpenseDraft) => {
     if (groupId == null || scan.isScanning()) return;
     setError('');
     try {

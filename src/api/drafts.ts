@@ -88,6 +88,8 @@ export function draftToExpenseDraft(draft: Draft): ExpenseDraft {
     notRead: [
       ...(draft.date ? [] : ['date' as const]),
       ...(draft.paymentType ? [] : ['payment' as const]),
+      ...(draft.currency ? [] : ['currency' as const]),
+      ...(draft.category ? [] : ['category' as const]),
     ],
   };
 }

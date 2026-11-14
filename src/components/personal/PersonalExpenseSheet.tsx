@@ -88,13 +88,14 @@ export function PersonalExpenseSheet({
     La foto que llegó desde el "+", esperando al grupo personal: la hoja puede abrir antes de
     que `usePersonalContext` lo resuelva, y sin grupo no hay contra quién leer el ticket.
   */
-  const [pendingScan, setPendingScan] = useState<File | null>(null);
+  /* `file` puede faltar cuando viene un borrador ya leído (carga rápida) cuya foto no bajó. */
+  const [pendingScan, setPendingScan] = useState<{ file: File | null } | null>(null);
   /*
     "Dejar para después" solo con una foto en juego y sin un borrador abierto: revisar un
     borrador no ofrece guardarlo de nuevo. La foto que espera al grupo personal también vale:
     guardarla como borrador no necesita grupo.
   */
-  const laterFile = scan.scannedFile ?? pendingScan;
+  const laterFile = scan.scannedFile ?? pendingScan?.file ?? null;
   const canSaveForLater = laterFile !== null && !scanDraft;
   const saveForLater = () => scan.saveForLater(() => { setPendingScan(null); onOpenChange(false); }, laterFile);
 
@@ -113,14 +114,14 @@ export function PersonalExpenseSheet({
     setDuplicate(null);
     setError('');
     scan.reset();
-    setPendingScan(scanFile);
+    setPendingScan(scanFile || scanDraft ? { file: scanFile } : null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialKind, year, month]);
 
   useEffect(() => {
     if (!open || !pendingScan || !personalGroupId) return;
     setPendingScan(null);
-    scanImage(pendingScan, scanDraft ?? undefined);
+    scanImage(pendingScan.file, scanDraft ?? undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pendingScan, personalGroupId]);
 
@@ -139,7 +140,7 @@ export function PersonalExpenseSheet({
    * gasto fijo no tiene fecha ni cuotas, así que de la foto se queda con el monto, el nombre
    * y la categoría.
    */
-  const scanImage = async (file: File, preRead?: ExpenseDraft) => {
+  const scanImage = async (file: File | null, preRead?: ExpenseDraft) => {
     if (!personalGroupId || scan.isScanning()) return;
     setError('');
     try {

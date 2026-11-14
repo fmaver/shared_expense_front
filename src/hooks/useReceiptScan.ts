@@ -23,7 +23,9 @@ export interface ReceiptImage {
  * local; el backend no guarda imágenes, así que no se persiste.
  *
  * Con `preRead` (un borrador de carga rápida que el backend ya leyó) no se vuelve a llamar a
- * `parseExpenseImage`: la foto queda de miniatura y se aplica ese borrador tal cual.
+ * `parseExpenseImage`: la foto queda de miniatura y se aplica ese borrador tal cual. Con
+ * `preRead` la foto puede faltar (no se pudo bajar, o el borrador no tiene): el borrador se
+ * aplica igual, sin miniatura.
  */
 export function useReceiptScan(groupId: number | null | undefined) {
   const { t } = useTranslation();
@@ -67,11 +69,11 @@ export function useReceiptScan(groupId: number | null | undefined) {
   useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
 
   const scan = useCallback(async (
-    file: File,
+    file: File | null,
     apply: (draft: ExpenseDraft) => ScanField[],
     preRead?: ExpenseDraft,
   ) => {
-    if (groupId == null) return;
+    if (groupId == null || (!file && !preRead)) return;
     const generation = ++generationRef.current;
     setScanningBoth(true);
     setImage(file);
@@ -79,8 +81,8 @@ export function useReceiptScan(groupId: number | null | undefined) {
     setFromPhoto(new Set());
     setConfidence(null);
     try {
-      const draft = preRead ?? await parseExpenseImage(groupId, file);
-      if (generation !== generationRef.current) return;
+      const draft = preRead ?? (file ? await parseExpenseImage(groupId, file) : null);
+      if (!draft || generation !== generationRef.current) return;
       setFromPhoto(new Set(apply(draft)));
       setConfidence(draft.confidence);
     } catch (err) {
@@ -173,6 +175,7 @@ export function draftFields(draft: ExpenseDraft, opts: { payment: boolean }): Sc
   if (draft.description) fields.push('description');
   if (draft.date) fields.push('date');
   if (opts.payment && draft.paymentType) fields.push('payment');
-  // Lo que el borrador trae por defecto (fecha de hoy, débito) no lo leyó nadie.
-  return draft.notRead ? fields.filter(f => !draft.notRead!.includes(f as 'date' | 'payment')) : fields;
+  // Lo que el borrador trae por defecto (fecha de hoy, débito, ARS, "otros") no lo leyó nadie.
+  const notRead: ReadonlyArray<string> = draft.notRead ?? [];
+  return fields.filter(f => !notRead.includes(f));
 }

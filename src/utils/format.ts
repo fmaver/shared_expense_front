@@ -191,7 +191,10 @@ export function formatCompactCurrency(amount: number, currency: string = 'ARS'):
  */
 export function relativeAge(iso: string, language: string, now = Date.now()): string {
   const locale = language === 'en' ? 'en-US' : 'es-AR';
-  const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
+  // Los timestamps del backend son UTC: uno sin zona ("2026-11-14T12:30:00") se leería como
+  // hora local y correría el "hace X" por el huso del navegador.
+  const utc = /T[^Z+-]*$/.test(iso) ? `${iso}Z` : iso;
+  const minutes = Math.max(0, Math.round((now - new Date(utc).getTime()) / 60000));
   if (minutes < 1) return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(0, 'second');
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'always' });
   if (minutes < 60) return rtf.format(-minutes, 'minute');
