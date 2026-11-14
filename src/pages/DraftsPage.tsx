@@ -323,6 +323,7 @@ export function DraftsPage() {
                         <p className="mt-1 truncate text-[12px] font-medium text-muted-1">
                           {draft.suggestedGroupName ?? t('drafts.noGroup')}
                           {payment && <> · {payment}</>}
+                          {' · '}{t('drafts.paidByYou')}
                         </p>
                         <p className="mt-0.5 truncate text-[11px] font-medium text-muted-2">
                           {t('drafts.savedAge', { age: relativeAge(draft.createdAt, i18n.language) })}

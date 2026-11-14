@@ -1136,6 +1136,7 @@
     "noDescription": "No description",
     "noAmount": "Amount missing",
     "noGroup": "No suggested group",
+    "paidByYou": "paid by you",
     "savedAge": "Saved {{age}}",
     "installments_one": "{{count}} installment",
     "installments_other": "{{count}} installments",

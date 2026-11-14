@@ -1136,6 +1136,7 @@
     "noDescription": "Sin descripción",
     "noAmount": "Falta el monto",
     "noGroup": "Sin grupo sugerido",
+    "paidByYou": "pagaste vos",
     "savedAge": "Guardado {{age}}",
     "installments_one": "{{count}} cuota",
     "installments_other": "{{count}} cuotas",
