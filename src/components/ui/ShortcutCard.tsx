@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { config } from '@/config/env';
 import { relativeAge } from '@/utils/format';
 import { getShortcutToken, issueShortcutToken, revokeShortcutToken } from '@/api/shortcutToken';
+import { copyToClipboard } from '@/utils/clipboard';
+import { ShortcutGuide } from './ShortcutGuide';
 import type { ShortcutTokenStatus } from '@/types/expense';
 
 const primaryBtn =
@@ -68,15 +70,10 @@ export function ShortcutCard({ className }: { className?: string }) {
     }
   };
 
-  const copy = async () => {
+  const copy = () => {
     if (!issuedToken) return;
-    try {
-      await navigator.clipboard.writeText(issuedToken);
-      toast.success(t('shortcut.copied'));
-    } catch {
-      // Sin permiso o sin contexto seguro: el token sigue visible y seleccionable.
-      toast.error(t('shortcut.copyFailed'));
-    }
+    // Sin permiso o sin contexto seguro: el token sigue visible y seleccionable.
+    void copyToClipboard(issuedToken, t('shortcut.copied'), t('shortcut.copyFailed'));
   };
 
   const connected = status?.connected ?? false;
@@ -150,6 +147,8 @@ export function ShortcutCard({ className }: { className?: string }) {
           </ol>
         </div>
       )}
+
+      {connected && <ShortcutGuide />}
 
       {connected && (
         <div className="mt-3 border-t border-white/10 pt-3">
