@@ -87,6 +87,16 @@ function GroupExpenseDialogs({
     onClose();
   }, [island, requestExpenseRefresh, onSaved, onClose]);
 
+  /*
+    El alta recurrente no pasa por `create`: la hoja llama a `onSuccess` y se cierra sola
+    (`onOpenChange(false)` → `onClose`), así que acá va todo lo de `handleDone` menos cerrar.
+  */
+  const handleRecurringSaved = useCallback(() => {
+    island.success();
+    requestExpenseRefresh();
+    onSaved?.();
+  }, [island, requestExpenseRefresh, onSaved]);
+
   const { create, duplicates, pendingExpense, confirm, cancel } = useGroupExpenseCreate({
     groupId,
     onDone: handleDone,
@@ -114,6 +124,7 @@ function GroupExpenseDialogs({
           open={open}
           onOpenChange={v => { if (!v) onClose(); }}
           onSubmit={create}
+          onSuccess={handleRecurringSaved}
           members={members}
           currentMemberId={currentMemberId}
           groupId={groupId}

@@ -85,5 +85,9 @@ export function draftToExpenseDraft(draft: Draft): ExpenseDraft {
     installments: draft.installments ?? 1,
     currency: draft.currency ?? 'ARS',
     confidence: draft.confidence ?? 'low',
+    notRead: [
+      ...(draft.date ? [] : ['date' as const]),
+      ...(draft.paymentType ? [] : ['payment' as const]),
+    ],
   };
 }

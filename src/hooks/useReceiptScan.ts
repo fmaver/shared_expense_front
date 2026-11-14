@@ -86,5 +86,6 @@ export function draftFields(draft: ExpenseDraft, opts: { payment: boolean }): Sc
   if (draft.description) fields.push('description');
   if (draft.date) fields.push('date');
   if (opts.payment && draft.paymentType) fields.push('payment');
-  return fields;
+  // Lo que el borrador trae por defecto (fecha de hoy, débito) no lo leyó nadie.
+  return draft.notRead ? fields.filter(f => !draft.notRead!.includes(f as 'date' | 'payment')) : fields;
 }
