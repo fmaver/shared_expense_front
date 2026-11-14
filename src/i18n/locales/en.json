@@ -1059,7 +1059,16 @@
     "reading": "Reading the receipt…",
     "read": "<0>We read the receipt.</0> Check what's marked “from photo” before saving.",
     "lowConfidence": "We couldn't read everything: fill in what's missing.",
-    "thumbnailAlt": "Receipt photo"
+    "thumbnailAlt": "Receipt photo",
+    "saveForLater": "Save for later",
+    "savingForLater": "Saving…",
+    "savedForLater": "Saved to drafts",
+    "saveForLaterFailed": "Couldn't save the draft"
+  },
+  "paste": {
+    "menuTitle": "Paste screenshot",
+    "menuDesc": "Use the image you copied",
+    "empty": "There's no copied image"
   },
   "receipt": {
     "add": "Add photo",

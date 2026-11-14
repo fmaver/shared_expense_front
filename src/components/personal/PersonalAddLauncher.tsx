@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { useIsland } from '@/contexts/IslandContext';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { PersonalAddMatrix, type PersonalEntryKind } from './PersonalAddMatrix';
 import { PersonalExpenseSheet } from './PersonalExpenseSheet';
 import { PersonalIncomeSheet } from './PersonalIncomeSheet';
 import { useScanPicker } from '@/components/expenses/ScanPicker';
+import { readClipboardImage } from '@/utils/clipboardImage';
 import type { PersonalLedgerResponse, CategoryWithEmoji } from '@/types/expense';
 
 interface PersonalAddLauncherProps {
@@ -23,6 +26,7 @@ interface PersonalAddLauncherProps {
  * escritorio abren exactamente lo mismo. Lo montan el home personal y las pantallas de sección.
  */
 export function PersonalAddLauncher({ ledger, year, month, categories, refetch }: PersonalAddLauncherProps) {
+  const { t } = useTranslation();
   const island = useIsland();
   const { registerPersonalActions } = useFabActions();
 
@@ -30,11 +34,12 @@ export function PersonalAddLauncher({ ledger, year, month, categories, refetch }
   const [expenseKind, setExpenseKind] = useState<'expense' | 'fixed' | null>(null);
   /* La foto elegida en "Escanear ticket": la hoja del gasto abre leyéndola (V6.6). */
   const [scanFile, setScanFile] = useState<File | null>(null);
-  const scanPicker = useScanPicker(file => {
+  const openScan = useCallback((file: File) => {
     setMatrixOpen(false);
     setScanFile(file);
     setExpenseKind('expense');
-  });
+  }, []);
+  const scanPicker = useScanPicker(openScan);
   const [incomeKind, setIncomeKind] = useState<'extra' | 'salary' | null>(null);
 
   const openMatrix = useCallback(() => {
@@ -48,11 +53,19 @@ export function PersonalAddLauncher({ ledger, year, month, categories, refetch }
   const pick = useCallback((kind: PersonalEntryKind) => {
     // Escanear abre el selector desde este mismo toque: iOS no lo abre después.
     if (kind === 'scan') { pickAny(); return; }
+    // Pegar también lee el portapapeles en este toque, antes de cualquier espera (iOS).
+    if (kind === 'paste') {
+      readClipboardImage().then(file => {
+        if (file) openScan(file);
+        else toast(t('paste.empty'));
+      });
+      return;
+    }
     setMatrixOpen(false);
     setScanFile(null);
     if (kind === 'expense' || kind === 'fixed') setExpenseKind(kind);
     else setIncomeKind(kind);
-  }, [pickAny]);
+  }, [pickAny, openScan, t]);
 
   useEffect(() => {
     registerPersonalActions({ openMatrix, pick, scanWithCamera: pickCamera });

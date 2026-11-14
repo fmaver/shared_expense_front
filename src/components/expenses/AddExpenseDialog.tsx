@@ -14,7 +14,7 @@ import {
 } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { AmountInput } from './AmountInput';
-import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from './ScanReview';
+import { FromPhotoPill, ReceiptRow, SaveForLaterButton, ScanReading, ScanReviewNotice } from './ScanReview';
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from './CategoryChips';
@@ -152,6 +152,12 @@ export function AddExpenseDialog({
   const descriptionRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const scan = useReceiptScan(groupId);
+  /*
+    "Dejar para después" solo con una foto en juego y sin un borrador abierto: revisar un
+    borrador no ofrece guardarlo de nuevo.
+  */
+  const canSaveForLater = scan.scannedFile !== null && !scanDraft && !isEdit;
+  const saveForLater = () => scan.saveForLater(() => onOpenChange(false));
 
   useEffect(() => {
     if (!open) return;
@@ -378,6 +384,9 @@ export function AddExpenseDialog({
 
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
           {scan.scanning && <ScanReading receipt={scan.receipt} />}
+          {scan.scanning && canSaveForLater && (
+            <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-4" />
+          )}
           <div hidden={scan.scanning}>
           <ScanReviewNotice receipt={scan.receipt} confidence={scan.confidence} />
           {/* ── Segmented: qué estás anotando ──────────────────────────────────────── */}
@@ -564,6 +573,7 @@ export function AddExpenseDialog({
                   ? t('expenseForm.update')
                   : mode === 'loan' ? t('expenseForm.saveLoan') : t('expenseForm.saveExpense')}
             </button>
+            {canSaveForLater && <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-1" />}
           </div>
           </div>
         </div>

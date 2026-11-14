@@ -120,3 +120,26 @@ export function ReceiptRow({ receipt, onAttach }: {
     </div>
   );
 }
+
+/**
+ * "Dejar para después": la foto se guarda como borrador pendiente y la hoja se cierra. Va
+ * debajo del botón principal con el mismo estilo de acción secundaria que la hoja de saldar.
+ * Quien la monta decide cuándo aplica (hay foto y no se está revisando un borrador).
+ */
+export function SaveForLaterButton({ saving, onClick, className }: {
+  saving: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={saving}
+      className={`h-11 w-full cursor-pointer text-[13px] font-bold text-brand-ink transition-opacity hover:opacity-80 disabled:opacity-50 ${className ?? ''}`}
+    >
+      {saving ? t('scan.savingForLater') : t('scan.saveForLater')}
+    </button>
+  );
+}

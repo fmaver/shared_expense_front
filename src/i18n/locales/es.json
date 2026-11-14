@@ -1059,7 +1059,16 @@
     "reading": "Leyendo el ticket…",
     "read": "<0>Leímos el ticket.</0> Chequeá lo marcado “de la foto” antes de guardar.",
     "lowConfidence": "No pudimos leer todo: completá lo que falta.",
-    "thumbnailAlt": "Foto del ticket"
+    "thumbnailAlt": "Foto del ticket",
+    "saveForLater": "Dejar para después",
+    "savingForLater": "Guardando…",
+    "savedForLater": "Guardado en borradores",
+    "saveForLaterFailed": "No se pudo guardar el borrador"
+  },
+  "paste": {
+    "menuTitle": "Pegar captura",
+    "menuDesc": "Usá la imagen que copiaste",
+    "empty": "No hay ninguna imagen copiada"
   },
   "receipt": {
     "add": "Agregar foto",

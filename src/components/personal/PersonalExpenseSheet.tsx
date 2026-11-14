@@ -10,7 +10,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { AmountInput } from '@/components/expenses/AmountInput';
 import { DescriptionInput } from '@/components/expenses/DescriptionInput';
-import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
+import { FromPhotoPill, ReceiptRow, SaveForLaterButton, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from '@/components/expenses/CategoryChips';
@@ -85,10 +85,22 @@ export function PersonalExpenseSheet({
   const [saving, setSaving] = useState(false);
   const scan = useReceiptScan(personalGroupId);
   /*
+    "Dejar para después" solo con una foto en juego y sin un borrador abierto: revisar un
+    borrador no ofrece guardarlo de nuevo.
+  */
+  /*
     La foto que llegó desde el "+", esperando al grupo personal: la hoja puede abrir antes de
     que `usePersonalContext` lo resuelva, y sin grupo no hay contra quién leer el ticket.
   */
   const [pendingScan, setPendingScan] = useState<File | null>(null);
+  /*
+    "Dejar para después" solo con una foto en juego y sin un borrador abierto: revisar un
+    borrador no ofrece guardarlo de nuevo. La foto que espera al grupo personal también vale:
+    guardarla como borrador no necesita grupo.
+  */
+  const laterFile = scan.scannedFile ?? pendingScan;
+  const canSaveForLater = laterFile !== null && !scanDraft;
+  const saveForLater = () => scan.saveForLater(() => { setPendingScan(null); onOpenChange(false); }, laterFile);
 
   useEffect(() => {
     if (!open) return;
@@ -273,6 +285,9 @@ export function PersonalExpenseSheet({
 
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
           {(scan.scanning || pendingScan) && <ScanReading receipt={scan.receipt} />}
+          {(scan.scanning || pendingScan) && canSaveForLater && (
+            <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-4" />
+          )}
           <div hidden={scan.scanning || pendingScan !== null}>
           <ScanReviewNotice receipt={scan.receipt} confidence={scan.confidence} />
           {/* ── Una vez, o todos los meses ─────────────────────────────────────────── */}
@@ -425,6 +440,7 @@ export function PersonalExpenseSheet({
                 ? t('expenseForm.saving')
                 : t(kind === 'fixed' ? 'personalAdd.saveFixed' : 'personalAdd.saveExpense')}
             </button>
+            {canSaveForLater && <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-1" />}
           </div>
           </div>
         </div>
