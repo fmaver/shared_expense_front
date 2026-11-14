@@ -188,6 +188,11 @@ export interface ExpenseDraft {
   installments: number;
   currency: string;
   confidence: 'high' | 'low';
+  /**
+   * Campos que vienen con un valor por defecto y no leído (borradores de carga rápida): no se
+   * marcan "de la foto". `parse-image` nunca lo manda.
+   */
+  notRead?: Array<'date' | 'payment' | 'currency' | 'category'>;
 }
 
 export async function parseExpenseImage(groupId: number, file: File): Promise<ExpenseDraft> {

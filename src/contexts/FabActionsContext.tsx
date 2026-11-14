@@ -10,7 +10,7 @@ export interface PersonalAddActions {
   /** Abre "¿Qué anotamos?": Gasto, Escanear ticket e Ingreso. */
   openMatrix: () => void;
   /** Salta el panel y abre una hoja directamente, o el escaneo. */
-  pick: (kind: 'expense' | 'fixed' | 'extra' | 'salary' | 'scan') => void;
+  pick: (kind: 'expense' | 'fixed' | 'extra' | 'salary' | 'scan' | 'paste') => void;
   /** Directo a la cámara: lo que hace mantener apretado el "+". Llamar desde el toque. */
   scanWithCamera: () => void;
 }

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PushCard } from '@/components/ui/PushCard';
+import { ShortcutCard } from '@/components/ui/ShortcutCard';
 import { Segmented } from '@/components/ui/Segmented';
 import { ConfigSheet } from '@/components/layout/ConfigSheet';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
@@ -279,6 +280,10 @@ export function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </p>
           )}
         </div>
+      </Section>
+
+      <Section label={t('shortcut.section')}>
+        <ShortcutCard />
       </Section>
 
       {/* ── Ajustes, como filas ─────────────────────────────────────────────────────── */}

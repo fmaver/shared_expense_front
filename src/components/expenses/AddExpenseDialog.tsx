@@ -8,12 +8,13 @@ import { Segmented } from '@/components/ui/Segmented';
 import { useCategories } from '@/hooks/useCategories';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { createRecurringGroupExpense } from '@/api/recurringExpenses';
+import type { ExpenseDraft } from '@/api/expenses';
 import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
 } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { AmountInput } from './AmountInput';
-import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from './ScanReview';
+import { FromPhotoPill, ReceiptRow, SaveForLaterButton, ScanReading, ScanReviewNotice } from './ScanReview';
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from './CategoryChips';
@@ -50,6 +51,11 @@ interface AddExpenseDialogProps {
    * el formulario completado para revisar.
    */
   scanFile?: File | null;
+  /**
+   * El borrador ya leído de `scanFile` (carga rápida): se aplica sin volver a leer la foto.
+   * Sin él, `scanFile` se lee como siempre.
+   */
+  scanDraft?: ExpenseDraft | null;
 }
 
 /** En el formulario un porcentaje o monto puede estar vacío (null) mientras se escribe. */
@@ -127,6 +133,7 @@ export function AddExpenseDialog({
   open, onOpenChange, onSubmit, members, initialExpense, isSettled = false,
   hidePayerAndSplit = false, currentMemberId, groupId, onSuccess,
   isRecurringEdit = false, isOneTimeGroup = false, initialMode = 'expense', scanFile = null,
+  scanDraft = null,
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
@@ -145,16 +152,23 @@ export function AddExpenseDialog({
   const descriptionRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const scan = useReceiptScan(groupId);
+  /*
+    "Dejar para después" solo con una foto en juego y sin un borrador abierto: revisar un
+    borrador no ofrece guardarlo de nuevo.
+  */
+  const canSaveForLater = scan.scannedFile !== null && !scanDraft && !isEdit;
+  const saveForLater = () => scan.saveForLater(() => onOpenChange(false));
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { scan.endSession(); return; }
     setForm(buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
     setMode(initialExpense?.category === 'prestamo' ? 'loan' : initialMode);
     setPicker(null);
     setIsRecurring(false);
     setError('');
     scan.reset();
-    if (scanFile) scanImage(scanFile);
+    // Un borrador sin foto (no se pudo bajar) se aplica igual, sin miniatura.
+    if (scanFile || scanDraft) scanImage(scanFile, scanDraft ?? undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -185,8 +199,8 @@ export function AddExpenseDialog({
       ? form.splitStrategy.percentages : form.splitStrategy.amounts, amount).ok;
 
   /* ── Escaneo de ticket ────────────────────────────────────────────────────────────── */
-  const scanImage = async (file: File) => {
-    if (groupId == null || scan.scanning) return;
+  const scanImage = async (file: File | null, preRead?: ExpenseDraft) => {
+    if (groupId == null || scan.isScanning()) return;
     setError('');
     try {
       await scan.scan(file, draft => {
@@ -200,7 +214,7 @@ export function AddExpenseDialog({
           currency: draft.currency,
         });
         return draftFields(draft, { payment: !isOneTimeGroup });
-      });
+      }, preRead);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.submitFailed'));
     }
@@ -371,6 +385,9 @@ export function AddExpenseDialog({
 
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
           {scan.scanning && <ScanReading receipt={scan.receipt} />}
+          {scan.scanning && canSaveForLater && (
+            <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-4" />
+          )}
           <div hidden={scan.scanning}>
           <ScanReviewNotice receipt={scan.receipt} confidence={scan.confidence} />
           {/* ── Segmented: qué estás anotando ──────────────────────────────────────── */}
@@ -548,7 +565,7 @@ export function AddExpenseDialog({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={disabled || submitting}
+              disabled={disabled || submitting || scan.savingDraft}
               className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {submitting
@@ -557,6 +574,7 @@ export function AddExpenseDialog({
                   ? t('expenseForm.update')
                   : mode === 'loan' ? t('expenseForm.saveLoan') : t('expenseForm.saveExpense')}
             </button>
+            {canSaveForLater && <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-1" />}
           </div>
           </div>
         </div>

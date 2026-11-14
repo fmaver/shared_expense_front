@@ -28,14 +28,20 @@ self.addEventListener('push', event => {
     payload = { title: 'Jirens', body: event.data.text(), url: '/' };
   }
 
-  event.waitUntil(
-    self.registration.showNotification(payload.title || 'Jirens', {
-      body: payload.body || '',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      data: { url: payload.url || '/' },
-    }),
-  );
+  const options = {
+    body: payload.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    data: { url: payload.url || '/' },
+  };
+  // Con `tag` (p. ej. "drafts-pending") el aviso nuevo reemplaza al anterior en vez de apilarse,
+  // y `renotify` hace que igual suene. Sin tag, cada aviso es uno aparte, como siempre.
+  if (payload.tag) {
+    options.tag = payload.tag;
+    options.renotify = true;
+  }
+
+  event.waitUntil(self.registration.showNotification(payload.title || 'Jirens', options));
 });
 
 self.addEventListener('notificationclick', event => {

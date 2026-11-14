@@ -184,3 +184,21 @@ export function formatCompactCurrency(amount: number, currency: string = 'ARS'):
   if (abs >= 1_000) return `${sign}${symbol}${Math.round(abs / 1_000)}k`;
   return `${sign}${symbol}${Math.round(abs)}`;
 }
+
+/**
+ * "hace 2 días", "hace 3 horas", "ahora": la antigüedad en palabras, en el idioma de la app.
+ * Siempre con número ("hace 2 días", no "anteayer"), salvo lo recién cargado.
+ */
+export function relativeAge(iso: string, language: string, now = Date.now()): string {
+  const locale = language === 'en' ? 'en-US' : 'es-AR';
+  // Los timestamps del backend son UTC: uno sin zona ("2026-11-14T12:30:00") se leería como
+  // hora local y correría el "hace X" por el huso del navegador.
+  const utc = /T[^Z+-]*$/.test(iso) ? `${iso}Z` : iso;
+  const minutes = Math.max(0, Math.round((now - new Date(utc).getTime()) / 60000));
+  if (minutes < 1) return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(0, 'second');
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'always' });
+  if (minutes < 60) return rtf.format(-minutes, 'minute');
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return rtf.format(-hours, 'hour');
+  return rtf.format(-Math.round(hours / 24), 'day');
+}

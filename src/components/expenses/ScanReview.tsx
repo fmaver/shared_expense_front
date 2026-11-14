@@ -4,14 +4,18 @@ import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ReceiptImage } from '@/hooks/useReceiptScan';
 
+const PILL_CLASS = 'shrink-0 rounded-full bg-brand-wash px-1.5 py-0.5 text-[10px] font-bold leading-none text-brand-ink';
+
 /** La pastilla "de la foto": el valor lo leyó el escaneo y conviene mirarlo. */
 export function FromPhotoPill() {
   const { t } = useTranslation();
-  return (
-    <span className="shrink-0 rounded-full bg-brand-wash px-1.5 py-0.5 text-[10px] font-bold leading-none text-brand-ink">
-      {t('scan.fromPhoto')}
-    </span>
-  );
+  return <span className={PILL_CLASS}>{t('scan.fromPhoto')}</span>;
+}
+
+/** La misma pastilla, para el grupo que la carga rápida sugiere en el selector del "+". */
+export function SuggestedPill() {
+  const { t } = useTranslation();
+  return <span className={PILL_CLASS}>{t('fab.suggested')}</span>;
 }
 
 /** Mientras `parseExpenseImage` responde: la hoja ya está abierta, con un skeleton. */
@@ -114,5 +118,28 @@ export function ReceiptRow({ receipt, onAttach }: {
         {t('receipt.view')}
       </a>
     </div>
+  );
+}
+
+/**
+ * "Dejar para después": la foto se guarda como borrador pendiente y la hoja se cierra. Va
+ * debajo del botón principal con el mismo estilo de acción secundaria que la hoja de saldar.
+ * Quien la monta decide cuándo aplica (hay foto y no se está revisando un borrador).
+ */
+export function SaveForLaterButton({ saving, onClick, className }: {
+  saving: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={saving}
+      className={`h-11 w-full cursor-pointer text-[13px] font-bold text-brand-ink transition-opacity hover:opacity-80 disabled:opacity-50 ${className ?? ''}`}
+    >
+      {saving ? t('scan.savingForLater') : t('scan.saveForLater')}
+    </button>
   );
 }

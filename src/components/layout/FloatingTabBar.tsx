@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
-  ArrowLeftRight, Camera, PenLine, PieChart, Plus, User, Users, type LucideIcon,
+  ArrowLeftRight, Camera, ClipboardPaste, PenLine, PieChart, Plus, User, Users, type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFabActions } from '@/contexts/FabActionsContext';
 import { useSettlementState } from '@/contexts/SettlementContext';
 import { GroupExpenseLauncher, type LauncherMode } from './GroupExpenseLauncher';
 import { useScanPicker } from '@/components/expenses/ScanPicker';
+import { readClipboardImage } from '@/utils/clipboardImage';
 
 /** Cuánto hay que mantener apretado el "+" para ir directo a la cámara. */
 const LONG_PRESS_MS = 500;
@@ -88,6 +90,25 @@ export function FloatingTabBar() {
     tone: 'scan' as const,
     onClick: () => { setSpeedDialOpen(false); scanPicker.pickAny(); },
   };
+  /*
+    Pegar captura: lo más cercano a compartir hacia la app en iOS (Safari no tiene Web Share
+    Target). El `read()` sale en este mismo toque, sin esperas antes: si no, iOS lo rechaza.
+    Se ofrece siempre — saber si hay imagen exige leer el portapapeles — y sin imagen avisa.
+  */
+  const pasteItem = {
+    icon: ClipboardPaste,
+    label: t('paste.menuTitle'),
+    desc: t('paste.menuDesc'),
+    tone: 'scan' as const,
+    onClick: () => {
+      const reading = readClipboardImage();
+      setSpeedDialOpen(false);
+      reading.then(file => {
+        if (file) openLauncher('expense', groupId ?? undefined, file);
+        else toast(t('paste.empty'));
+      });
+    },
+  };
   const menuItems = isPersonal && !inGroup
     ? []
     : [
@@ -99,6 +120,7 @@ export function FloatingTabBar() {
           onClick: () => openLauncher('expense', groupId ?? undefined),
         },
         scanItem,
+        pasteItem,
         {
           icon: ArrowLeftRight,
           label: t('fab.transfer'),

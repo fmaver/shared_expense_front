@@ -32,6 +32,7 @@ import { SettlementProvider } from './contexts/SettlementContext';
 import { usePushNavigation } from '@/hooks/usePushNavigation';
 import GroupDueDatesPage from '@/pages/GroupDueDatesPage';
 import PersonalDueDatesPage from '@/pages/PersonalDueDatesPage';
+import { DraftsPage } from '@/pages/DraftsPage';
 
 function App() {
   usePushNavigation();
@@ -126,6 +127,8 @@ function App() {
             <Route path="/personal/expenses" element={<PersonalSectionPage section="expenses" />} />
             <Route path="/personal/shares" element={<PersonalSectionPage section="shares" />} />
             <Route path="/personal/due-dates" element={<PersonalDueDatesPage />} />
+            {/* Borradores de la carga rápida: se llega por la tarjeta del inicio o el push. */}
+            <Route path="/drafts" element={<DraftsPage />} />
             <Route path="/profile" element={<ProfilePage onLogout={handleLogout} />} />
             <Route path="*" element={<Navigate to="/groups" replace />} />
           </Route>

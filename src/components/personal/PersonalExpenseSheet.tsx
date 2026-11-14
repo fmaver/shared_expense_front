@@ -10,7 +10,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePersonalContext } from '@/hooks/usePersonalContext';
 import { AmountInput } from '@/components/expenses/AmountInput';
 import { DescriptionInput } from '@/components/expenses/DescriptionInput';
-import { FromPhotoPill, ReceiptRow, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
+import { FromPhotoPill, ReceiptRow, SaveForLaterButton, ScanReading, ScanReviewNotice } from '@/components/expenses/ScanReview';
 import { draftFields, useReceiptScan } from '@/hooks/useReceiptScan';
 import { FEATURE_RECEIPTS } from '@/config/features';
 import { CategoryChips } from '@/components/expenses/CategoryChips';
@@ -21,7 +21,7 @@ import {
 import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
 } from '@/utils/format';
-import { checkSimilarExpenses, createExpense } from '@/api/expenses';
+import { checkSimilarExpenses, createExpense, type ExpenseDraft } from '@/api/expenses';
 import { createRecurringPersonalExpense } from '@/api/personal';
 import type {
   CategoryWithEmoji, ExpenseResponse, RecurringPersonalExpenseInstanceResponse,
@@ -44,6 +44,8 @@ interface PersonalExpenseSheetProps {
   onSaved: () => void;
   /** Una foto de ticket elegida desde el "+" (V6.6): la hoja abre leyéndola. */
   scanFile?: File | null;
+  /** El borrador ya leído de `scanFile` (carga rápida): se aplica sin volver a leer la foto. */
+  scanDraft?: ExpenseDraft | null;
 }
 
 /**
@@ -56,7 +58,7 @@ interface PersonalExpenseSheetProps {
  */
 export function PersonalExpenseSheet({
   open, onOpenChange, initialKind, year, month, categories,
-  existingRecurring, onBack, onSaved, scanFile = null,
+  existingRecurring, onBack, onSaved, scanFile = null, scanDraft = null,
 }: PersonalExpenseSheetProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -86,7 +88,16 @@ export function PersonalExpenseSheet({
     La foto que llegó desde el "+", esperando al grupo personal: la hoja puede abrir antes de
     que `usePersonalContext` lo resuelva, y sin grupo no hay contra quién leer el ticket.
   */
-  const [pendingScan, setPendingScan] = useState<File | null>(null);
+  /* `file` puede faltar cuando viene un borrador ya leído (carga rápida) cuya foto no bajó. */
+  const [pendingScan, setPendingScan] = useState<{ file: File | null } | null>(null);
+  /*
+    "Dejar para después" solo con una foto en juego y sin un borrador abierto: revisar un
+    borrador no ofrece guardarlo de nuevo. La foto que espera al grupo personal también vale:
+    guardarla como borrador no necesita grupo.
+  */
+  const laterFile = scan.scannedFile ?? pendingScan?.file ?? null;
+  const canSaveForLater = laterFile !== null && !scanDraft;
+  const saveForLater = () => scan.saveForLater(() => { setPendingScan(null); onOpenChange(false); }, laterFile);
 
   useEffect(() => {
     if (!open) return;
@@ -103,14 +114,14 @@ export function PersonalExpenseSheet({
     setDuplicate(null);
     setError('');
     scan.reset();
-    setPendingScan(scanFile);
+    setPendingScan(scanFile || scanDraft ? { file: scanFile } : null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialKind, year, month]);
 
   useEffect(() => {
     if (!open || !pendingScan || !personalGroupId) return;
     setPendingScan(null);
-    scanImage(pendingScan);
+    scanImage(pendingScan.file, scanDraft ?? undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pendingScan, personalGroupId]);
 
@@ -129,8 +140,8 @@ export function PersonalExpenseSheet({
    * gasto fijo no tiene fecha ni cuotas, así que de la foto se queda con el monto, el nombre
    * y la categoría.
    */
-  const scanImage = async (file: File) => {
-    if (!personalGroupId || scan.scanning) return;
+  const scanImage = async (file: File | null, preRead?: ExpenseDraft) => {
+    if (!personalGroupId || scan.isScanning()) return;
     setError('');
     try {
       await scan.scan(file, draft => {
@@ -146,7 +157,7 @@ export function PersonalExpenseSheet({
         }
         const fields = draftFields(draft, { payment: kind === 'expense' });
         return kind === 'expense' ? fields : fields.filter(f => f !== 'date');
-      });
+      }, preRead);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.scanFailed'));
     }
@@ -271,6 +282,9 @@ export function PersonalExpenseSheet({
 
         <div className="max-h-[calc((100dvh-var(--keyboard-inset,0px))*0.88-3rem)] overflow-y-auto px-5 pb-5">
           {(scan.scanning || pendingScan) && <ScanReading receipt={scan.receipt} />}
+          {(scan.scanning || pendingScan) && canSaveForLater && (
+            <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-4" />
+          )}
           <div hidden={scan.scanning || pendingScan !== null}>
           <ScanReviewNotice receipt={scan.receipt} confidence={scan.confidence} />
           {/* ── Una vez, o todos los meses ─────────────────────────────────────────── */}
@@ -416,13 +430,14 @@ export function PersonalExpenseSheet({
             <button
               type="button"
               onClick={() => save()}
-              disabled={saving || duplicate !== null}
+              disabled={saving || duplicate !== null || scan.savingDraft}
               className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {saving
                 ? t('expenseForm.saving')
                 : t(kind === 'fixed' ? 'personalAdd.saveFixed' : 'personalAdd.saveExpense')}
             </button>
+            {canSaveForLater && <SaveForLaterButton saving={scan.savingDraft} onClick={saveForLater} className="mt-1" />}
           </div>
           </div>
         </div>

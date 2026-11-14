@@ -370,3 +370,34 @@ export interface UnsettledMonth {
   year: number;
   month: number;
 }
+
+/** Borrador de gasto creado por el atajo de iOS o subiendo una captura. Todo puede venir vacío. */
+export interface Draft {
+  id: number;
+  amount: number | null;
+  description: string | null;
+  category: string | null;
+  date: string | null;
+  paymentType: string | null;
+  installments: number | null;
+  currency: string | null;
+  confidence: 'high' | 'low' | null;
+  suggestedGroupId: number | null;
+  suggestedGroupName: string | null;
+  hasImage: boolean;
+  createdAt: string;
+}
+
+export interface ShortcutTokenStatus {
+  connected: boolean;
+  prefix: string | null;
+  createdAt: string | null;
+  lastUsedAt: string | null;
+}
+
+/** El token completo solo se devuelve una vez, al emitirlo. */
+export interface ShortcutTokenIssued {
+  token: string;
+  prefix: string;
+  createdAt: string;
+}

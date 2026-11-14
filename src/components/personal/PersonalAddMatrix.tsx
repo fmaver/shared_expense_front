@@ -1,5 +1,5 @@
 import { useTranslation, Trans } from 'react-i18next';
-import { Camera, ChevronRight } from 'lucide-react';
+import { Camera, ChevronRight, ClipboardPaste } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
  * los accesos directos (el "Agregar fijo" de la lista de gastos), que abren la hoja ya en
  * "Cada mes".
  */
-export type PersonalEntryKind = 'expense' | 'fixed' | 'extra' | 'salary' | 'scan';
+export type PersonalEntryKind = 'expense' | 'fixed' | 'extra' | 'salary' | 'scan' | 'paste';
 
 interface PersonalAddMatrixProps {
   open: boolean;
@@ -27,7 +27,7 @@ interface PersonalAddMatrixProps {
 export function PersonalAddMatrix({ open, onOpenChange, onPick }: PersonalAddMatrixProps) {
   const { t } = useTranslation();
 
-  const option = (kind: 'expense' | 'extra' | 'scan', tone: 'out' | 'in' | 'scan') => (
+  const option = (kind: 'expense' | 'extra' | 'scan' | 'paste', tone: 'out' | 'in' | 'scan') => (
     <button
       type="button"
       onClick={() => onPick(kind)}
@@ -42,14 +42,16 @@ export function PersonalAddMatrix({ open, onOpenChange, onPick }: PersonalAddMat
         )}
         aria-hidden="true"
       >
-        {tone === 'scan' ? <Camera className="h-5 w-5" /> : tone === 'out' ? '−' : '+'}
+        {kind === 'paste'
+          ? <ClipboardPaste className="h-5 w-5" />
+          : tone === 'scan' ? <Camera className="h-5 w-5" /> : tone === 'out' ? '−' : '+'}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-bold text-foreground">
-          {t(kind === 'expense' ? 'personalAdd.expenseTitle' : kind === 'scan' ? 'scan.menuTitle' : 'personalAdd.incomeTitle')}
+          {t(kind === 'expense' ? 'personalAdd.expenseTitle' : kind === 'scan' ? 'scan.menuTitle' : kind === 'paste' ? 'paste.menuTitle' : 'personalAdd.incomeTitle')}
         </span>
         <span className="mt-[3px] block text-[11.5px] font-medium leading-[1.4] text-muted-1">
-          {t(kind === 'expense' ? 'personalAdd.expenseDesc' : kind === 'scan' ? 'scan.menuDesc' : 'personalAdd.incomeDesc')}
+          {t(kind === 'expense' ? 'personalAdd.expenseDesc' : kind === 'scan' ? 'scan.menuDesc' : kind === 'paste' ? 'paste.menuDesc' : 'personalAdd.incomeDesc')}
         </span>
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-brand-ink" aria-hidden="true" />
@@ -68,6 +70,7 @@ export function PersonalAddMatrix({ open, onOpenChange, onPick }: PersonalAddMat
           <div className="mt-5 flex flex-col gap-2.5">
             {option('expense', 'out')}
             {option('scan', 'scan')}
+            {option('paste', 'scan')}
             {option('extra', 'in')}
           </div>
 
