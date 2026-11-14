@@ -1133,5 +1133,33 @@
     "savedNotResolved": "The expense was saved, but the draft is still on the list. Discard it.",
     "loadFailed": "We couldn't load your drafts.",
     "retry": "Try again"
+  },
+  "shortcut": {
+    "section": "Quick capture",
+    "title": "Connect shortcut",
+    "subtitle": "Log an expense with a double tap on your phone: take the screenshot and you're done.",
+    "connectedTitle": "Shortcut connected",
+    "loading": "Loading…",
+    "loadFailed": "Couldn't load the shortcut status.",
+    "retry": "Retry",
+    "lastUsed": "Last used {{when}}",
+    "neverUsed": "Not used yet",
+    "connect": "Connect shortcut",
+    "working": "One moment…",
+    "tokenOnce": "Copy your token now: it won't be shown again.",
+    "copy": "Copy",
+    "copied": "Token copied",
+    "copyFailed": "Couldn't copy. Press and hold the token to copy it manually.",
+    "install": "Install the shortcut",
+    "step1": "Install the shortcut and paste your token when it asks.",
+    "step2": "In Settings → Accessibility → Touch → Back Tap → Double Tap, choose \"Cargar gasto\".",
+    "step3": "Don't share your shortcut: everyone generates their own.",
+    "regen": "Generate a new one",
+    "regenWarning": "The shortcut you have installed stops working until you paste the new token.",
+    "regenConfirm": "Yes, generate a new one",
+    "cancel": "Cancel",
+    "disconnect": "Disconnect",
+    "issueFailed": "Couldn't generate the token.",
+    "revokeFailed": "Couldn't disconnect the shortcut."
   }
 }

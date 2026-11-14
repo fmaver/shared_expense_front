@@ -1133,5 +1133,33 @@
     "savedNotResolved": "El gasto se guardó, pero el borrador quedó en la lista. Descartalo.",
     "loadFailed": "No pudimos cargar los borradores.",
     "retry": "Reintentar"
+  },
+  "shortcut": {
+    "section": "Carga rápida",
+    "title": "Conectar atajo",
+    "subtitle": "Cargá un gasto con un doble toque en el celular: sacás la captura y listo.",
+    "connectedTitle": "Atajo conectado",
+    "loading": "Cargando…",
+    "loadFailed": "No se pudo cargar el estado del atajo.",
+    "retry": "Reintentar",
+    "lastUsed": "Último uso {{when}}",
+    "neverUsed": "Sin usar todavía",
+    "connect": "Conectar atajo",
+    "working": "Un momento…",
+    "tokenOnce": "Copiá tu token ahora: no se vuelve a mostrar.",
+    "copy": "Copiar",
+    "copied": "Token copiado",
+    "copyFailed": "No se pudo copiar. Mantené apretado el token para copiarlo a mano.",
+    "install": "Instalar el atajo",
+    "step1": "Instalá el atajo y pegá tu token cuando te lo pida.",
+    "step2": "En Ajustes → Accesibilidad → Tocar → Toque posterior → Doble toque, elegí \"Cargar gasto\".",
+    "step3": "No compartas tu atajo: cada uno genera el suyo.",
+    "regen": "Generar uno nuevo",
+    "regenWarning": "El atajo que tenés instalado deja de andar hasta que le pegues el token nuevo.",
+    "regenConfirm": "Sí, generar uno nuevo",
+    "cancel": "Cancelar",
+    "disconnect": "Desconectar",
+    "issueFailed": "No se pudo generar el token.",
+    "revokeFailed": "No se pudo desconectar el atajo."
   }
 }
