@@ -381,7 +381,7 @@ export interface Draft {
   paymentType: string | null;
   installments: number | null;
   currency: string | null;
-  confidence: number | null;
+  confidence: 'high' | 'low' | null;
   suggestedGroupId: number | null;
   suggestedGroupName: string | null;
   hasImage: boolean;

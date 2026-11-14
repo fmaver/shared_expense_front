@@ -9,7 +9,7 @@ function authHeaders(): HeadersInit {
 
 const base = () => `${config.apiBaseUrl}/api/v1/drafts`;
 
-async function failure(response: Response, fallback: string): Promise<Error> {
+export async function failure(response: Response, fallback: string): Promise<Error> {
   try {
     const body = await response.json();
     const detail = body?.detail;
