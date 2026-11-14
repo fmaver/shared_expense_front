@@ -63,11 +63,13 @@ src/
 │   ├── auth.ts              # POST /token, POST /register
 │   ├── categories.ts        # GET /categories, GET /categories/with-emojis
 │   ├── currency.ts          # GET /currency/rate — live dolarapi blue rate
+│   ├── drafts.ts            # borradores de carga rápida: list/image/confirm/save/resolve/discard
 │   ├── expenses.ts          # CRUD for expenses
 │   ├── groups.ts            # CRUD, membership, invitations, join-link
 │   ├── invitations.ts       # resolve + accept invitation token
 │   ├── joinLinks.ts         # resolve + register-and-join via join link
 │   ├── members.ts           # GET /members, GET /me, PATCH /me
+│   ├── shortcutToken.ts     # token del atajo de iOS: status/issue/revoke
 │   └── shares.ts            # GET/settle/unsettle/recalculate monthly share; getGroupTrend()
 ├── contexts/
 │   ├── CurrencyContext.tsx  # useCurrency(): displayMode, setDisplayMode, blueRate, formatAmount
