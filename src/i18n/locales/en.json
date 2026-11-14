@@ -1119,7 +1119,6 @@
     "cardAgeOldest": "the oldest from {{age}}",
     "cardAgeSingle": "saved {{age}}",
     "review": "Review",
-    "reviewOne": "Review",
     "complete": "Complete",
     "confirm": "Confirm",
     "discard": "Discard",
@@ -1130,6 +1129,9 @@
     "noGroup": "No suggested group",
     "savedAge": "Saved {{age}}",
     "installments_one": "{{count}} installment",
-    "installments_other": "{{count}} installments"
+    "installments_other": "{{count}} installments",
+    "savedNotResolved": "The expense was saved, but the draft is still on the list. Discard it.",
+    "loadFailed": "We couldn't load your drafts.",
+    "retry": "Try again"
   }
 }

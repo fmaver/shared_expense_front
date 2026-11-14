@@ -113,13 +113,19 @@ export function DraftsPage() {
   const island = useIsland();
   const { requestExpenseRefresh } = useExpenseRefresh();
   const { formatAmount } = useCurrency();
-  const { drafts, loading, refetch } = useDrafts();
+  const { drafts, loading, error: loadFailed, refetch } = useDrafts();
   const { images, load } = useDraftImages(drafts);
 
   const [titleEl, setTitleEl] = useState<HTMLHeadingElement | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [armedDiscardId, setArmedDiscardId] = useState<number | null>(null);
   const [review, setReview] = useState<Review | null>(null);
+  /*
+    Borradores cuyo gasto ya se guardó desde la hoja pero que el backend no llegó a cerrar
+    (`resolveDraft` falló dos veces). Ofrecer Confirmar o Revisar ahí duplicaría el gasto: solo
+    queda Descartar.
+  */
+  const [savedUnresolved, setSavedUnresolved] = useState<Set<number>>(() => new Set());
 
   // El "¿Descartar?" armado se desarma solo: un toque olvidado no queda listo para borrar.
   useEffect(() => {
@@ -145,6 +151,8 @@ export function DraftsPage() {
       await refetch();
     } catch (error) {
       toast.error((error as Error).message);
+      // Un 409 suele ser que ya se resolvió en otro lado: la lista tiene que reflejarlo.
+      await refetch();
     } finally {
       setBusyId(null);
     }
@@ -165,6 +173,7 @@ export function DraftsPage() {
   };
 
   const handleDiscard = async (draft: Draft) => {
+    if (busyId !== null) return;
     if (armedDiscardId !== draft.id) {
       setArmedDiscardId(draft.id);
       return;
@@ -181,12 +190,22 @@ export function DraftsPage() {
     }
   };
 
-  const handleReviewSaved = () => {
+  const handleReviewSaved = async () => {
     // El lanzador ya mostró el éxito y pidió refrescar los gastos; acá se cierra el borrador.
     if (!review) return;
-    resolveDraft(review.draftId)
-      .then(refetch)
-      .catch((error: Error) => toast.error(error.message));
+    const id = review.draftId;
+    try {
+      await resolveDraft(id);
+    } catch {
+      // Un reintento: el gasto ya existe, así que vale la pena insistir antes de avisar.
+      try {
+        await resolveDraft(id);
+      } catch {
+        setSavedUnresolved(current => new Set(current).add(id));
+        toast.error(t('drafts.savedNotResolved'));
+      }
+    }
+    await refetch();
   };
 
   const paymentLabel = (draft: Draft) => {
@@ -233,6 +252,17 @@ export function DraftsPage() {
                 <Skeleton className="h-28 w-full rounded-card" />
                 <Skeleton className="h-28 w-full rounded-card" />
               </>
+            ) : loadFailed && drafts.length === 0 ? (
+              <div className="px-1 py-10 text-center">
+                <p className="text-[13px] font-semibold text-muted-1">{t('drafts.loadFailed')}</p>
+                <button
+                  type="button"
+                  onClick={() => { refetch(); }}
+                  className="mx-auto mt-4 flex h-9 cursor-pointer items-center rounded-pill border border-line-strong px-4 text-[12px] font-bold text-foreground transition-colors hover:bg-surface-sunken"
+                >
+                  {t('drafts.retry')}
+                </button>
+              </div>
             ) : drafts.length === 0 ? (
               <div className="px-1 py-10 text-center">
                 <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-sunken">
@@ -250,6 +280,7 @@ export function DraftsPage() {
             ) : (
               drafts.map(draft => {
                 const image = images.get(draft.id);
+                const unresolved = savedUnresolved.has(draft.id);
                 const complete = draft.amount != null && draft.suggestedGroupId != null;
                 const busy = busyId === draft.id;
                 const armed = armedDiscardId === draft.id;
@@ -299,37 +330,39 @@ export function DraftsPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                      {complete && (
+                    <div className="mt-3 flex flex-wrap items-center gap-1">
+                      {complete && !unresolved && (
                         <button
                           type="button"
                           disabled={busy}
                           onClick={() => handleConfirm(draft)}
-                          className="flex h-9 cursor-pointer items-center rounded-pill bg-primary px-3.5 text-[12px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-50"
+                          className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-pill bg-primary px-3 text-[12px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-50"
                         >
                           {t('drafts.confirm')}
                         </button>
                       )}
+                      {!unresolved && (
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => handleReview(draft)}
                         className={cn(
-                          'flex h-9 cursor-pointer items-center rounded-pill px-3.5 text-[12px] font-bold transition-colors disabled:cursor-default disabled:opacity-50',
+                          'flex h-9 cursor-pointer items-center whitespace-nowrap rounded-pill px-3 text-[12px] font-bold transition-colors disabled:cursor-default disabled:opacity-50',
                           complete
                             ? 'border border-line-strong text-foreground hover:bg-surface-sunken'
                             : 'bg-primary text-primary-foreground hover:opacity-90',
                         )}
                       >
-                        {draft.amount == null ? t('drafts.complete') : t('drafts.reviewOne')}
+                        {draft.amount == null ? t('drafts.complete') : t('drafts.review')}
                       </button>
+                      )}
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => handleDiscard(draft)}
                         onBlur={() => { if (armed) setArmedDiscardId(null); }}
                         className={cn(
-                          'ml-auto flex h-9 cursor-pointer items-center rounded-pill px-2.5 text-[12px] font-bold transition-colors disabled:cursor-default disabled:opacity-50',
+                          'ml-auto flex h-9 cursor-pointer items-center whitespace-nowrap rounded-pill px-2 text-[12px] font-bold transition-colors disabled:cursor-default disabled:opacity-50',
                           armed
                             ? 'border border-negative-wash-line bg-negative-wash text-negative-ink'
                             : 'text-muted-2 hover:text-negative',

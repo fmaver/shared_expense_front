@@ -1119,7 +1119,6 @@
     "cardAgeOldest": "el más viejo de {{age}}",
     "cardAgeSingle": "guardado {{age}}",
     "review": "Revisar",
-    "reviewOne": "Revisar",
     "complete": "Completar",
     "confirm": "Confirmar",
     "discard": "Descartar",
@@ -1130,6 +1129,9 @@
     "noGroup": "Sin grupo sugerido",
     "savedAge": "Guardado {{age}}",
     "installments_one": "{{count}} cuota",
-    "installments_other": "{{count}} cuotas"
+    "installments_other": "{{count}} cuotas",
+    "savedNotResolved": "El gasto se guardó, pero el borrador quedó en la lista. Descartalo.",
+    "loadFailed": "No pudimos cargar los borradores.",
+    "retry": "Reintentar"
   }
 }
