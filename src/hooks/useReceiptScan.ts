@@ -41,6 +41,22 @@ export function useReceiptScan(groupId: number | null | undefined) {
     reinició), la respuesta que llega tarde ya no es la vigente y no toca el formulario.
   */
   const generationRef = useRef(0);
+  /*
+    Cada apertura de la hoja (`reset`) es una sesión. Un guardado que termina después de que
+    la hoja se cerró y se volvió a abrir con otra foto no abandona esa lectura ni la cierra.
+  */
+  const sessionRef = useRef(0);
+  /*
+    `scanning` en un ref, para que la hoja pregunte "¿hay una lectura en curso?" sin depender
+    del estado del render en que armó su closure: el efecto de apertura llama a `reset` y
+    enseguida a `scan`, y ahí el estado todavía no se actualizó.
+  */
+  const scanningRef = useRef(false);
+  const setScanningBoth = useCallback((value: boolean) => {
+    scanningRef.current = value;
+    setScanning(value);
+  }, []);
+  const isScanning = useCallback(() => scanningRef.current, []);
 
   const setImage = useCallback((file: File | null) => {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
@@ -57,7 +73,7 @@ export function useReceiptScan(groupId: number | null | undefined) {
   ) => {
     if (groupId == null) return;
     const generation = ++generationRef.current;
-    setScanning(true);
+    setScanningBoth(true);
     setImage(file);
     setScannedFile(file);
     setFromPhoto(new Set());
@@ -71,9 +87,9 @@ export function useReceiptScan(groupId: number | null | undefined) {
       // Una lectura abandonada no tiene a quién avisarle su error.
       if (generation === generationRef.current) throw err;
     } finally {
-      if (generation === generationRef.current) setScanning(false);
+      if (generation === generationRef.current) setScanningBoth(false);
     }
-  }, [groupId, setImage]);
+  }, [groupId, setImage, setScanningBoth]);
 
   /**
    * "Dejar para después": guarda la foto como borrador pendiente (el backend la vuelve a leer)
@@ -86,22 +102,29 @@ export function useReceiptScan(groupId: number | null | undefined) {
     // El ref frena el doble toque antes de que el botón llegue a deshabilitarse: dos toques
     // serían dos borradores.
     if (!file || savingRef.current) return;
+    const session = sessionRef.current;
     savingRef.current = true;
     setSavingDraft(true);
     try {
       await saveDraft(file);
-      // Recién ahora se abandona la lectura: si el guardado falla, la hoja sigue como estaba.
-      ++generationRef.current;
+      // El borrador quedó guardado pase lo que pase con la hoja: el aviso y el refresco van igual.
       toast.success(t('scan.savedForLater'));
       requestExpenseRefresh();
+      // Otra sesión (la hoja se cerró y se abrió con otra foto): esa no se toca.
+      if (session !== sessionRef.current) return;
+      // Recién ahora se abandona la lectura: si el guardado falla, la hoja sigue como estaba.
+      ++generationRef.current;
+      setScanningBoth(false);
       onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('scan.saveForLaterFailed'));
     } finally {
-      savingRef.current = false;
-      setSavingDraft(false);
+      if (session === sessionRef.current) {
+        savingRef.current = false;
+        setSavingDraft(false);
+      }
     }
-  }, [scannedFile, t, requestExpenseRefresh]);
+  }, [scannedFile, t, requestExpenseRefresh, setScanningBoth]);
 
   /** El usuario editó ese campo: deja de ser "de la foto". */
   const touch = useCallback((field: ScanField) => {
@@ -113,17 +136,29 @@ export function useReceiptScan(groupId: number | null | undefined) {
     });
   }, []);
 
+  /*
+    La hoja se cerró: un guardado en vuelo ya no la cierra (podría cerrar otra cosa que se
+    abrió mientras tanto). No limpia nada visible, así la animación de salida no parpadea.
+  */
+  const endSession = useCallback(() => { ++sessionRef.current; }, []);
+  useEffect(() => endSession, [endSession]);
+
   const reset = useCallback(() => {
     ++generationRef.current;
+    ++sessionRef.current;
+    savingRef.current = false;
+    setSavingDraft(false);
     setScannedFile(null);
     setImage(null);
     setFromPhoto(new Set());
     setConfidence(null);
-    setScanning(false);
-  }, [setImage]);
+    setScanningBoth(false);
+  }, [setImage, setScanningBoth]);
 
   return {
     scanning, receipt, fromPhoto, confidence, scan, touch, reset,
+    /** Si hay una lectura en curso, leído al momento (no del render). */
+    isScanning, endSession,
     /** La foto leída (o leyéndose), y si ya se está guardando como borrador. */
     scannedFile, savingDraft, saveForLater,
     /** Adjuntar una foto como comprobante, sin leerla (fila "Comprobante"). */

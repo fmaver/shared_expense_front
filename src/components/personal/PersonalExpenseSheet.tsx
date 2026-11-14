@@ -85,10 +85,6 @@ export function PersonalExpenseSheet({
   const [saving, setSaving] = useState(false);
   const scan = useReceiptScan(personalGroupId);
   /*
-    "Dejar para después" solo con una foto en juego y sin un borrador abierto: revisar un
-    borrador no ofrece guardarlo de nuevo.
-  */
-  /*
     La foto que llegó desde el "+", esperando al grupo personal: la hoja puede abrir antes de
     que `usePersonalContext` lo resuelva, y sin grupo no hay contra quién leer el ticket.
   */
@@ -144,7 +140,7 @@ export function PersonalExpenseSheet({
    * y la categoría.
    */
   const scanImage = async (file: File, preRead?: ExpenseDraft) => {
-    if (!personalGroupId || scan.scanning) return;
+    if (!personalGroupId || scan.isScanning()) return;
     setError('');
     try {
       await scan.scan(file, draft => {
@@ -433,7 +429,7 @@ export function PersonalExpenseSheet({
             <button
               type="button"
               onClick={() => save()}
-              disabled={saving || duplicate !== null}
+              disabled={saving || duplicate !== null || scan.savingDraft}
               className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {saving

@@ -160,7 +160,7 @@ export function AddExpenseDialog({
   const saveForLater = () => scan.saveForLater(() => onOpenChange(false));
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { scan.endSession(); return; }
     setForm(buildInitial(initialExpense, members, categories[0]?.name ?? '', currentMemberId));
     setMode(initialExpense?.category === 'prestamo' ? 'loan' : initialMode);
     setPicker(null);
@@ -199,7 +199,7 @@ export function AddExpenseDialog({
 
   /* ── Escaneo de ticket ────────────────────────────────────────────────────────────── */
   const scanImage = async (file: File, preRead?: ExpenseDraft) => {
-    if (groupId == null || scan.scanning) return;
+    if (groupId == null || scan.isScanning()) return;
     setError('');
     try {
       await scan.scan(file, draft => {
@@ -564,7 +564,7 @@ export function AddExpenseDialog({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={disabled || submitting}
+              disabled={disabled || submitting || scan.savingDraft}
               className="h-12 w-full cursor-pointer rounded-[14px] bg-brand text-[13.5px] font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {submitting
