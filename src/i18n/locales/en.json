@@ -197,7 +197,8 @@
     "addByHand": "Add by hand",
     "personal": "Personal",
     "personalDesc": "Your expenses",
-    "desktopAdd": "Add"
+    "desktopAdd": "Add",
+    "suggested": "Suggested"
   },
   "charts": {
     "title": "Charts",

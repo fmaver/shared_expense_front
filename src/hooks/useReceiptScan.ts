@@ -17,6 +17,9 @@ export interface ReceiptImage {
  * borrador en su propio estado: `apply` devuelve qué campos llenó, y esos quedan marcados
  * como "de la foto" hasta que el usuario los toque (`touch`). La foto queda como miniatura
  * local; el backend no guarda imágenes, así que no se persiste.
+ *
+ * Con `preRead` (un borrador de carga rápida que el backend ya leyó) no se vuelve a llamar a
+ * `parseExpenseImage`: la foto queda de miniatura y se aplica ese borrador tal cual.
  */
 export function useReceiptScan(groupId: number | null | undefined) {
   const [scanning, setScanning] = useState(false);
@@ -33,14 +36,18 @@ export function useReceiptScan(groupId: number | null | undefined) {
 
   useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
 
-  const scan = useCallback(async (file: File, apply: (draft: ExpenseDraft) => ScanField[]) => {
+  const scan = useCallback(async (
+    file: File,
+    apply: (draft: ExpenseDraft) => ScanField[],
+    preRead?: ExpenseDraft,
+  ) => {
     if (groupId == null) return;
     setScanning(true);
     setImage(file);
     setFromPhoto(new Set());
     setConfidence(null);
     try {
-      const draft = await parseExpenseImage(groupId, file);
+      const draft = preRead ?? await parseExpenseImage(groupId, file);
       setFromPhoto(new Set(apply(draft)));
       setConfidence(draft.confidence);
     } finally {

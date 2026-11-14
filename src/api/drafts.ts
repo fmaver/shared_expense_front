@@ -1,5 +1,7 @@
 import { config } from '../config/env';
 import type { Draft } from '../types/expense';
+import type { ExpenseDraft } from './expenses';
+import { formatDate } from '../utils/format';
 
 /** Todas las llamadas fetch de este repo mandan el bearer a mano; axios no interviene acá. */
 function authHeaders(): HeadersInit {
@@ -67,4 +69,21 @@ export async function resolveDraft(id: number): Promise<void> {
 export async function discardDraft(id: number): Promise<void> {
   const response = await fetch(`${base()}/${id}`, { method: 'DELETE', headers: authHeaders() });
   if (!response.ok) throw await failure(response, 'No se pudo descartar el borrador');
+}
+
+/**
+ * Un borrador pendiente, con la forma que esperan las hojas de carga (`scanDraft`): lo que el
+ * backend no pudo leer cae en los mismos valores por defecto que un formulario vacío.
+ */
+export function draftToExpenseDraft(draft: Draft): ExpenseDraft {
+  return {
+    amount: draft.amount,
+    description: draft.description ?? '',
+    category: draft.category ?? 'otros',
+    date: draft.date ?? formatDate(new Date()),
+    paymentType: draft.paymentType === 'credit' ? 'credit' : 'debit',
+    installments: draft.installments ?? 1,
+    currency: draft.currency ?? 'ARS',
+    confidence: draft.confidence ?? 'low',
+  };
 }

@@ -21,7 +21,7 @@ import {
 import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
 } from '@/utils/format';
-import { checkSimilarExpenses, createExpense } from '@/api/expenses';
+import { checkSimilarExpenses, createExpense, type ExpenseDraft } from '@/api/expenses';
 import { createRecurringPersonalExpense } from '@/api/personal';
 import type {
   CategoryWithEmoji, ExpenseResponse, RecurringPersonalExpenseInstanceResponse,
@@ -44,6 +44,8 @@ interface PersonalExpenseSheetProps {
   onSaved: () => void;
   /** Una foto de ticket elegida desde el "+" (V6.6): la hoja abre leyéndola. */
   scanFile?: File | null;
+  /** El borrador ya leído de `scanFile` (carga rápida): se aplica sin volver a leer la foto. */
+  scanDraft?: ExpenseDraft | null;
 }
 
 /**
@@ -56,7 +58,7 @@ interface PersonalExpenseSheetProps {
  */
 export function PersonalExpenseSheet({
   open, onOpenChange, initialKind, year, month, categories,
-  existingRecurring, onBack, onSaved, scanFile = null,
+  existingRecurring, onBack, onSaved, scanFile = null, scanDraft = null,
 }: PersonalExpenseSheetProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -110,7 +112,7 @@ export function PersonalExpenseSheet({
   useEffect(() => {
     if (!open || !pendingScan || !personalGroupId) return;
     setPendingScan(null);
-    scanImage(pendingScan);
+    scanImage(pendingScan, scanDraft ?? undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pendingScan, personalGroupId]);
 
@@ -129,7 +131,7 @@ export function PersonalExpenseSheet({
    * gasto fijo no tiene fecha ni cuotas, así que de la foto se queda con el monto, el nombre
    * y la categoría.
    */
-  const scanImage = async (file: File) => {
+  const scanImage = async (file: File, preRead?: ExpenseDraft) => {
     if (!personalGroupId || scan.scanning) return;
     setError('');
     try {
@@ -146,7 +148,7 @@ export function PersonalExpenseSheet({
         }
         const fields = draftFields(draft, { payment: kind === 'expense' });
         return kind === 'expense' ? fields : fields.filter(f => f !== 'date');
-      });
+      }, preRead);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.scanFailed'));
     }

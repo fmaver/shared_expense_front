@@ -5,11 +5,14 @@ import { useGroupMembers } from '@/hooks/useMembers';
 import { useCategories } from '@/hooks/useCategories';
 import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { getCurrentUser } from '@/api/auth';
+import { getPersonalGroup } from '@/api/personal';
+import type { ExpenseDraft } from '@/api/expenses';
 import { useGroupExpenseCreate } from '@/hooks/useGroupExpenseCreate';
 import { useIsland } from '@/contexts/IslandContext';
 import { useExpenseRefresh } from '@/contexts/ExpenseRefreshContext';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 import { PersonalExpenseSheet } from '@/components/personal/PersonalExpenseSheet';
+import { SuggestedPill } from '@/components/expenses/ScanReview';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +34,15 @@ interface GroupExpenseLauncherProps {
   presetGroupId?: number;
   /** Foto de ticket elegida en el "+": la hoja abre leyéndola (V6.6). */
   scanFile?: File | null;
+  /**
+   * El borrador ya leído de `scanFile` (carga rápida): la hoja lo aplica sin volver a leer la
+   * foto. Sin él, `scanFile` se lee con `parse-image` como siempre.
+   */
+  scanDraft?: ExpenseDraft | null;
+  /** El grupo que sugirió la carga rápida: en el selector va primero, con la pastilla "Sugerido". */
+  suggestedGroupId?: number | null;
+  /** Se llama cuando el gasto quedó guardado (grupo o personal). */
+  onSaved?: () => void;
 }
 
 /** Inner component — only rendered when we have a resolved groupId */
@@ -40,12 +52,16 @@ function GroupExpenseDialogs({
   open,
   onClose,
   scanFile,
+  scanDraft,
+  onSaved,
 }: {
   groupId: number;
   mode: LauncherMode;
   open: boolean;
   onClose: () => void;
   scanFile: File | null;
+  scanDraft: ExpenseDraft | null;
+  onSaved?: () => void;
 }) {
   const { t } = useTranslation();
   const island = useIsland();
@@ -67,8 +83,9 @@ function GroupExpenseDialogs({
     // The launcher lives outside the group pages' subtree, so signal them to
     // refetch instead of relying on a local refetch they can't reach.
     requestExpenseRefresh();
+    onSaved?.();
     onClose();
-  }, [island, requestExpenseRefresh, onClose]);
+  }, [island, requestExpenseRefresh, onSaved, onClose]);
 
   const { create, duplicates, pendingExpense, confirm, cancel } = useGroupExpenseCreate({
     groupId,
@@ -103,6 +120,7 @@ function GroupExpenseDialogs({
           isOneTimeGroup={isOneTimeGroup}
           initialMode={mode === 'transfer' ? 'loan' : 'expense'}
           scanFile={mode === 'expense' ? scanFile : null}
+          scanDraft={mode === 'expense' ? scanDraft : null}
         />
       )}
 
@@ -161,11 +179,15 @@ function PersonalExpenseLauncherSheet({
   onClose,
   onBack,
   scanFile,
+  scanDraft,
+  onSaved,
 }: {
   open: boolean;
   onClose: () => void;
   onBack: () => void;
   scanFile: File | null;
+  scanDraft: ExpenseDraft | null;
+  onSaved?: () => void;
 }) {
   const island = useIsland();
   const { requestExpenseRefresh } = useExpenseRefresh();
@@ -179,7 +201,8 @@ function PersonalExpenseLauncherSheet({
     island.success();
     requestExpenseRefresh();
     refetch();
-  }, [island, requestExpenseRefresh, refetch]);
+    onSaved?.();
+  }, [island, requestExpenseRefresh, refetch, onSaved]);
 
   return (
     <PersonalExpenseSheet
@@ -193,6 +216,7 @@ function PersonalExpenseLauncherSheet({
       onBack={onBack}
       onSaved={handleSaved}
       scanFile={scanFile}
+      scanDraft={scanDraft}
     />
   );
 }
@@ -203,6 +227,9 @@ export function GroupExpenseLauncher({
   mode,
   presetGroupId,
   scanFile = null,
+  scanDraft = null,
+  suggestedGroupId = null,
+  onSaved,
 }: GroupExpenseLauncherProps) {
   const { t } = useTranslation();
   const { data: groups = [], isLoading: loadingGroups } = useGroups();
@@ -223,6 +250,45 @@ export function GroupExpenseLauncher({
     se ofrece como destino cuando el "+" abrió en modo transferencia.
   */
   const offerPersonal = mode === 'expense';
+
+  /*
+    El grupo sugerido puede ser el personal, que `useGroups` no lista. Solo cuando hay una
+    sugerencia que no es uno de tus grupos se averigua cuál es el personal: sin sugerencia, el
+    selector no hace ninguna llamada de más.
+  */
+  const suggestedIsListedGroup = suggestedGroupId != null && groups.some(g => g.id === suggestedGroupId);
+  const needsPersonalId = open && suggestedGroupId != null && !loadingGroups && !suggestedIsListedGroup;
+  const [personalGroupId, setPersonalGroupId] = useState<number | null>(null);
+  useEffect(() => {
+    if (!needsPersonalId || personalGroupId != null) return;
+    let cancelled = false;
+    getPersonalGroup()
+      .then(g => { if (!cancelled) setPersonalGroupId(g.id); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [needsPersonalId, personalGroupId]);
+  const personalSuggested = offerPersonal && suggestedGroupId != null && !suggestedIsListedGroup
+    && personalGroupId === suggestedGroupId;
+  const suggestedGroup = suggestedIsListedGroup ? groups.find(g => g.id === suggestedGroupId) : undefined;
+  const renderGroupRow = (group: (typeof groups)[number]) => (
+    <button
+      key={group.id}
+      type="button"
+      onClick={() => setSelection({ kind: 'group', groupId: group.id })}
+      className="w-full bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between hover:border-brand/40 hover:bg-accent/50 transition-colors text-left cursor-pointer"
+    >
+      <div>
+        <p className="font-semibold text-foreground text-sm">{group.name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {t('fab.members', { count: group.members.length })}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {group.id === suggestedGroup?.id && <SuggestedPill />}
+        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      </div>
+    </button>
+  );
 
   return (
     <>
@@ -246,6 +312,8 @@ export function GroupExpenseLauncher({
             </div>
           ) : (
             <div className="space-y-1.5 py-1">
+              {/* La sugerencia de la carga rápida va primero, aunque eso la ponga sobre Personal. */}
+              {suggestedGroup && renderGroupRow(suggestedGroup)}
               {offerPersonal && (
                 <button
                   type="button"
@@ -261,25 +329,13 @@ export function GroupExpenseLauncher({
                       <p className="text-xs text-muted-foreground mt-0.5">{t('fab.personalDesc')}</p>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {personalSuggested && <SuggestedPill />}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </div>
                 </button>
               )}
-              {groups.map(group => (
-                <button
-                  key={group.id}
-                  type="button"
-                  onClick={() => setSelection({ kind: 'group', groupId: group.id })}
-                  className="w-full bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between hover:border-brand/40 hover:bg-accent/50 transition-colors text-left cursor-pointer"
-                >
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">{group.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {t('fab.members', { count: group.members.length })}
-                    </p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                </button>
-              ))}
+              {(suggestedGroup ? groups.filter(g => g.id !== suggestedGroup.id) : groups).map(renderGroupRow)}
             </div>
           )}
         </DialogContent>
@@ -293,6 +349,8 @@ export function GroupExpenseLauncher({
           open={showGroupDialogs}
           onClose={onClose}
           scanFile={scanFile}
+          scanDraft={scanDraft}
+          onSaved={onSaved}
         />
       )}
 
@@ -303,6 +361,8 @@ export function GroupExpenseLauncher({
           onClose={onClose}
           onBack={() => setSelection(null)}
           scanFile={scanFile}
+          scanDraft={scanDraft}
+          onSaved={onSaved}
         />
       )}
     </>

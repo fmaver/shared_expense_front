@@ -197,7 +197,8 @@
     "addByHand": "Cargar a mano",
     "personal": "Personal",
     "personalDesc": "Tus gastos",
-    "desktopAdd": "Cargar"
+    "desktopAdd": "Cargar",
+    "suggested": "Sugerido"
   },
   "charts": {
     "title": "Gráficos",

@@ -8,6 +8,7 @@ import { Segmented } from '@/components/ui/Segmented';
 import { useCategories } from '@/hooks/useCategories';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { createRecurringGroupExpense } from '@/api/recurringExpenses';
+import type { ExpenseDraft } from '@/api/expenses';
 import {
   formatDate, formatDayMonth, formatKeypadAmount, parseKeypadAmount,
 } from '@/utils/format';
@@ -50,6 +51,11 @@ interface AddExpenseDialogProps {
    * el formulario completado para revisar.
    */
   scanFile?: File | null;
+  /**
+   * El borrador ya leído de `scanFile` (carga rápida): se aplica sin volver a leer la foto.
+   * Sin él, `scanFile` se lee como siempre.
+   */
+  scanDraft?: ExpenseDraft | null;
 }
 
 /** En el formulario un porcentaje o monto puede estar vacío (null) mientras se escribe. */
@@ -127,6 +133,7 @@ export function AddExpenseDialog({
   open, onOpenChange, onSubmit, members, initialExpense, isSettled = false,
   hidePayerAndSplit = false, currentMemberId, groupId, onSuccess,
   isRecurringEdit = false, isOneTimeGroup = false, initialMode = 'expense', scanFile = null,
+  scanDraft = null,
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
@@ -154,7 +161,7 @@ export function AddExpenseDialog({
     setIsRecurring(false);
     setError('');
     scan.reset();
-    if (scanFile) scanImage(scanFile);
+    if (scanFile) scanImage(scanFile, scanDraft ?? undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -185,7 +192,7 @@ export function AddExpenseDialog({
       ? form.splitStrategy.percentages : form.splitStrategy.amounts, amount).ok;
 
   /* ── Escaneo de ticket ────────────────────────────────────────────────────────────── */
-  const scanImage = async (file: File) => {
+  const scanImage = async (file: File, preRead?: ExpenseDraft) => {
     if (groupId == null || scan.scanning) return;
     setError('');
     try {
@@ -200,7 +207,7 @@ export function AddExpenseDialog({
           currency: draft.currency,
         });
         return draftFields(draft, { payment: !isOneTimeGroup });
-      });
+      }, preRead);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('expenseForm.submitFailed'));
     }

@@ -4,14 +4,18 @@ import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ReceiptImage } from '@/hooks/useReceiptScan';
 
+const PILL_CLASS = 'shrink-0 rounded-full bg-brand-wash px-1.5 py-0.5 text-[10px] font-bold leading-none text-brand-ink';
+
 /** La pastilla "de la foto": el valor lo leyó el escaneo y conviene mirarlo. */
 export function FromPhotoPill() {
   const { t } = useTranslation();
-  return (
-    <span className="shrink-0 rounded-full bg-brand-wash px-1.5 py-0.5 text-[10px] font-bold leading-none text-brand-ink">
-      {t('scan.fromPhoto')}
-    </span>
-  );
+  return <span className={PILL_CLASS}>{t('scan.fromPhoto')}</span>;
+}
+
+/** La misma pastilla, para el grupo que la carga rápida sugiere en el selector del "+". */
+export function SuggestedPill() {
+  const { t } = useTranslation();
+  return <span className={PILL_CLASS}>{t('fab.suggested')}</span>;
 }
 
 /** Mientras `parseExpenseImage` responde: la hoja ya está abierta, con un skeleton. */
