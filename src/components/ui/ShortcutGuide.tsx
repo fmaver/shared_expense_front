@@ -51,11 +51,12 @@ function Step({ title, children }: { title: string; children?: ReactNode }) {
 /**
  * Cómo armar el atajo "Cargar gasto" en Atajos de iOS, paso a paso. Misma receta que
  * `docs/quick-capture-shortcut.md` (fuente de verdad). Nunca incluye el token real: la
- * credencial se pega en la pregunta de importación "Token".
+ * credencial se pega en la pregunta de importación "Código de conexión".
  */
 export function ShortcutGuide() {
   const { t } = useTranslation();
-  const api = `${config.apiBaseUrl.replace(/\/+$/, '')}/api/v1/quick-capture`;
+  // La dirección es la variable `servidor` del atajo, no la URL resuelta: se copia sólo el path.
+  const api = '/api/v1/quick-capture';
   const hasInstall = Boolean(config.shortcutInstallUrl);
 
   return (
@@ -72,6 +73,12 @@ export function ShortcutGuide() {
         </Step>
         <Step title={t('shortcut.guide.s3')}>
           <p>{t('shortcut.guide.s3b')}</p>
+        </Step>
+        <Step title={t('shortcut.guide.sSplit')}>
+          <p>{t('shortcut.guide.sSplitA')}</p>
+          <CopyBlock label={t('shortcut.guide.separator')} value="|" />
+          <p className="mt-1.5">{t('shortcut.guide.sSplitB')}</p>
+          <p className="mt-1">{t('shortcut.guide.sSplitC')}</p>
         </Step>
         <Step title={t('shortcut.guide.s4')}>
           <CopyBlock label={t('shortcut.guide.url')} value={api} />
@@ -98,13 +105,13 @@ export function ShortcutGuide() {
         <Step title={t('shortcut.guide.s7')}>
           <p>{t('shortcut.guide.s7intro')}</p>
           <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.confirm')}</p>
-          <CopyBlock label="POST" value={`${api}/{draftId}/confirm`} />
+          <CopyBlock label={t('shortcut.guide.urlPost')} value={`${api}/`} suffix="{draftId}/confirm" />
           <p className="mt-1.5">{t('shortcut.guide.jsonBody')}</p>
           <CopyBlock label={t('shortcut.guide.jsonField')} value="groupId" />
           <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.keep')}</p>
-          <CopyBlock label="POST" value={`${api}/{draftId}/keep`} />
+          <CopyBlock label={t('shortcut.guide.urlPost')} value={`${api}/`} suffix="{draftId}/keep" />
           <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.discard')}</p>
-          <CopyBlock label="DELETE" value={`${api}/{draftId}`} />
+          <CopyBlock label={t('shortcut.guide.urlDelete')} value={`${api}/`} suffix="{draftId}" />
           <p className="mt-1.5">{t('shortcut.guide.draftIdNote')}</p>
           <p className="mt-1">{t('shortcut.guide.s7outro')}</p>
         </Step>

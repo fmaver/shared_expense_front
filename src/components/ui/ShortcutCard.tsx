@@ -70,10 +70,16 @@ export function ShortcutCard({ className }: { className?: string }) {
     }
   };
 
+  // Código de conexión: `<URL del API>|<token>`. Un solo atajo publicado sirve para cualquier
+  // entorno porque la dirección viaja con la credencial. El atajo sigue mandando sólo el token.
+  const connectionCode = issuedToken
+    ? `${config.apiBaseUrl.replace(/\/+$/, '')}|${issuedToken}`
+    : null;
+
   const copy = () => {
-    if (!issuedToken) return;
-    // Sin permiso o sin contexto seguro: el token sigue visible y seleccionable.
-    void copyToClipboard(issuedToken, t('shortcut.copied'), t('shortcut.copyFailed'));
+    if (!connectionCode) return;
+    // Sin permiso o sin contexto seguro: el código sigue visible y seleccionable.
+    void copyToClipboard(connectionCode, t('shortcut.copied'), t('shortcut.copyFailed'));
   };
 
   const connected = status?.connected ?? false;
@@ -119,12 +125,13 @@ export function ShortcutCard({ className }: { className?: string }) {
       {issuedToken && (
         <div className="mt-3 border-t border-white/10 pt-3">
           <p className="text-[11.5px] font-semibold text-paper">{t('shortcut.tokenOnce')}</p>
-          <div className="mt-2 flex items-center gap-2">
+          <p className="mt-1 text-[10.5px] font-semibold text-muted-on-dark">{t('shortcut.codeLabel')}</p>
+          <div className="mt-1 flex items-center gap-2">
             <code
               data-testid="shortcut-token"
               className="min-w-0 flex-1 select-all break-all rounded-[10px] bg-white/10 px-3 py-2 font-mono text-[11.5px] text-paper"
             >
-              {issuedToken}
+              {connectionCode}
             </code>
             <button type="button" onClick={copy} className={primaryBtn}>
               {t('shortcut.copy')}
