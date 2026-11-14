@@ -99,15 +99,18 @@ export function ShortcutGuide() {
           <p>{t('shortcut.guide.s7intro')}</p>
           <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.confirm')}</p>
           <CopyBlock label="POST" value={`${api}/{draftId}/confirm`} />
-          <CopyBlock label={t('shortcut.guide.jsonBody')} value={'{"groupId": grupo}'} />
+          <p className="mt-1.5">{t('shortcut.guide.jsonBody')}</p>
+          <CopyBlock label={t('shortcut.guide.jsonField')} value="groupId" />
           <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.keep')}</p>
           <CopyBlock label="POST" value={`${api}/{draftId}/keep`} />
           <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.discard')}</p>
           <CopyBlock label="DELETE" value={`${api}/{draftId}`} />
-          <p className="mt-1.5">{t('shortcut.guide.s7outro')}</p>
+          <p className="mt-1.5">{t('shortcut.guide.draftIdNote')}</p>
+          <p className="mt-1">{t('shortcut.guide.s7outro')}</p>
         </Step>
         <Step title={t('shortcut.guide.s8')}>
           <p>{t('shortcut.guide.s8b')}</p>
+          <p className="mt-1">{t('shortcut.guide.s8err')}</p>
         </Step>
         <Step title={t('shortcut.guide.s9')}>
           <p>{t('shortcut.guide.s9b')}</p>

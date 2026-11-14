@@ -140,14 +140,20 @@ export function ShortcutCard({ className }: { className?: string }) {
               {t('shortcut.install')}
             </a>
           )}
-          <ol className="mt-3 list-decimal space-y-1 pl-4 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
-            <li>{t('shortcut.step1')}</li>
-            <li>{t('shortcut.step2')}</li>
-            <li>{t('shortcut.step3')}</li>
-          </ol>
+          <p className="mt-3 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+            {t('shortcut.pasteToken')}
+          </p>
+          <p className="mt-1 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+            {t('shortcut.step3')}
+          </p>
         </div>
       )}
 
+      {connected && !issuedToken && (
+        <p className="mt-3 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+          {t('shortcut.lostToken')}
+        </p>
+      )}
       {connected && <ShortcutGuide />}
 
       {connected && (
