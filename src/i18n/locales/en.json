@@ -1111,5 +1111,25 @@
     "addTo": "Add to {{name}}",
     "takeFrom": "Take from {{name}}",
     "needAmount": "Enter the expense amount first."
+  },
+  "drafts": {
+    "title": "To review",
+    "cardTitle_one": "{{count}} expense to review",
+    "cardTitle_other": "{{count}} expenses to review",
+    "cardAgeOldest": "the oldest from {{age}}",
+    "cardAgeSingle": "saved {{age}}",
+    "review": "Review",
+    "reviewOne": "Review",
+    "complete": "Complete",
+    "confirm": "Confirm",
+    "discard": "Discard",
+    "discardConfirm": "Discard? Tap again",
+    "empty": "You have no expenses to review",
+    "noDescription": "No description",
+    "noAmount": "Amount missing",
+    "noGroup": "No suggested group",
+    "savedAge": "Saved {{age}}",
+    "installments_one": "{{count}} installment",
+    "installments_other": "{{count}} installments"
   }
 }

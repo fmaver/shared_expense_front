@@ -28,6 +28,7 @@ import {
 import { SettleUpCard } from '@/components/personal/SettleUpCard';
 import { DueDatesSection } from '@/components/personal/DueDatesSection';
 import { PersonalAddLauncher } from '@/components/personal/PersonalAddLauncher';
+import { DraftsCard } from '@/components/expenses/DraftsCard';
 
 export function PersonalDashboard() {
   const { t } = useTranslation();
@@ -162,6 +163,8 @@ export function PersonalDashboard() {
             </div>
           </div>
           <MonthPager className="mt-3.5" year={year} month={month} onNavigate={setYearMonth} />
+          {/* Borradores de la carga rápida, encima del contenido del mes; sin pendientes no se dibuja. */}
+          <DraftsCard className="mt-4" />
 
           {/*
             Columnas con mínimo 0, y no el `auto` de una columna implícita: con `auto` la columna

@@ -7,6 +7,7 @@ import { usePersonalLedger } from '@/hooks/usePersonalLedger';
 import { useMonthSearchParams } from '@/hooks/useMonthSearchParams';
 import { CreateGroupDialog } from '@/components/groups/CreateGroupDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DraftsCard } from '@/components/expenses/DraftsCard';
 import { capitalize, formatCompactCurrency, formatCurrency, formatDayMonth } from '@/utils/format';
 import { avatarBg, initials } from '@/utils/avatar';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,9 @@ export function GroupSelectorPage() {
 
   return (
     <div className="mx-auto w-full max-w-lg px-5 py-6">
+      {/* Borradores de la carga rápida: arriba de todo mientras haya; si no, no ocupa lugar. */}
+      <DraftsCard className="mb-5" />
+
       {/* ── Tu saldo en grupos: la cifra neta y de qué grupo sale cada parte ─────────── */}
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-1">
         {t('groups.balanceLabel')}

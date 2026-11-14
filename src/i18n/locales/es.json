@@ -1111,5 +1111,25 @@
     "addTo": "Sumarle a {{name}}",
     "takeFrom": "Restarle a {{name}}",
     "needAmount": "Primero cargá el monto del gasto."
+  },
+  "drafts": {
+    "title": "Para revisar",
+    "cardTitle_one": "{{count}} gasto para revisar",
+    "cardTitle_other": "{{count}} gastos para revisar",
+    "cardAgeOldest": "el más viejo de {{age}}",
+    "cardAgeSingle": "guardado {{age}}",
+    "review": "Revisar",
+    "reviewOne": "Revisar",
+    "complete": "Completar",
+    "confirm": "Confirmar",
+    "discard": "Descartar",
+    "discardConfirm": "¿Descartar? Tocá de nuevo",
+    "empty": "No tenés gastos para revisar",
+    "noDescription": "Sin descripción",
+    "noAmount": "Falta el monto",
+    "noGroup": "Sin grupo sugerido",
+    "savedAge": "Guardado {{age}}",
+    "installments_one": "{{count}} cuota",
+    "installments_other": "{{count}} cuotas"
   }
 }
