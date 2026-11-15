@@ -51,7 +51,7 @@ function Step({ title, children }: { title: string; children?: ReactNode }) {
 /**
  * Cómo armar el atajo "Cargar gasto" en Atajos de iOS, paso a paso. Misma receta que
  * `docs/quick-capture-shortcut.md` (fuente de verdad). Nunca incluye el token real: la
- * credencial se pega en la pregunta de importación "Código de conexión".
+ * credencial se pega en la acción Text del primer paso.
  */
 export function ShortcutGuide() {
   const { t } = useTranslation();
@@ -64,23 +64,26 @@ export function ShortcutGuide() {
       <summary className="cursor-pointer list-none text-[12px] font-bold text-brand-soft underline underline-offset-2 [&::-webkit-details-marker]:hidden">
         {hasInstall ? t('shortcut.guide.titleAlt') : t('shortcut.guide.title')}
       </summary>
-      <ol className="mt-3 list-decimal space-y-3 pl-4 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+      <p className="mt-3 text-[11.5px] font-medium italic leading-[1.45] text-muted-on-dark">
+        {t('shortcut.guide.intro')}
+      </p>
+      <ol className="mt-2 list-decimal space-y-3 pl-4 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
         <Step title={t('shortcut.guide.s1')}>
           <p>{t('shortcut.guide.s1b')}</p>
         </Step>
         <Step title={t('shortcut.guide.s2')}>
-          <p>{t('shortcut.guide.s2b')}</p>
+          <p>{t('shortcut.guide.s2a')}</p>
+          <CopyBlock label={t('shortcut.guide.separator')} value="|" />
         </Step>
         <Step title={t('shortcut.guide.s3')}>
-          <p>{t('shortcut.guide.s3b')}</p>
-        </Step>
-        <Step title={t('shortcut.guide.sSplit')}>
-          <p>{t('shortcut.guide.sSplitA')}</p>
-          <CopyBlock label={t('shortcut.guide.separator')} value="|" />
-          <p className="mt-1.5">{t('shortcut.guide.sSplitB')}</p>
-          <p className="mt-1">{t('shortcut.guide.sSplitC')}</p>
+          <p>{t('shortcut.guide.s3a')}</p>
+          <p className="mt-1">{t('shortcut.guide.s3b')}</p>
+          <p className="mt-1">{t('shortcut.guide.s3c')}</p>
         </Step>
         <Step title={t('shortcut.guide.s4')}>
+          <p>{t('shortcut.guide.s4b')}</p>
+        </Step>
+        <Step title={t('shortcut.guide.s5')}>
           <CopyBlock label={t('shortcut.guide.url')} value={api} />
           <p className="mt-1.5">{t('shortcut.guide.method')}</p>
           <CopyBlock label={t('shortcut.guide.headerName')} value="Authorization" />
@@ -91,38 +94,59 @@ export function ShortcutGuide() {
           />
           <p className="mt-1.5">{t('shortcut.guide.body')}</p>
           <CopyBlock label={t('shortcut.guide.field')} value="file" />
-          <p className="mt-1.5">{t('shortcut.guide.response')}</p>
-        </Step>
-        <Step title={t('shortcut.guide.s5')}>
-          <p>{t('shortcut.guide.s5b')}</p>
         </Step>
         <Step title={t('shortcut.guide.s6')}>
           <p>{t('shortcut.guide.s6a')}</p>
           <p className="mt-1">{t('shortcut.guide.s6b')}</p>
-          <p className="mt-1">{t('shortcut.guide.s6c')}</p>
-          <p className="mt-1 italic">{t('shortcut.guide.s6note')}</p>
         </Step>
         <Step title={t('shortcut.guide.s7')}>
-          <p>{t('shortcut.guide.s7intro')}</p>
-          <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.confirm')}</p>
-          <CopyBlock label={t('shortcut.guide.urlPost')} value={`${api}/`} suffix="{draftId}/confirm" />
-          <p className="mt-1.5">{t('shortcut.guide.jsonBody')}</p>
-          <CopyBlock label={t('shortcut.guide.jsonField')} value="groupId" />
-          <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.keep')}</p>
-          <CopyBlock label={t('shortcut.guide.urlPost')} value={`${api}/`} suffix="{draftId}/keep" />
-          <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.discard')}</p>
-          <CopyBlock label={t('shortcut.guide.urlDelete')} value={`${api}/`} suffix="{draftId}" />
-          <p className="mt-1.5">{t('shortcut.guide.draftIdNote')}</p>
-          <p className="mt-1">{t('shortcut.guide.s7outro')}</p>
+          <p>{t('shortcut.guide.s7a')}</p>
+          <p className="mt-1 italic">{t('shortcut.guide.s7b')}</p>
         </Step>
         <Step title={t('shortcut.guide.s8')}>
-          <p>{t('shortcut.guide.s8b')}</p>
-          <p className="mt-1">{t('shortcut.guide.s8err')}</p>
+          <p>{t('shortcut.guide.s8a')}</p>
+          <p className="mt-1">{t('shortcut.guide.s8b')}</p>
         </Step>
         <Step title={t('shortcut.guide.s9')}>
-          <p>{t('shortcut.guide.s9b')}</p>
+          <p>{t('shortcut.guide.s9a')}</p>
+          <p className="mt-1">{t('shortcut.guide.s9b')}</p>
+        </Step>
+        <Step title={t('shortcut.guide.s10')}>
+          <p>{t('shortcut.guide.s10a')}</p>
+          <p className="mt-1">{t('shortcut.guide.s10b')}</p>
+          <p className="mt-1">{t('shortcut.guide.s10c')}</p>
+          <p className="mt-1">{t('shortcut.guide.s10d')}</p>
+        </Step>
+        <Step title={t('shortcut.guide.s11')}>
+          <p>{t('shortcut.guide.s11a')}</p>
+          <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.confirm')}</p>
+          <p className="mt-1">{t('shortcut.guide.confirmA')}</p>
+          <CopyBlock label={t('shortcut.guide.urlPost')} value={`${api}/`} suffix="{borrador}/confirm" />
+          <p className="mt-1.5">{t('shortcut.guide.confirmB')}</p>
+          <CopyBlock label={t('shortcut.guide.jsonField')} value="groupId" />
+          <p className="mt-1.5">{t('shortcut.guide.confirmC')}</p>
+          <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.keep')}</p>
+          <CopyBlock label={t('shortcut.guide.urlPost')} value={`${api}/`} suffix="{borrador}/keep" />
+          <p className="mt-1.5">{t('shortcut.guide.keepA')}</p>
+          <p className="mt-1.5 font-semibold text-paper">{t('shortcut.guide.discard')}</p>
+          <CopyBlock label={t('shortcut.guide.urlDelete')} value={`${api}/`} suffix="{borrador}" />
+          <p className="mt-1.5">{t('shortcut.guide.discardA')}</p>
+          <p className="mt-1.5">{t('shortcut.guide.draftIdNote')}</p>
+          <p className="mt-1">{t('shortcut.guide.s11out')}</p>
+        </Step>
+        <Step title={t('shortcut.guide.s12')}>
+          <p>{t('shortcut.guide.s12b')}</p>
         </Step>
       </ol>
+      <p className="mt-3 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+        <span className="font-semibold text-paper">{t('shortcut.guide.fail')}</span>
+      </p>
+      <ul className="mt-1 list-disc space-y-1 pl-4 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+        <li>{t('shortcut.guide.f1')}</li>
+        <li>{t('shortcut.guide.f2')}</li>
+        <li>{t('shortcut.guide.f3')}</li>
+        <li>{t('shortcut.guide.f4')}</li>
+      </ul>
       <p className="mt-3 text-[11px] font-medium leading-[1.45] text-muted-on-dark">
         {t('shortcut.guide.mismatch')}
       </p>
