@@ -44,14 +44,40 @@ self.addEventListener('push', event => {
   event.waitUntil(self.registration.showNotification(payload.title || 'Jirens', options));
 });
 
+// Where a tapped notification wants the app to go, kept until the app picks it up.
+// iOS suspends an installed app in the background: a message posted to it can arrive late or not
+// at all, and opening/focusing the window does not navigate it. The app reads this entry whenever
+// it comes back to the foreground (usePushNavigation), so the tap lands on the right screen even
+// when the message is lost.
+const PENDING_NAV_CACHE = 'push-nav';
+const PENDING_NAV_KEY = '/__pending-push-nav';
+
+async function rememberTarget(url) {
+  try {
+    const cache = await caches.open(PENDING_NAV_CACHE);
+    await cache.put(PENDING_NAV_KEY, new Response(JSON.stringify({ url, at: Date.now() })));
+  } catch {
+    // Best effort: the message below still covers an app that is awake.
+  }
+}
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const target = event.notification.data?.url || '/';
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async windows => {
+    rememberTarget(target).then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true })).then(async windows => {
       const client = windows[0];
       if (!client) return self.clients.openWindow(target);
+
+      // Wake the window before talking to it: a suspended page cannot answer.
+      if ('focus' in client) {
+        try {
+          await client.focus();
+        } catch {
+          // Focus can be refused; the pending entry still routes the app when it resumes.
+        }
+      }
 
       // Tell the running app where to go and let react-router handle it. A message reaches
       // any client the worker can see, controlled or not, and routing in-app avoids the full
@@ -60,7 +86,7 @@ self.addEventListener('notificationclick', event => {
       try {
         routed = await new Promise(resolve => {
           const channel = new MessageChannel();
-          const timer = setTimeout(() => resolve(false), 500);
+          const timer = setTimeout(() => resolve(false), 1500);
           channel.port1.onmessage = e => {
             clearTimeout(timer);
             resolve(Boolean(e.data?.handled));
@@ -70,8 +96,6 @@ self.addEventListener('notificationclick', event => {
       } catch {
         routed = false;
       }
-
-      if ('focus' in client) await client.focus();
 
       // Nothing answered — an old bundle without the listener, or a page mid-load.
       if (!routed) {
