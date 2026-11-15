@@ -1236,7 +1236,7 @@
       "f4": "401: generate a new code in your profile and paste it in the first step (Text). 409: the month is settled or the draft was already resolved.",
       "mismatch": "If a step doesn't match your iPhone, let us know."
     },
-    "pasteToken": "Paste it when the shortcut asks for \"Código de conexión\".",
+    "pasteToken": "Paste it into the Text action in step 1 if you build it yourself, or when the installed shortcut asks for \"Código de conexión\".",
     "lostToken": "Lost the code? Generate a new one and paste it into the shortcut."
   }
 }

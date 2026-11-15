@@ -1236,7 +1236,7 @@
       "f4": "401: generá un código nuevo en el perfil y pegalo en el primer paso (Text). 409: el mes está saldado o el borrador ya estaba resuelto.",
       "mismatch": "Si algún paso no coincide con tu iPhone, avisanos."
     },
-    "pasteToken": "Pegalo cuando el atajo te pida «Código de conexión».",
+    "pasteToken": "Pegalo en la acción Text del paso 1 si lo armás vos, o cuando el atajo instalado te pida «Código de conexión».",
     "lostToken": "¿Perdiste el código? Generá uno nuevo y pegalo en el atajo."
   }
 }
