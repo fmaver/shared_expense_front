@@ -6,7 +6,6 @@ import { config } from '@/config/env';
 import { relativeAge } from '@/utils/format';
 import { getShortcutToken, issueShortcutToken, revokeShortcutToken } from '@/api/shortcutToken';
 import { copyToClipboard } from '@/utils/clipboard';
-import { ShortcutGuide } from './ShortcutGuide';
 import type { ShortcutTokenStatus } from '@/types/expense';
 
 const primaryBtn =
@@ -137,31 +136,34 @@ export function ShortcutCard({ className }: { className?: string }) {
               {t('shortcut.copy')}
             </button>
           </div>
-          {config.shortcutInstallUrl && (
-            <a
-              href={config.shortcutInstallUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-block text-[12px] font-bold text-brand-soft underline underline-offset-2"
-            >
-              {t('shortcut.install')}
-            </a>
+          {config.shortcutInstallUrl ? (
+            <>
+              <InstallLink />
+              <ol className="mt-3 list-decimal space-y-1 pl-4 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+                <li>{t('shortcut.stepInstall')}</li>
+                <li>{t('shortcut.stepPaste')}</li>
+                <li>{t('shortcut.stepBackTap')}</li>
+              </ol>
+            </>
+          ) : (
+            <p className="mt-3 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+              {t('shortcut.notPublished')}
+            </p>
           )}
-          <p className="mt-3 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
-            {t('shortcut.pasteToken')}
-          </p>
-          <p className="mt-1 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+          <p className="mt-2 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
             {t('shortcut.step3')}
           </p>
         </div>
       )}
 
       {connected && !issuedToken && (
-        <p className="mt-3 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
-          {t('shortcut.lostToken')}
-        </p>
+        <>
+          {config.shortcutInstallUrl && <InstallLink />}
+          <p className="mt-3 text-[11.5px] font-medium leading-[1.45] text-muted-on-dark">
+            {t('shortcut.lostToken')}
+          </p>
+        </>
       )}
-      {connected && <ShortcutGuide />}
 
       {connected && (
         <div className="mt-3 border-t border-white/10 pt-3">
@@ -202,5 +204,20 @@ export function ShortcutCard({ className }: { className?: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** El atajo publicado (link de iCloud): se instala ya armado y pide el código al instalarse. */
+function InstallLink() {
+  const { t } = useTranslation();
+  return (
+    <a
+      href={config.shortcutInstallUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-3 inline-block text-[12px] font-bold text-brand-soft underline underline-offset-2"
+    >
+      {t('shortcut.install')}
+    </a>
   );
 }
