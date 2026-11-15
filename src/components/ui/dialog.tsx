@@ -124,6 +124,9 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
+// Sin blur en mobile a propósito: en iOS, una hoja que scrollea encima de un fondo con
+// `backdrop-filter` de pantalla completa deja franjas sin dibujar (la mitad de abajo de la hoja
+// se ve vacía hasta que se vuelve a scrollear). Un velo más oscuro cumple la misma función.
 function DialogOverlay({
   className,
   ...props
@@ -132,7 +135,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/40 backdrop-blur-sm duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/50 lg:bg-black/40 lg:backdrop-blur-sm duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
